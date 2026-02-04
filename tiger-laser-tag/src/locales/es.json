@@ -1,0 +1,278 @@
+{
+  "navigation": {
+    "elJuego": "El Juego",
+    "precios": "Precios",
+    "cumpleanos": "Cumpleaños",
+    "faq": "FAQ",
+    "blog": "Novedades",
+    "contacto": "Contacto",
+    "reservaYa": "Reserva ya"
+  },
+  "home": {
+    "heroTitle": "TIGER LASER TAG",
+    "heroTitleS": "EN MARBELLA",
+    "heroSubtitle": "La emoción del laser tag al aire libre en Marbella.",
+    "ctaReserve": "Reservar Ahora",
+    "ctaDiscover": "Descubre Más",
+    "welcomeTitle": "Bienvenido a Tiger Laser Tag",
+    "welcomeDesc": "En TIGER LASER TAG te invitamos a vivir la única experiencia de laser tag en Marbella, y además en un entorno 100% al aire libre, donde la acción y la diversión se mezclan con la naturaleza.",
+    "features": {
+      "techTitle": "Tecnología Avanzada",
+      "techDesc": "Equipamiento láser de última generación, diseñado para brindar una experiencia inmersiva, emocionante e inolvidable para todos los participantes.",
+      "everyoneTitle": "Para Todas Las Edades",
+      "everyoneDesc": "Diversión garantizada para niños, jóvenes, adultos, familias y grupos corporativos, con actividades emocionantes y momentos inolvidables.",
+      "competitionTitle": "Cada partida es un reto",
+      "competitionDesc": "Corre, escóndete, diseña estrategias y sorprende a tus rivales. Ideal para adrenalina con amigos, planes familiares o actividades para empresas y celebraciones.",
+      "securityTitle": "Seguridad Total",
+      "securityDesc": "Instalaciones seguras y monitoreadas con personal capacitado, equipos de última generación y dinámicas para todas las edades, garantizando partidas emocionantes e inolvidables."
+    },
+    "finalTitle": "¿Estás listo para aceptar el desafío?",
+    "finalSubtitle": "¡Ven y descubre el laser tag como nunca antes lo habías jugado en Marbella!"
+
+  },
+  "footer": {
+    "testimonialsTitle": "Lo que dicen nuestros clientes",
+    "aboutTitle": "Tiger Laser Tag",
+    "aboutDesc": "La arena de laser tag más emocionante de Marbella. Diversión garantizada para todas las edades con tecnología de última generación.",
+    "quickLinks": "Enlaces Rápidos",
+    "contactTitle": "Contacto",
+    "followUs": "Síguenos",
+    "hoursTitle": "Horario",
+    "hoursDesc": "Lunes - Viernes: 16:00 - 22:00\nSábados: 10:00 - 23:00\nDomingos: 10:00 - 21:00",
+    "copyright": "© 2026 Tiger Laser Tag. Todos los derechos reservados."
+  },
+  "elJuego": {
+    "title": "El Juego",
+    "subtitle": "Descubre todo sobre la experiencia de laser tag más emocionante",
+    "whatIs": {
+      "title": "¿Qué es el LASER TAG?",
+      "content": "El laser tag es un juego de acción en el que los participantes se enfrentan en equipos, usando pistolas electrónicas que emiten rayos infrarrojos totalmente inofensivos. Cada jugador lleva un chaleco o sensor que registra los impactos, lo que permite acumular puntos y seguir la partida en tiempo real. A diferencia de otros juegos de combate, el laser tag es seguro, sin proyectiles físicos, sin dolor y apto para todas las edades. Se basa en la estrategia, la rapidez y el trabajo en equipo, por lo que es perfecto tanto para quienes buscan adrenalina como para quienes simplemente quieren pasar un rato divertido con amigos, familia o compañeros de trabajo. En resumen: es como meterse dentro de un videojuego, pero en la vida real."
+    },
+    "howWorks": {
+      "title": "Cómo funciona",
+      "content": "Cada jugador recibe un chaleco con sensores y un phaser (pistola láser). El objetivo es marcar a los jugadores del equipo contrario mientras evitas ser marcado tú. Los sensores en el chaleco registran cada impacto, y tu phaser se desactiva temporalmente cuando eres alcanzado. Al final de cada partida, se muestran las estadísticas completas de todos los jugadores."
+    },
+    "rules": {
+      "title": "Reglas del juego",
+      "content": "Las reglas son simples: respeta a todos los jugadores, no corras ni realices contacto físico, mantén tu equipo con cuidado, sigue las indicaciones del personal, y sobre todo, ¡diviértete! Puedes moverte libremente por la arena, usar las estructuras como cobertura, y trabajar en equipo con tus compañeros para dominar el campo de batalla."
+    },
+    "important": {
+      "title": "Información importante",
+      "content": "Edad mínima: 6 años. Grupos de 4 a 30 jugadores. Duración de partida: 10-15 minutos. Equipamiento incluido en el precio. Se recomienda usar ropa cómoda y calzado deportivo. No se permite comida ni bebida en la arena. Las sesiones se realizan bajo supervisión de nuestro personal entrenado para garantizar seguridad y diversión."
+    },
+    "ctaTitle": "¿Listo para la acción?",
+    "ctaDesc": "Reserva tu partida ahora y experimenta la emoción del laser tag con tus amigos, familia o equipo de trabajo. ¡La diversión está garantizada!",
+    "btnPrices": "Ver Precios",
+    "btnContact": "Contactar"
+  },
+  "precios": {
+    "title": "Nuestros Precios",
+    "subtitle": "Elige el paquete perfecto para ti, tu familia o tu grupo",
+    "packages": {
+      "basic": {
+        "name": "Paquete Básico",
+        "features": [
+          "Equipamiento completo",
+          "1 partida de 15 minutos",
+          "Estadísticas de juego",
+          "Vestuario incluido"
+        ]
+      },
+      "standard": {
+        "name": "Paquete Estándar",
+        "features": [
+          "Equipamiento completo",
+          "2 partidas de 15 minutos",
+          "Estadísticas detalladas",
+          "Vestuario incluido",
+          "Bebida de bienvenida"
+        ]
+      },
+      "premium": {
+        "name": "Paquete Premium",
+        "features": [
+          "Equipamiento premium",
+          "3 partidas de 15 minutos",
+          "Estadísticas avanzadas",
+          "Vestuario incluido",
+          "Bebida y snack",
+          "Foto digital de recuerdo"
+        ]
+      },
+      "group": {
+        "name": "Paquete Grupo",
+        "features": [
+          "Equipamiento completo",
+          "2 partidas de 15 minutos",
+          "Estadísticas de equipo",
+          "Área privada de descanso",
+          "Bebidas incluidas",
+          "Descuento por grupo"
+        ]
+      },
+      "vip": {
+        "name": "Paquete VIP",
+        "features": [
+          "Equipamiento premium",
+          "3 partidas de 15 minutos",
+          "Sala VIP exclusiva",
+          "Catering completo",
+          "Fotografía profesional",
+          "Trofeo para el ganador",
+          "Coordinador dedicado"
+        ]
+      }
+    },
+    "common": {
+      "perPerson": "/persona",
+      "btnReserve": "Reservar Ahora",
+      "premiumLabel": "PREMIUM"
+    },
+    "infoTitle": "Información Adicional",
+    "infoList": [
+      "• Descuentos especiales para grupos de más de 20 personas",
+      "• Paquetes corporativos personalizados disponibles",
+      "• Reserva anticipada recomendada, especialmente los fines de semana",
+      "• Precios especiales para colegios y organizaciones",
+      "• Consulta por nuestros paquetes de cumpleaños con extras incluidos"
+    ]
+  },
+  "cumpleanos": {
+    "title": "Cumpleaños Épicos",
+    "subtitle": "Celebra el cumpleaños más memorable en la mejor arena de laser tag",
+    "packageTitle": "PAQUETE CUMPLEAÑOS",
+    "kidsIncluded": "Hasta 15 niños incluidos",
+    "extraChild": "Niños adicionales: 12€/persona",
+    "btnReserve": "Reservar Cumpleaños",
+    "included": {
+      "room": "2 horas de sala privada",
+      "kids": "Hasta 15 niños incluidos",
+      "games": "3 partidas de laser tag",
+      "decoration": "Decoración temática incluida",
+      "cake": "Espacio para tarta y merienda",
+      "photos": "Sesión de fotos profesional"
+    },
+    "descriptionTitle": "¿Qué incluye el paquete?",
+    "descriptionText": "Nuestro paquete de cumpleaños está diseñado para que los niños vivan una experiencia inolvidable sin que los padres tengan que preocuparse por nada. Desde que llegues, nuestro equipo se encargará de todo para que el cumpleañero y sus amigos disfruten al máximo.",
+    "featuresList": [
+      "Monitor dedicado durante todo el evento",
+      "Invitaciones digitales personalizadas",
+      "Medallas para todos los participantes",
+      "Regalo especial para el cumpleañero",
+      "Música y efectos de sonido",
+      "Zona de descanso privada",
+      "Área para padres separada",
+      "Opción de catering adicional"
+    ],
+    "agesTitle": "Edades Recomendadas",
+    "agesDesc": "Ideal para niños de 6 a 14 años. Contamos con equipamiento adaptado para diferentes edades y estaturas. Los padres son bienvenidos a participar o simplemente disfrutar desde nuestra zona de espera.",
+    "infoTitle": "Información Importante",
+    "infoList": [
+      "• Reserva con al menos 1 semana de antelación",
+      "• Puedes traer tu propia tarta y comida",
+      "• Disponible fines de semana y festivos",
+      "• Consulta disponibilidad entre semana"
+    ],
+    "doubtsTitle": "¿Tienes dudas?",
+    "doubtsText": "Contacta con nosotros y te ayudaremos a organizar el cumpleaños perfecto",
+    "btnContact": "Contactar Ahora"
+  },
+  "faq": {
+    "title": "Preguntas Frecuentes",
+    "subtitle": "Encuentra respuestas a las dudas más comunes sobre nuestra arena de laser tag",
+    "notFoundTitle": "¿No encuentras tu respuesta?",
+    "notFoundText": "Nuestro equipo está aquí para ayudarte con cualquier duda adicional",
+    "btnContact": "Contáctanos",
+    "questions": [
+      {
+        "q": "¿Cuál es la edad mínima para jugar?",
+        "a": "La edad mínima recomendada es de 6 años. Los niños menores de 8 años deben estar acompañados por un adulto en la arena."
+      },
+      {
+        "q": "¿Cuántas personas pueden jugar al mismo tiempo?",
+        "a": "Nuestras instalaciones pueden acomodar de 4 a 30 jugadores simultáneamente."
+      },
+      {
+        "q": "¿Es seguro el laser tag?",
+        "a": "¡Absolutamente! El laser tag es completamente seguro. Utilizamos tecnología infrarroja sin proyectiles físicos."
+      },
+      {
+        "q": "¿Cuánto dura una partida?",
+        "a": "Cada partida tiene una duración aproximada de 12-15 minutos de juego activo."
+      },
+      {
+        "q": "¿Qué incluye el precio?",
+        "a": "El precio incluye todo el equipamiento necesario, acceso a la arena, y estadísticas completas."
+      },
+      {
+        "q": "¿Necesito reservar con anticipación?",
+        "a": "Sí, recomendamos encarecidamente hacer reserva previa."
+      },
+      {
+        "q": "¿Qué ropa debo usar?",
+        "a": "Recomendamos usar ropa cómoda y deportiva. Calzado deportivo cerrado es obligatorio."
+      },
+      {
+        "q": "¿Puedo traer mi propia comida y bebida?",
+        "a": "No está permitido llevar comida ni bebida dentro de la arena."
+      },
+      {
+        "q": "¿Cuál es la política de cancelación?",
+        "a": "Puedes cancelar o reprogramar tu reserva hasta 48 horas antes sin cargo alguno."
+      },
+      {
+        "q": "¿Ofrecen descuentos para grupos?",
+        "a": "Sí, ofrecemos descuentos especiales para grupos grandes y eventos corporativos."
+      }
+    ]
+  },
+  "blog": {
+    "title": "Novedades",
+    "subtitle": "Mantente al día con las últimas noticias, consejos y novedades de Tiger Laser Tag",
+    "readMore": "Leer más",
+    "newsletterTitle": "Suscríbete a nuestro newsletter",
+    "newsletterText": "Recibe las últimas noticias, promociones especiales y consejos exclusivos",
+    "emailPlaceholder": "Tu email",
+    "btnSubscribe": "Suscribirse"
+  },
+  "contacto": {
+    "title": "Contacto",
+    "subtitle": "Estamos aquí para ayudarte. Contáctanos para reservas, consultas o más información",
+    "formTitle": "Envíanos un mensaje",
+    "name": "Nombre completo *",
+    "email": "Email *",
+    "phone": "Teléfono",
+    "subject": "Asunto",
+    "message": "Mensaje *",
+    "btnSend": "Enviar mensaje",
+    "infoTitle": "Información de contacto",
+    "subjects": {
+      "general": "Consulta general",
+      "booking": "Reserva",
+      "birthday": "Cumpleaños",
+      "corporate": "Evento corporativo",
+      "other": "Otro"
+    },
+    "mapTitle": "Cómo llegar",
+    "mapPlaceholder": "Mapa interactivo próximamente"
+  },
+  "reserva": {
+    "title": "Reserva Tu Aventura",
+    "subtitle": "Completa el formulario para solicitar tu reserva en nuestra arena de Marbella.",
+    "contactData": "Datos de Contacto",
+    "details": "Detalles de la Reserva",
+    "name": "Nombre Completo *",
+    "email": "Email *",
+    "phone": "Teléfono *",
+    "date": "Fecha *",
+    "time": "Hora *",
+    "participants": "Nº Personas *",
+    "notes": "Notas Adicionales",
+    "notesPlaceholder": "¿Alguna petición especial? Cumpleaños, empresa, etc.",
+    "btnConfirm": "Confirmar Reserva",
+    "processing": "Procesando...",
+    "warning": "La reserva no es definitiva hasta recibir confirmación por email o teléfono.",
+    "successTitle": "¡Solicitud recibida!",
+    "successDesc": "Gracias {{name}}, hemos recibido tu solicitud."
+  }
+}

@@ -1,0 +1,276 @@
+{
+  "navigation": {
+    "elJuego": "The Game",
+    "precios": "Pricing",
+    "cumpleanos": "Birthdays",
+    "faq": "FAQ",
+    "blog": "Blog",
+    "contacto": "Contact",
+    "reservaYa": "Book Now"
+  },
+  "home": {
+    "heroTitle": "TIGER LASER TAG",
+    "heroSubtitle": "Adrenaline, strategy, and fun at Marbella's best laser tag arena",
+    "ctaReserve": "Book Now",
+    "ctaDiscover": "Discover More",
+    "welcomeTitle": "Welcome to Tiger Laser Tag",
+    "welcomeDesc": "Marbella's most exciting entertainment experience. State-of-the-art equipment, first-class facilities, and guaranteed fun for all ages.",
+    "features": {
+      "techTitle": "Advanced Technology",
+      "techDesc": "Latest generation laser equipment for an immersive and unforgettable experience.",
+      "everyoneTitle": "For Everyone",
+      "everyoneDesc": "Fun guaranteed for kids, teens, adults, families, and corporate groups.",
+      "competitionTitle": "Competition",
+      "competitionDesc": "Different game modes and tournaments to test your strategy and skill.",
+      "securityTitle": "Total Safety",
+      "securityDesc": "Secure and monitored facilities with trained staff for your peace of mind."
+    },
+    "finalTitle": "¿Estás listo para aceptar el desafío?",
+    "finalSubtitle": "¡Ven y descubre el laser tag como nunca antes lo habías jugado en Marbella!"
+  },
+  "footer": {
+    "testimonialsTitle": "What our clients say",
+    "aboutTitle": "Tiger Laser Tag",
+    "aboutDesc": "Marbella's most exciting laser tag arena. Guaranteed fun for all ages with state-of-the-art technology.",
+    "quickLinks": "Quick Links",
+    "contactTitle": "Contact",
+    "followUs": "Follow Us",
+    "hoursTitle": "Opening Hours",
+    "hoursDesc": "Monday - Friday: 16:00 - 22:00\nSaturdays: 10:00 - 23:00\nSundays: 10:00 - 21:00",
+    "copyright": "© 2026 Tiger Laser Tag. All rights reserved."
+  },
+  "elJuego": {
+    "title": "The Game",
+    "subtitle": "Discover everything about the most exciting laser tag experience",
+    "whatIs": {
+      "title": "What is Laser Tag?",
+      "content": "Laser tag is a team action game where players use infrared devices to 'tag' other players. It's an exciting experience combining strategy, teamwork, and fun in a safe environment."
+    },
+    "howWorks": {
+      "title": "How it works",
+      "content": "Each player receives a vest with sensors and a phaser. The goal is to tag players from the opposing team while avoiding being tagged yourself."
+    },
+    "rules": {
+      "title": "Game Rules",
+      "content": "The rules are simple: respect all players, no running or physical contact, handle equipment with care, follow staff instructions, and above all, have fun!"
+    },
+    "important": {
+      "title": "Important Information",
+      "content": "Minimum age: 6 years. Groups of 4 to 30 players. Game duration: 10-15 minutes. Equipment included. Comfortable clothing recommended."
+    },
+    "ctaTitle": "Ready for action?",
+    "ctaDesc": "Book your game now and experience the thrill of laser tag with friends, family, or colleagues.",
+    "btnPrices": "See Prices",
+    "btnContact": "Contact"
+  },
+  "precios": {
+    "title": "Our Prices",
+    "subtitle": "Choose the perfect package for you, your family, or your group",
+    "packages": {
+      "basic": {
+        "name": "Basic Package",
+        "features": [
+          "Full equipment",
+          "1 game of 15 minutes",
+          "Game stats",
+          "Locker room included"
+        ]
+      },
+      "standard": {
+        "name": "Standard Package",
+        "features": [
+          "Full equipment",
+          "2 games of 15 minutes",
+          "Detailed stats",
+          "Locker room included",
+          "Welcome drink"
+        ]
+      },
+      "premium": {
+        "name": "Premium Package",
+        "features": [
+          "Premium equipment",
+          "3 games of 15 minutes",
+          "Advanced stats",
+          "Locker room included",
+          "Drink and snack",
+          "Digital photo"
+        ]
+      },
+      "group": {
+        "name": "Group Package",
+        "features": [
+          "Full equipment",
+          "2 games of 15 minutes",
+          "Team stats",
+          "Private rest area",
+          "Drinks included",
+          "Group discount"
+        ]
+      },
+      "vip": {
+        "name": "VIP Package",
+        "features": [
+          "Premium equipment",
+          "3 games of 15 minutes",
+          "Exclusive VIP room",
+          "Full catering",
+          "Professional photography",
+          "Trophy for winner",
+          "Dedicated coordinator"
+        ]
+      }
+    },
+    "common": {
+      "perPerson": "/person",
+      "btnReserve": "Book Now",
+      "premiumLabel": "PREMIUM"
+    },
+    "infoTitle": "Additional Information",
+    "infoList": [
+      "• Special discounts for groups over 20 people",
+      "• Customized corporate packages available",
+      "• Advance booking recommended, especially on weekends",
+      "• Special prices for schools and organizations",
+      "• Ask about our birthday packages with extras included"
+    ]
+  },
+  "cumpleanos": {
+    "title": "Epic Birthdays",
+    "subtitle": "Celebrate the most memorable birthday at the best laser tag arena",
+    "packageTitle": "BIRTHDAY PACKAGE",
+    "kidsIncluded": "Up to 15 kids included",
+    "extraChild": "Extra kids: 12€/person",
+    "btnReserve": "Book Birthday",
+    "included": {
+      "room": "2 hours private room",
+      "kids": "Up to 15 kids included",
+      "games": "3 laser tag games",
+      "decoration": "Themed decoration included",
+      "cake": "Space for cake and snacks",
+      "photos": "Professional photo session"
+    },
+    "descriptionTitle": "What's included?",
+    "descriptionText": "Our birthday package is designed for an unforgettable experience without parents worrying about anything.",
+    "featuresList": [
+      "Dedicated monitor during the event",
+      "Custom digital invitations",
+      "Medals for all participants",
+      "Special gift for the birthday child",
+      "Music and sound effects",
+      "Private rest area",
+      "Separate parents area",
+      "Additional catering option"
+    ],
+    "agesTitle": "Recommended Ages",
+    "agesDesc": "Ideal for children aged 6 to 14. We have equipment adapted for different ages and heights.",
+    "infoTitle": "Important Information",
+    "infoList": [
+      "• Book at least 1 week in advance",
+      "• You can bring your own cake and food",
+      "• Available weekends and holidays",
+      "• Check weekday availability"
+    ],
+    "doubtsTitle": "Any questions?",
+    "doubtsText": "Contact us and we'll help you organize the perfect birthday",
+    "btnContact": "Contact Now"
+  },
+  "faq": {
+    "title": "Frequently Asked Questions",
+    "subtitle": "Find answers to common questions about our laser tag arena",
+    "notFoundTitle": "Can't find your answer?",
+    "notFoundText": "Our team is here to help with any additional questions",
+    "btnContact": "Contact Us",
+    "questions": [
+      {
+        "q": "What is the minimum age to play?",
+        "a": "Minimum recommended age is 6 years. Children under 8 must be accompanied by an adult."
+      },
+      {
+        "q": "How many people can play at once?",
+        "a": "Our facilities accommodate 4 to 30 players simultaneously."
+      },
+      {
+        "q": "Is laser tag safe?",
+        "a": "Absolutely! Laser tag is completely safe. We use infrared technology with no physical projectiles."
+      },
+      {
+        "q": "How long is a game?",
+        "a": "Each game lasts approximately 12-15 minutes of active play."
+      },
+      {
+        "q": "What is included in the price?",
+        "a": "Price includes all necessary equipment, arena access, and full stats."
+      },
+      {
+        "q": "Do I need to book in advance?",
+        "a": "Yes, we strongly recommend booking in advance."
+      },
+      {
+        "q": "What should I wear?",
+        "a": "We recommend comfortable sports clothing. Closed sports shoes are mandatory."
+      },
+      {
+        "q": "Can I bring my own food?",
+        "a": "Outside food and drink are not allowed in the arena."
+      },
+      {
+        "q": "What is the cancellation policy?",
+        "a": "You can cancel or reschedule up to 48 hours before without charge."
+      },
+      {
+        "q": "Do you offer group discounts?",
+        "a": "Yes, we offer special discounts for large groups and corporate events."
+      }
+    ]
+  },
+  "blog": {
+    "title": "Blog & News",
+    "subtitle": "Stay up to date with the latest news, tips, and updates from Tiger Laser Tag",
+    "readMore": "Read more",
+    "newsletterTitle": "Subscribe to our newsletter",
+    "newsletterText": "Receive the latest news, special promotions, and exclusive tips",
+    "emailPlaceholder": "Your email",
+    "btnSubscribe": "Subscribe"
+  },
+  "contacto": {
+    "title": "Contact",
+    "subtitle": "We are here to help. Contact us for bookings, inquiries, or more information",
+    "formTitle": "Send us a message",
+    "name": "Full Name *",
+    "email": "Email *",
+    "phone": "Phone",
+    "subject": "Subject",
+    "message": "Message *",
+    "btnSend": "Send message",
+    "infoTitle": "Contact Information",
+    "subjects": {
+      "general": "General Inquiry",
+      "booking": "Booking",
+      "birthday": "Birthday",
+      "corporate": "Corporate Event",
+      "other": "Other"
+    },
+    "mapTitle": "How to get there",
+    "mapPlaceholder": "Interactive map coming soon"
+  },
+  "reserva": {
+    "title": "Book Your Adventure",
+    "subtitle": "Complete the form to request your booking at our Marbella arena.",
+    "contactData": "Contact Details",
+    "details": "Booking Details",
+    "name": "Full Name *",
+    "email": "Email *",
+    "phone": "Phone *",
+    "date": "Date *",
+    "time": "Time *",
+    "participants": "No. of People *",
+    "notes": "Additional Notes",
+    "notesPlaceholder": "Any special requests? Birthday, company, etc.",
+    "btnConfirm": "Confirm Booking",
+    "processing": "Processing...",
+    "warning": "Booking is not final until confirmed by email or phone.",
+    "successTitle": "Request received!",
+    "successDesc": "Thanks {{name}}, we have received your request."
+  }
+}
