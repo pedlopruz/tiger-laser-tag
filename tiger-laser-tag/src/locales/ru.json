@@ -1,0 +1,313 @@
+{
+  "navigation": {
+    "elJuego": "Игра",
+    "precios": "Цены",
+    "cumpleanos": "День рождения",
+    "faq": "Часто задаваемые вопросы",
+    "blog": "Новинки",
+    "contacto": "Контакт",
+    "reservaYa": "Забронируйте сейчас"
+  },
+  "home": {
+    "heroTitle": "TIGER LASER TAG",
+    "heroTitleS": "В МАРБЕЛЬЕ",
+    "heroSubtitle": "Эмоции от лазертага на открытом воздухе в Марбелье.",
+    "ctaReserve": "Забронировать сейчас",
+    "ctaDiscover": "Узнайте больше",
+    "welcomeTitle": "Добро пожаловать в Tiger Laser Tag",
+    "welcomeDesc": "В Tiger Laser Tag мы приглашаем вас испытать уникальный опыт лазерного тега в Марбелье, причем в полностью открытом воздухе, где действие и развлечение сочетаются с природой.",
+    "features": {
+      "techTitle": "Передовые технологии",
+      "techDesc": "Лазерное оборудование последнего поколения, разработанное для того, чтобы подарить всем участникам захватывающий, незабываемый опыт полного погружения.",
+      "everyoneTitle": "Для всех возрастов",
+      "everyoneDesc": "Гарантированное развлечение для детей, молодежи, взрослых, семей и корпоративных групп, с увлекательными мероприятиями и незабываемыми моментами.",
+      "competitionTitle": "Каждая партия — это вызов",
+      "competitionDesc": "Беги, прячься, разрабатывай стратегии и удивляй своих соперников. Идеально подходит для получения адреналина с друзьями, семейных планов или мероприятий для компаний и торжеств.",
+      "securityTitle": "Полная безопасность",
+      "securityDesc": "Безопасные и контролируемые объекты с обученным персоналом, современным оборудованием и динамичными развлечениями для всех возрастов, гарантирующие захватывающие и незабываемые впечатления."
+    },
+    "finalTitle": "Готовы принять вызов?",
+    "finalSubtitle": "Приходите и откройте для себя лазертаг, как никогда раньше в Марбелье!"
+
+  },
+  "footer": {
+    "testimonialsTitle": "Что говорят наши клиенты",
+    "aboutTitle": "Tiger Laser Tag",
+    "aboutDesc": "Самый увлекательный лазертаг в Марбелье. Гарантированное развлечение для всех возрастов с использованием новейших технологий.",
+    "quickLinks": "Быстрые ссылки",
+    "contactTitle": "Контакт",
+    "followUs": "Следуйте за нами",
+    "hoursTitle": "Расписание",
+    "hoursDesc": "Понедельник – пятница: 16:00 – 22:00\nСуббота: 10:00 – 23:00\nВоскресенье: 10:00 – 21:00",
+    "copyright": "© 2026 Tiger Laser Tag. Все права защищены."
+  },
+  "elJuego": {
+    "title": "Игра",
+    "subtitle": "Узнайте все о самом захватывающем опыте лазертага",
+    "whatIs": {
+      "title": "Что такое LASER TAG?",
+      "content": "Лазертаг — это экшн-игра, в которой участники сражаются в командах, используя электронные пистолеты, излучающие совершенно безвредные инфракрасные лучи. Каждый игрок носит жилет или датчик, который регистрирует попадания, что позволяет накапливать очки и следить за ходом игры в режиме реального времени. \nВ отличие от других боевых игр, лазертаг безопасен, не использует физических снарядов, не причиняет боли и подходит для всех возрастов. Он основан на стратегии, быстроте и командной работе, поэтому идеально подходит как для тех, кто ищет адреналина, так и для тех, кто просто хочет весело провести время с друзьями, семьей или коллегами. \nОдним словом, это как погрузиться в видеоигру, но в реальной жизни."
+    },
+    "howWorks": {
+      "title": "Cómo funciona",
+      "content": "Cada jugador recibe un chaleco con sensores y un phaser (pistola láser). El objetivo es marcar a los jugadores del equipo contrario mientras evitas ser marcado tú. Los sensores en el chaleco registran cada impacto, y tu phaser se desactiva temporalmente cuando eres alcanzado. Al final de cada partida, se muestran las estadísticas completas de todos los jugadores."
+    },
+    "rules": {
+      "title": "Reglas del juego",
+      "content": "Las reglas son simples: respeta a todos los jugadores, no corras ni realices contacto físico, mantén tu equipo con cuidado, sigue las indicaciones del personal, y sobre todo, ¡diviértete! Puedes moverte libremente por la arena, usar las estructuras como cobertura, y trabajar en equipo con tus compañeros para dominar el campo de batalla."
+    },
+    "important": {
+      "title": "Información importante",
+      "content": "Edad mínima: 6 años. Grupos de 4 a 30 jugadores. Duración de partida: 10-15 minutos. Equipamiento incluido en el precio. Se recomienda usar ropa cómoda y calzado deportivo. No se permite comida ni bebida en la arena. Las sesiones se realizan bajo supervisión de nuestro personal entrenado para garantizar seguridad y diversión."
+    },
+    "ctaTitle": "¿Listo para la acción?",
+    "ctaDesc": "Reserva tu partida ahora y experimenta la emoción del laser tag con tus amigos, familia o equipo de trabajo. ¡La diversión está garantizada!",
+    "btnPrices": "Ver Precios",
+    "btnContact": "Contactar"
+  },
+  "precios": {
+    "title": "Nuestros Precios",
+    "subtitle": "Elige el paquete perfecto para ti, tu familia o tu grupo",
+    "packages": {
+      "basic": {
+        "name": "Paquete Básico",
+        "features": [
+          "Equipamiento completo",
+          "1 partida de 15 minutos",
+          "Estadísticas de juego",
+          "Vestuario incluido"
+        ]
+      },
+      "standard": {
+        "name": "Paquete Estándar",
+        "features": [
+          "Equipamiento completo",
+          "2 partidas de 15 minutos",
+          "Estadísticas detalladas",
+          "Vestuario incluido",
+          "Bebida de bienvenida"
+        ]
+      },
+      "premium": {
+        "name": "Paquete Premium",
+        "features": [
+          "Equipamiento premium",
+          "3 partidas de 15 minutos",
+          "Estadísticas avanzadas",
+          "Vestuario incluido",
+          "Bebida y snack",
+          "Foto digital de recuerdo"
+        ]
+      },
+      "group": {
+        "name": "Paquete Grupo",
+        "features": [
+          "Equipamiento completo",
+          "2 partidas de 15 minutos",
+          "Estadísticas de equipo",
+          "Área privada de descanso",
+          "Bebidas incluidas",
+          "Descuento por grupo"
+        ]
+      },
+      "vip": {
+        "name": "Paquete VIP",
+        "features": [
+          "Equipamiento premium",
+          "3 partidas de 15 minutos",
+          "Sala VIP exclusiva",
+          "Catering completo",
+          "Fotografía profesional",
+          "Trofeo para el ganador",
+          "Coordinador dedicado"
+        ]
+      }
+    },
+    "common": {
+      "perPerson": "/persona",
+      "btnReserve": "Reservar Ahora",
+      "premiumLabel": "PREMIUM"
+    },
+    "infoTitle": "Información Adicional",
+    "infoList": [
+      "• Descuentos especiales para grupos de más de 20 personas",
+      "• Paquetes corporativos personalizados disponibles",
+      "• Reserva anticipada recomendada, especialmente los fines de semana",
+      "• Precios especiales para colegios y organizaciones",
+      "• Consulta por nuestros paquetes de cumpleaños con extras incluidos"
+    ]
+  },
+  "cumpleanos": {
+    "title": "Cumpleaños Épicos",
+    "subtitle": "Celebra el cumpleaños más memorable en la mejor arena de laser tag",
+    "packageTitle": "PAQUETE CUMPLEAÑOS",
+    "kidsIncluded": "Hasta 15 niños incluidos",
+    "extraChild": "Niños adicionales: 12€/persona",
+    "btnReserve": "Reservar Cumpleaños",
+    "included": {
+      "room": "2 horas de sala privada",
+      "kids": "Hasta 15 niños incluidos",
+      "games": "3 partidas de laser tag",
+      "decoration": "Decoración temática incluida",
+      "cake": "Espacio para tarta y merienda",
+      "photos": "Sesión de fotos profesional"
+    },
+    "descriptionTitle": "¿Qué incluye el paquete?",
+    "descriptionText": "Nuestro paquete de cumpleaños está diseñado para que los niños vivan una experiencia inolvidable sin que los padres tengan que preocuparse por nada. Desde que llegues, nuestro equipo se encargará de todo para que el cumpleañero y sus amigos disfruten al máximo.",
+    "featuresList": [
+      "Monitor dedicado durante todo el evento",
+      "Invitaciones digitales personalizadas",
+      "Medallas para todos los participantes",
+      "Regalo especial para el cumpleañero",
+      "Música y efectos de sonido",
+      "Zona de descanso privada",
+      "Área para padres separada",
+      "Opción de catering adicional"
+    ],
+    "agesTitle": "Edades Recomendadas",
+    "agesDesc": "Ideal para niños de 6 a 14 años. Contamos con equipamiento adaptado para diferentes edades y estaturas. Los padres son bienvenidos a participar o simplemente disfrutar desde nuestra zona de espera.",
+    "infoTitle": "Información Importante",
+    "infoList": [
+      "• Reserva con al menos 1 semana de antelación",
+      "• Puedes traer tu propia tarta y comida",
+      "• Disponible fines de semana y festivos",
+      "• Consulta disponibilidad entre semana"
+    ],
+    "doubtsTitle": "¿Tienes dudas?",
+    "doubtsText": "Contacta con nosotros y te ayudaremos a organizar el cumpleaños perfecto",
+    "btnContact": "Contactar Ahora"
+  },
+  "faq": {
+    "title": "Часто задаваемые вопросы",
+    "subtitle": "Найдите ответы на самые распространенные вопросы о нашем лазерном поле для лазертага.",
+    "notFoundTitle": "Не можете найти ответ на свой вопрос?Click to apply",
+    "notFoundText": "Наша команда готова помочь вам с любыми дополнительными вопросами.",
+    "btnContact": "Свяжитесь с нами",
+    "questions": [
+      {
+        "q": "¿Что такое laser tag?",
+        "a": "Лазертаг — это игра, сочетающая в себе элементы экшена и стратегии, в которой игроки сражаются друг с другом, используя лазерные пистолеты и жилеты с датчиками. \nЦель игры — набрать очки, попадая лазером в датчики соперников без физического контакта."
+      },
+      {
+        "q": "Есть ли возрастные ограничения?",
+        "a": "Минимальный возраст – 10 лет. \nДети до 15 лет должны прибыть в сопровождении взрослого, хотя взрослому не обязательно оставаться на время игры. \nИгра рассчитана на возраст от 10 до 70 лет. \nВзрослые и дети могут играть вместе в одной сессии. \nДля целей игры взрослыми считаются все лица старше 15 лет."
+      },
+      {
+        "q": "¿Это безопасно laser tag?",
+        "a": "Конечно! Игра абсолютно безопасна. \nИгра основана на инфракрасных датчиках, которые регистрируются жилетами."
+      },
+      {
+        "q": "Должен ли я носить какую-то одежду?",
+        "a": "Для игры в лазертаг мы рекомендуем надеть удобную спортивную одежду, в которой вам будет легко двигаться. \nЛучше избегать очень широкой одежды, юбок, платьев или открытой обуви. Также не рекомендуется носить незакрепленные предметы, такие как ожерелья, кепки или сумки. \nОдним словом: приходите в удобной одежде, готовые бегать... и весело проводить время! "
+      },
+      {
+        "q": "Сколько человек может играть одновременно?",
+        "a": "Максимальное количество игроков одновременно — 20 человек. \nДля больших групп обращайтесь к нам, у нас есть различные варианты и форматы со специальными игровыми сессиями для большего количества людей, с проведением небольших командных турниров."
+      },
+      {
+        "q": "Как долго длится игра?",
+        "a": ""
+      },
+      {
+        "q": "Можно ли играть, если нас меньше требуемого количества, например, 2 или 3 человека?",
+        "a": "Да, в лазертаг могут играть 2 или 3 человека без проблем. \nОднако вам нужно будет записаться на сессии, в которых еще есть свободные места, так как игры заполняются другими игроками. \nВ нашей системе бронирования вы легко сможете увидеть, сколько мест осталось в каждой сессии, чтобы выбрать наиболее подходящую вам, прежде чем подтвердить бронирование."
+      },
+      {
+        "q": "Может ли кто-нибудь еще присоединиться к команде в последний момент?",
+        "a": "Конечно, да, при условии, что не будет превышено максимальное количество игроков, допускаемых в данной сессии."
+      },
+      {
+        "q": "А что, если в последний момент кто-то не придет?",
+        "a": "Нет проблем, игра будет продолжена, но следует иметь в виду, что сумма за отсутствующего игрока не будет возвращена, его место останется пустым."
+      },
+      {
+        "q": "Могу ли я изменить дату или время бронирования?",
+        "a": "Конечно, наша система позволяет вам изменить бронирование онлайн из самого полученного вами бронирования, при условии, что это будет сделано за 48 часов до даты бронирования, вы сможете изменить его (изменить дату, количество человек или даже отменить) без каких-либо затрат, возврат или возмещение будет произведено автоматически. \nВы также можете сделать это, по крайней мере за 48 часов, связавшись с нашим отделом обслуживания клиентов по адресу lasertagmarbella@gmail.com или по телефону +34 659 000 000. "
+      },
+      {
+        "q": "За сколько времени рекомендуется прибыть?",
+        "a": "Вы должны прибыть за 15 минут до времени вашей брони."
+      },
+      {
+        "q": "Что будет, если я опоздаю?",
+        "a": "Если вы опоздаете более чем на 5 минут, сеанс может быть отменен, и лица, пропустившие сеанс, лишаются права на возмещение. \nЕсли группа, которая ПРИШЛА, состоит из более чем 4 человек, игра будет продолжена без пропустивших сеанс лиц. Игра будет отменена только в том случае, если в результате в группе будет менее 4 человек. \nВ этом случае лица, которые пришли, но не смогли играть, будут иметь право на возмещение или на изменение времени и дня игры, если они того пожелают."
+      },
+      {
+        "q": "Как сделать бронирование?",
+        "a": ""
+      },
+      {
+        "q": "Как оплатить, если я забронировал по телефону?",
+        "a": ""
+      },
+      {
+        "q": "Что произойдет, если я не оплачу бронирование, сделанное по телефону?",
+        "a": ""
+      },
+      {
+        "q": "Можно ли заблокировать комнату только для моей группы?",
+        "a": ""
+      },
+      {
+        "q": "Могу ли я отменить бронирование?",
+        "a": "Бронирование можно изменить, если это сделано за 48 часов до даты бронирования, в этом случае будет произведен соответствующий возврат средств. \nНаша система позволяет изменить бронирование из самого бронирования, которое вы получили, полностью автоматически и онлайн."
+      },
+      {
+        "q": "Можно ли приносить еду и напитки на территорию комплекса?",
+        "a": ""
+      }
+
+
+      
+    ]
+  },
+  "blog": {
+    "title": "Novedades",
+    "subtitle": "Mantente al día con las últimas noticias, consejos y novedades de Tiger Laser Tag",
+    "readMore": "Leer más",
+    "newsletterTitle": "Suscríbete a nuestro newsletter",
+    "newsletterText": "Recibe las últimas noticias, promociones especiales y consejos exclusivos",
+    "emailPlaceholder": "Tu email",
+    "btnSubscribe": "Suscribirse"
+  },
+  "contacto": {
+    "title": "Contacto",
+    "subtitle": "Estamos aquí para ayudarte. Contáctanos para reservas, consultas o más información",
+    "formTitle": "Envíanos un mensaje",
+    "name": "Nombre completo *",
+    "email": "Email *",
+    "phone": "Teléfono",
+    "subject": "Asunto",
+    "message": "Mensaje *",
+    "btnSend": "Enviar mensaje",
+    "infoTitle": "Información de contacto",
+    "subjects": {
+      "general": "Consulta general",
+      "booking": "Reserva",
+      "birthday": "Cumpleaños",
+      "corporate": "Evento corporativo",
+      "other": "Otro"
+    },
+    "mapTitle": "Cómo llegar",
+    "mapPlaceholder": "Mapa interactivo próximamente"
+  },
+  "reserva": {
+    "title": "Reserva Tu Aventura",
+    "subtitle": "Completa el formulario para solicitar tu reserva en nuestra arena de Marbella.",
+    "contactData": "Datos de Contacto",
+    "details": "Detalles de la Reserva",
+    "name": "Nombre Completo *",
+    "email": "Email *",
+    "phone": "Teléfono *",
+    "date": "Fecha *",
+    "time": "Hora *",
+    "participants": "Nº Personas *",
+    "notes": "Notas Adicionales",
+    "notesPlaceholder": "¿Alguna petición especial? Cumpleaños, empresa, etc.",
+    "btnConfirm": "Confirmar Reserva",
+    "processing": "Procesando...",
+    "warning": "La reserva no es definitiva hasta recibir confirmación por email o teléfono.",
+    "successTitle": "¡Solicitud recibida!",
+    "successDesc": "Gracias {{name}}, hemos recibido tu solicitud."
+  }
+}

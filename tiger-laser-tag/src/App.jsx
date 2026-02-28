@@ -11,6 +11,7 @@ import HomePage from '@/pages/HomePage';
 import ElJuegoPage from '@/pages/ElJuegoPage';
 import PreciosPage from '@/pages/PreciosPage';
 import CumpleañosPage from '@/pages/CumpleañosPage';
+import BlogDetailPage from '@/pages/BlogDetailPage';
 import FAQPage from '@/pages/FAQPage';
 import BlogPage from '@/pages/BlogPage';
 import ContactoPage from '@/pages/ContactoPage';
@@ -33,6 +34,7 @@ function App() {
                 <Route path="/cumpleaños" element={<CumpleañosPage />} />
                 <Route path="/faq" element={<FAQPage />} />
                 <Route path="/blog" element={<BlogPage />} />
+                <Route path="/blog/:slug" element={<BlogDetailPage />} />
                 <Route path="/contacto" element={<ContactoPage />} />
                 <Route path="/reserva" element={<ReservaPage />} />
               </Routes>

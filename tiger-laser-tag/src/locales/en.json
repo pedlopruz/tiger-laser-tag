@@ -4,29 +4,30 @@
     "precios": "Pricing",
     "cumpleanos": "Birthdays",
     "faq": "FAQ",
-    "blog": "Blog",
+    "blog": "What's new",
     "contacto": "Contact",
     "reservaYa": "Book Now"
   },
   "home": {
     "heroTitle": "TIGER LASER TAG",
-    "heroSubtitle": "Adrenaline, strategy, and fun at Marbella's best laser tag arena",
+    "heroTitleS": "IN MARBELLA",
+    "heroSubtitle": "The thrill of outdoor laser tag in Marbella.",
     "ctaReserve": "Book Now",
     "ctaDiscover": "Discover More",
     "welcomeTitle": "Welcome to Tiger Laser Tag",
-    "welcomeDesc": "Marbella's most exciting entertainment experience. State-of-the-art equipment, first-class facilities, and guaranteed fun for all ages.",
+    "welcomeDesc": "At Tiger Laser Tag, we invite you to enjoy the only laser tag experience in Marbella, in a 100% outdoor setting where action and fun blend with nature.",
     "features": {
       "techTitle": "Advanced Technology",
-      "techDesc": "Latest generation laser equipment for an immersive and unforgettable experience.",
-      "everyoneTitle": "For Everyone",
-      "everyoneDesc": "Fun guaranteed for kids, teens, adults, families, and corporate groups.",
-      "competitionTitle": "Competition",
-      "competitionDesc": "Different game modes and tournaments to test your strategy and skill.",
+      "techDesc": "State-of-the-art laser equipment, designed to provide an immersive, exciting and unforgettable experience for all participants.",
+      "everyoneTitle": "For All Ages",
+      "everyoneDesc": "Guaranteed fun for children, young people, adults, families and corporate groups, with exciting activities and unforgettable moments.",
+      "competitionTitle": "Every game is a challenge",
+      "competitionDesc": "Run, hide, devise strategies and surprise your opponents. Ideal for adrenaline-fuelled fun with friends, family outings or corporate events and celebrations.",
       "securityTitle": "Total Safety",
-      "securityDesc": "Secure and monitored facilities with trained staff for your peace of mind."
+      "securityDesc": "Safe, monitored facilities with trained staff, state-of-the-art equipment and activities for all ages, guaranteeing exciting and unforgettable experiences."
     },
-    "finalTitle": "¿Estás listo para aceptar el desafío?",
-    "finalSubtitle": "¡Ven y descubre el laser tag como nunca antes lo habías jugado en Marbella!"
+    "finalTitle": "Are you ready to take on the challenge?",
+    "finalSubtitle": "Come and discover laser tag like you've never played it before in Marbella!"
   },
   "footer": {
     "testimonialsTitle": "What our clients say",
@@ -44,7 +45,7 @@
     "subtitle": "Discover everything about the most exciting laser tag experience",
     "whatIs": {
       "title": "What is Laser Tag?",
-      "content": "Laser tag is a team action game where players use infrared devices to 'tag' other players. It's an exciting experience combining strategy, teamwork, and fun in a safe environment."
+      "content": "Laser tag is an action game in which participants compete in teams, using electronic guns that emit completely harmless infrared beams. Each player wears a vest or sensor that records hits, allowing them to accumulate points and follow the game in real time. Unlike other combat games, laser tag is safe, with no physical projectiles, no pain and suitable for all ages. \nIt is based on strategy, speed and teamwork, making it perfect for both those seeking an adrenaline rush and those who simply want to have a fun time with friends, family or work colleagues. \nIn short: it's like stepping into a video game, but in real life."
     },
     "howWorks": {
       "title": "How it works",
@@ -177,51 +178,86 @@
   },
   "faq": {
     "title": "Frequently Asked Questions",
-    "subtitle": "Find answers to common questions about our laser tag arena",
+    "subtitle": "Find answers to the most common questions about our laser tag arena.",
     "notFoundTitle": "Can't find your answer?",
-    "notFoundText": "Our team is here to help with any additional questions",
-    "btnContact": "Contact Us",
+    "notFoundText": "Our team is here to assist you with any further questions you may have.",
+    "btnContact": "Contact us",
     "questions": [
       {
-        "q": "What is the minimum age to play?",
-        "a": "Minimum recommended age is 6 years. Children under 8 must be accompanied by an adult."
+        "q": "What is laser tag?",
+        "a": "Laser tag is an action and strategy game in which players face off using laser guns and vests with sensors. \nThe objective is to score points by hitting your opponents' sensors with the laser, without physical contact."
       },
       {
-        "q": "How many people can play at once?",
-        "a": "Our facilities accommodate 4 to 30 players simultaneously."
+        "q": "Is there an age limit?",
+        "a": "The minimum age is 10 years old. \nChildren under 15 must be accompanied by an adult upon arrival, although the adult does not need to stay during the game session. \nThe game is designed for ages 10 to 70. \nAdults and children can play together in the same session. \nFor the purposes of the game, we consider adults to be anyone over the age of 15."
       },
       {
         "q": "Is laser tag safe?",
-        "a": "Absolutely! Laser tag is completely safe. We use infrared technology with no physical projectiles."
+        "a": "Absolutely! The game is completely harmless. \nThe game is based on infrared sensors that are registered by the vests"
       },
       {
-        "q": "How long is a game?",
-        "a": "Each game lasts approximately 12-15 minutes of active play."
+        "q": "Should I wear any particular type of clothing?",
+        "a": "To play laser tag, we recommend wearing comfortable, sporty clothing that allows you to move easily. \nIt is best to avoid very loose clothing, skirts, dresses or open-toed shoes. We also advise against wearing loose items such as necklaces, hats or bags. \nIn short: come comfortable, ready to run... and have fun! "
       },
       {
-        "q": "What is included in the price?",
-        "a": "Price includes all necessary equipment, arena access, and full stats."
+        "q": "How many people can play simultaneously?",
+        "a": "The maximum number of people who can play simultaneously is 20.  \nFor larger groups, please contact us. We have various options and formats with special game sessions for more people, holding small team tournaments."
       },
       {
-        "q": "Do I need to book in advance?",
-        "a": "Yes, we strongly recommend booking in advance."
+        "q": "How long does a game last?",
+        "a": ""
       },
       {
-        "q": "What should I wear?",
-        "a": "We recommend comfortable sports clothing. Closed sports shoes are mandatory."
+        "q": "Can we play if there are fewer than the required number of players, for example, 2 or 3 people?",
+        "a": "Yes, two or three people can play laser tag without any problem. \nHowever, you must sign up for sessions that still have places available, as games are completed with other players. \nOur booking system makes it easy to see how many places are left in each session, so you can choose the one that suits you best before confirming your booking."
       },
       {
-        "q": "Can I bring my own food?",
-        "a": "Outside food and drink are not allowed in the arena."
+        "q": "Can anyone else join the team at the last minute?",
+        "a": "Of course, as long as the maximum number of players allowed in that session is not exceeded."
       },
       {
-        "q": "What is the cancellation policy?",
-        "a": "You can cancel or reschedule up to 48 hours before without charge."
+        "q": "What if someone drops out at the last minute?",
+        "a": "No problem, the game will continue. Please note that the amount paid by the missing player will not be refunded, and their place will remain empty."
       },
       {
-        "q": "Do you offer group discounts?",
-        "a": "Yes, we offer special discounts for large groups and corporate events."
+        "q": "Can I change my booking date or time?",
+        "a": "Of course, our system allows you to modify your booking online from the booking confirmation you received. As long as you do so at least 48 hours in advance, you can modify it (change the date, number of people or even cancel) at no cost. The refund will be processed automatically. \nYou can also do this at least 48 hours in advance by contacting our customer service department at lasertagmarbella@gmail.com or by calling +34 659 000 000"
+      },
+      {
+        "q": "How far in advance is it recommended to arrive?",
+        "a": "You must arrive 15 minutes before your booking time."
+      },
+      {
+        "q": "What happens if I am late?",
+        "a": "If you arrive more than 5 minutes late, the session may be cancelled, forfeiting the right to a refund for those who missed it. \nIf the group that DID attend is more than 4 people, the game will continue without the missing people. A game will only be cancelled if the resulting group has fewer than 4 people. \nIn this case, those who did attend but were unable to play will be entitled to a refund or to change the time and day of their game, if they so wish."
+      },
+      {
+        "q": "How do I make a booking?",
+        "a": ""
+      },
+      {
+        "q": "How do I pay if I have booked by telephone?",
+        "a": ""
+      },
+      {
+        "q": "What happens if I do not pay for a booking made by telephone?",
+        "a": ""
+      },
+      {
+        "q": "Can the room be locked for my group only?",
+        "a": ""
+      },
+      {
+        "q": "Can I cancel my booking?",
+        "a": "It is possible to modify a booking, provided that this is done 48 hours in advance, in which case the corresponding refund will be made. \nOur system allows you to modify your booking from the booking confirmation you received, completely automatically and online."
+      },
+      {
+        "q": "May I bring food or drink onto the premises?",
+        "a": ""
       }
+
+
+      
     ]
   },
   "blog": {

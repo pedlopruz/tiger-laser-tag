@@ -4,29 +4,30 @@
     "precios": "Preise",
     "cumpleanos": "Geburtstage",
     "faq": "FAQ",
-    "blog": "Blog",
+    "blog": "Neuheiten",
     "contacto": "Kontakt",
     "reservaYa": "Jetzt buchen"
   },
   "home": {
     "heroTitle": "TIGER LASER TAG",
-    "heroSubtitle": "Adrenalin, Strategie und Spaß in Marbellas bester Laser-Tag-Arena",
+    "heroTitleS": "IN MARBELLA",
+    "heroSubtitle": "Die Spannung von Lasertag im Freien in Marbella.",
     "ctaReserve": "Jetzt Buchen",
     "ctaDiscover": "Mehr Entdecken",
     "welcomeTitle": "Willkommen bei Tiger Laser Tag",
-    "welcomeDesc": "Marbellas aufregendstes Unterhaltungserlebnis. Modernste Ausrüstung, erstklassige Einrichtungen und garantierter Spaß für alle Altersgruppen.",
+    "welcomeDesc": "Bei Tiger Laser Tag laden wir Sie ein, das einzigartige Laser-Tag-Erlebnis in Marbella zu genießen, und das zu 100 % unter freiem Himmel, wo Action und Spaß mit Natur verbunden sind.",
     "features": {
       "techTitle": "Fortschrittliche Technologie",
-      "techDesc": "Neueste Laser-Ausrüstung für ein immersives und unvergessliches Erlebnis.",
-      "everyoneTitle": "Für Alle",
-      "everyoneDesc": "Garantierter Spaß für Kinder, Jugendliche, Erwachsene, Familien und Firmengruppen.",
-      "competitionTitle": "Wettbewerb",
-      "competitionDesc": "Verschiedene Spielmodi und Turniere, um Ihre Strategie und Fähigkeiten zu testen.",
+      "techDesc": "Modernste Laserausrüstung, die allen Teilnehmern ein immersives, aufregendes und unvergessliches Erlebnis bietet.",
+      "everyoneTitle": "Für alle Altersgruppen",
+      "everyoneDesc": "Garantierter Spaß für Kinder, Jugendliche, Erwachsene, Familien und Unternehmensgruppen mit spannenden Aktivitäten und unvergesslichen Momenten.",
+      "competitionTitle": "Jedes Spiel ist eine Herausforderung",
+      "competitionDesc": "Laufen Sie, verstecken Sie sich, entwickeln Sie Strategien und überraschen Sie Ihre Gegner. Ideal für Adrenalinkicks mit Freunden, Familienausflüge oder Aktivitäten für Unternehmen und Feiern.",
       "securityTitle": "Totale Sicherheit",
-      "securityDesc": "Sichere und überwachte Einrichtungen mit geschultem Personal für Ihre Sicherheit."
+      "securityDesc": "Sichere und überwachte Anlagen mit geschultem Personal, modernster Ausrüstung und Aktivitäten für alle Altersgruppen garantieren spannende und unvergessliche Erlebnisse."
     },
-    "finalTitle": "¿Estás listo para aceptar el desafío?",
-    "finalSubtitle": "¡Ven y descubre el laser tag como nunca antes lo habías jugado en Marbella!"
+    "finalTitle": "Bist du bereit, die Herausforderung anzunehmen?",
+    "finalSubtitle": "Komm und entdecke Lasertag, wie du es in Marbella noch nie zuvor gespielt hast!"
   },
   "footer": {
     "testimonialsTitle": "Was unsere Kunden sagen",
@@ -44,7 +45,7 @@
     "subtitle": "Entdecken Sie alles über das aufregendste Laser-Tag-Erlebnis",
     "whatIs": {
       "title": "Was ist Laser Tag?",
-      "content": "Laser Tag ist ein Team-Actionspiel, bei dem Spieler Infrarotgeräte verwenden, um andere Spieler zu 'markieren'. Es ist ein aufregendes Erlebnis, das Strategie, Teamarbeit und Spaß kombiniert."
+      "content": "Lasertag ist ein Action-Spiel, bei dem die Teilnehmer in Teams gegeneinander antreten und dabei elektronische Pistolen verwenden, die völlig harmlose Infrarotstrahlen aussenden. Jeder Spieler trägt eine Weste oder einen Sensor, der die Treffer registriert, sodass Punkte gesammelt und das Spiel in Echtzeit verfolgt werden können. \nIm Gegensatz zu anderen Kampfspielen ist Lasertag sicher, ohne physische Projektile, schmerzfrei und für alle Altersgruppen geeignet. Es basiert auf Strategie, Schnelligkeit und Teamwork und ist daher sowohl für Adrenalinjunkies als auch für diejenigen perfekt, die einfach nur eine lustige Zeit mit Freunden, Familie oder Kollegen verbringen möchten. \nKurz gesagt: Es ist, als würde man in ein Videospiel eintauchen, aber im echten Leben."
     },
     "howWorks": {
       "title": "Wie es funktioniert",
@@ -177,51 +178,86 @@
   },
   "faq": {
     "title": "Häufig gestellte Fragen",
-    "subtitle": "Finden Sie Antworten auf häufige Fragen zu unserer Laser-Tag-Arena",
-    "notFoundTitle": "Antwort nicht gefunden?",
-    "notFoundText": "Unser Team hilft Ihnen gerne bei weiteren Fragen",
+    "subtitle": "Hier finden Sie Antworten auf die häufigsten Fragen zu unserem Laser-Tag-Sand.",
+    "notFoundTitle": "Sie finden keine Antwort auf Ihre Frage?",
+    "notFoundText": "Unser Team steht Ihnen bei weiteren Fragen gerne zur Verfügung.",
     "btnContact": "Kontaktieren Sie uns",
     "questions": [
       {
-        "q": "Was ist das Mindestalter zum Spielen?",
-        "a": "Das empfohlene Mindestalter beträgt 6 Jahre. Kinder unter 8 Jahren müssen von einem Erwachsenen begleitet werden."
+        "q": "Was ist Lasertag?",
+        "a": "Lasertag ist ein Action- und Strategiespiel, bei dem die Spieler mit Laserpistolen und Westen mit Sensoren gegeneinander antreten. \nDas Ziel ist es, Punkte zu sammeln, indem man die Sensoren der Gegner mit dem Laser trifft, ohne sie dabei zu berühren."
+      },
+      {
+        "q": "Gibt es eine Altersbeschränkung?",
+        "a": "Das Mindestalter beträgt 10 Jahre.  \nKinder unter 15 Jahren müssen bei ihrer Ankunft von einem Erwachsenen begleitet werden, wobei dieser nicht während der gesamten Spielzeit anwesend sein muss.  \nDas Spiel ist für Personen im Alter von 10 bis 70 Jahren konzipiert.  \nErwachsene und Kinder können gemeinsam an einer Spielrunde teilnehmen.  \nFür die Zwecke des Spiels gelten alle Personen über 15 Jahren als Erwachsene."
+      },
+      {
+        "q": "Ist Lasertag sicher?",
+        "a": "Absolut! Das Spiel ist völlig ungefährlich. \nDas Spiel basiert auf Infrarotsensoren, die von den Westen registriert werden."
+      },
+      {
+        "q": "Muss ich bestimmte Kleidung mitbringen?",
+        "a": "Um Lasertag zu spielen, empfehlen wir Ihnen, bequeme Sportkleidung zu tragen, in der Sie sich leicht bewegen können. \nVermeiden Sie am besten sehr weite Kleidung, Röcke, Kleider oder offene Schuhe. Es wird auch empfohlen, keine losen Gegenstände wie Halsketten, Mützen oder Taschen mitzunehmen. \nKurz gesagt: Kommen Sie bequem, bereit zum Laufen ... und zum Spaß haben! "
       },
       {
         "q": "Wie viele Personen können gleichzeitig spielen?",
-        "a": "Unsere Einrichtungen bieten Platz für 4 bis 30 Spieler gleichzeitig."
+        "a": "Die maximale Anzahl an Personen, die gleichzeitig spielen können, beträgt 20. \nFür größere Gruppen wenden Sie sich bitte an uns. Wir bieten verschiedene Optionen und Formate mit speziellen Spielrunden für mehr Personen an, bei denen kleine Teamturniere ausgetragen werden."
       },
       {
-        "q": "Ist Laser Tag sicher?",
-        "a": "Absolut! Laser Tag ist vollkommen sicher. Wir verwenden Infrarot-Technologie ohne physische Projektile."
+        "q": "Wie lange dauert eine Partie?",
+        "a": ""
       },
       {
-        "q": "Wie lange dauert ein Spiel?",
-        "a": "Jedes Spiel dauert ca. 12-15 Minuten aktive Spielzeit."
+        "q": "Können wir spielen, wenn wir weniger als die erforderliche Anzahl sind, zum Beispiel 2 oder 3 Personen?",
+        "a": "Ja, 2 oder 3 Personen können problemlos Lasertag spielen. \nAllerdings müssen sie sich für Sessions anmelden, in denen noch Plätze frei sind, da die Spiele mit anderen Spielern komplettiert werden. \nIn unserem Reservierungssystem können Sie leicht sehen, wie viele Plätze in jeder Session noch frei sind, um die für Sie am besten geeignete auszuwählen, bevor Sie die Reservierung bestätigen."
       },
       {
-        "q": "Was ist im Preis inbegriffen?",
-        "a": "Der Preis beinhaltet die gesamte notwendige Ausrüstung, Zugang zur Arena und vollständige Statistiken."
+        "q": "Kann sich in letzter Minute noch jemand dem Team anschließen?",
+        "a": "Natürlich, solange die maximale Anzahl an Spielern für diese Sitzung nicht überschritten wird."
       },
       {
-        "q": "Muss ich im Voraus buchen?",
-        "a": "Ja, wir empfehlen dringend, im Voraus zu buchen."
+        "q": "Was passiert, wenn jemand in letzter Minute absagt?",
+        "a": "Kein Problem, das Spiel wird fortgesetzt. Bitte beachten Sie, dass der Betrag für den fehlenden Spieler nicht zurückerstattet wird und sein Platz frei bleibt."
       },
       {
-        "q": "Was soll ich anziehen?",
-        "a": "Wir empfehlen bequeme Sportkleidung. Geschlossene Sportschuhe sind Pflicht."
+        "q": "Kann ich meine Reservierung hinsichtlich Tag oder Uhrzeit ändern?",
+        "a": "Selbstverständlich können Sie Ihre Online-Reservierung über das von Ihnen erhaltene Reservierungsformular ändern, sofern dies mindestens 48 Stunden im Voraus erfolgt (Änderung des Datums, der Personenzahl oder sogar Stornierung), ohne dass Ihnen dafür Kosten entstehen. Die Rückerstattung erfolgt automatisch. \nSie können dies ebenfalls mindestens 48 Stunden im Voraus tun, indem Sie sich an unseren Kundenservice unter lasertagmarbella@gmail.com oder unter der Telefonnummer +34 659 000 000 wenden. "
       },
       {
-        "q": "Kann ich mein eigenes Essen mitbringen?",
-        "a": "Mitgebrachte Speisen und Getränke sind in der Arena nicht gestattet."
+        "q": "Wie lange im Voraus sollte man anreisen?",
+        "a": "Sie sollten 15 Minuten vor Ihrer Reservierungszeit eintreffen."
       },
       {
-        "q": "Wie ist die Stornierungsrichtlinie?",
-        "a": "Sie können bis zu 48 Stunden vorher kostenlos stornieren oder umbuchen."
+        "q": "Was passiert, wenn ich zu spät komme?",
+        "a": "Wenn Sie mehr als 5 Minuten zu spät kommen, kann die Sitzung abgesagt werden, wodurch die Personen, die nicht erschienen sind, ihren Anspruch auf Rückerstattung verlieren. \nWenn die Gruppe, die WELCHEN anwesend war, aus mehr als 4 Personen besteht, wird das Spiel ohne die fehlenden Personen fortgesetzt. Ein Spiel wird nur dann abgesagt, wenn die verbleibende Gruppe aus weniger als 4 Personen besteht. \nIn diesem Fall haben die Personen, die anwesend waren, aber nicht spielen konnten, Anspruch auf eine Rückerstattung oder können den Termin und den Tag des Spiels ändern, wenn sie dies wünschen."
       },
       {
-        "q": "Bieten Sie Gruppenrabatte an?",
-        "a": "Ja, wir bieten spezielle Rabatte für große Gruppen und Firmenveranstaltungen."
+        "q": "Wie nehme ich eine Reservierung vor?",
+        "a": ""
+      },
+      {
+        "q": "Wie bezahle ich, wenn ich telefonisch reserviert habe?",
+        "a": ""
+      },
+      {
+        "q": "Was passiert, wenn ich eine telefonisch vorgenommene Reservierung nicht bezahle?",
+        "a": ""
+      },
+      {
+        "q": "Kann der Raum nur für meine Gruppe gesperrt werden?",
+        "a": ""
+      },
+      {
+        "q": "Kann ich meine Reservierung stornieren?",
+        "a": "Eine Reservierung kann geändert werden, sofern dies 48 Stunden im Voraus erfolgt. \nIn diesem Fall wird die entsprechende Rückerstattung vorgenommen. Unser System ermöglicht es Ihnen, die Änderung der Reservierung direkt in der Reservierungsbestätigung, die Sie erhalten haben, automatisch und online vorzunehmen."
+      },
+      {
+        "q": "Darf ich Essen oder Getränke mit auf das Gelände bringen?",
+        "a": ""
       }
+
+
+      
     ]
   },
   "blog": {

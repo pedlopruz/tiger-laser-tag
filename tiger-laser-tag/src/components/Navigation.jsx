@@ -23,6 +23,7 @@ const Navigation = () => {
     { code: 'EN', label: 'English', flag: 'https://flagcdn.com/w20/gb.png' },
     { code: 'FR', label: 'Français', flag: 'https://flagcdn.com/w20/fr.png' },
     { code: 'DE', label: 'Deutsch', flag: 'https://flagcdn.com/w20/de.png' },
+    { code: 'RU', label: 'Русский', flag: 'https://flagcdn.com/w20/ru.png' },
   ];
 
   const changeLanguage = (langCode) => {

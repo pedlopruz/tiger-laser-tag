@@ -33,6 +33,7 @@
     "react-helmet": "^6.1.0",
     "react-i18next": "^13.5.0",
     "react-router-dom": "^7.1.1",
+    "resend": "^6.9.2",
     "tailwind-merge": "^2.6.1",
     "tailwindcss-animate": "^1.0.7"
   },

@@ -60,9 +60,13 @@ const FAQPage = () => {
                   onClick={() => toggleFAQ(index)}
                   className="w-full px-6 py-5 flex items-center justify-between text-left hover:bg-tiger-golden/5 transition-colors"
                 >
-                  <h3 className={`text-lg font-heading font-bold pr-4 ${
-                    openIndex === index ? 'text-tiger-golden' : 'text-tiger-green'
-                  }`}>
+                  <h3
+                    className={`text-lg font-heading font-bold pr-4 ${
+                      openIndex === index
+                        ? 'text-tiger-golden'
+                        : 'text-tiger-green'
+                    }`}
+                  >
                     {faq.q}
                   </h3>
                   <motion.div
@@ -70,10 +74,17 @@ const FAQPage = () => {
                     transition={{ duration: 0.3 }}
                     className="flex-shrink-0"
                   >
-                    <ChevronDown className={openIndex === index ? 'text-tiger-golden' : 'text-tiger-green'} size={24} />
+                    <ChevronDown
+                      className={
+                        openIndex === index
+                          ? 'text-tiger-golden'
+                          : 'text-tiger-green'
+                      }
+                      size={24}
+                    />
                   </motion.div>
                 </button>
-                
+
                 <AnimatePresence>
                   {openIndex === index && (
                     <motion.div
@@ -83,7 +94,8 @@ const FAQPage = () => {
                       transition={{ duration: 0.3 }}
                       className="overflow-hidden"
                     >
-                      <div className="px-6 pb-5 text-tiger-green/80 leading-relaxed">
+                      {/* ✅ AQUÍ ESTÁ EL CAMBIO */}
+                      <div className="px-6 pb-5 text-tiger-green/80 leading-relaxed whitespace-pre-line">
                         {faq.a}
                       </div>
                     </motion.div>
@@ -107,7 +119,7 @@ const FAQPage = () => {
             <p className="text-tiger-cream text-lg mb-6">
               {t('faq.notFoundText')}
             </p>
-            <a 
+            <a
               href="/contacto"
               className="bg-tiger-orange hover:bg-tiger-orange/90 text-white px-8 py-4 rounded-lg font-bold text-lg transition-all duration-300 hover:scale-105 inline-block"
             >

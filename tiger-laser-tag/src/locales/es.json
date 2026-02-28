@@ -15,7 +15,7 @@
     "ctaReserve": "Reservar Ahora",
     "ctaDiscover": "Descubre Más",
     "welcomeTitle": "Bienvenido a Tiger Laser Tag",
-    "welcomeDesc": "En TIGER LASER TAG te invitamos a vivir la única experiencia de laser tag en Marbella, y además en un entorno 100% al aire libre, donde la acción y la diversión se mezclan con la naturaleza.",
+    "welcomeDesc": "En Tiger Laser Tag te invitamos a vivir la única experiencia de laser tag en Marbella, y además en un entorno 100% al aire libre, donde la acción y la diversión se mezclan con la naturaleza.",
     "features": {
       "techTitle": "Tecnología Avanzada",
       "techDesc": "Equipamiento láser de última generación, diseñado para brindar una experiencia inmersiva, emocionante e inolvidable para todos los participantes.",
@@ -23,7 +23,7 @@
       "everyoneDesc": "Diversión garantizada para niños, jóvenes, adultos, familias y grupos corporativos, con actividades emocionantes y momentos inolvidables.",
       "competitionTitle": "Cada partida es un reto",
       "competitionDesc": "Corre, escóndete, diseña estrategias y sorprende a tus rivales. Ideal para adrenalina con amigos, planes familiares o actividades para empresas y celebraciones.",
-      "securityTitle": "Seguridad Total",
+      "securityTitle": "Total Seguridad",
       "securityDesc": "Instalaciones seguras y monitoreadas con personal capacitado, equipos de última generación y dinámicas para todas las edades, garantizando partidas emocionantes e inolvidables."
     },
     "finalTitle": "¿Estás listo para aceptar el desafío?",
@@ -46,7 +46,7 @@
     "subtitle": "Descubre todo sobre la experiencia de laser tag más emocionante",
     "whatIs": {
       "title": "¿Qué es el LASER TAG?",
-      "content": "El laser tag es un juego de acción en el que los participantes se enfrentan en equipos, usando pistolas electrónicas que emiten rayos infrarrojos totalmente inofensivos. Cada jugador lleva un chaleco o sensor que registra los impactos, lo que permite acumular puntos y seguir la partida en tiempo real. A diferencia de otros juegos de combate, el laser tag es seguro, sin proyectiles físicos, sin dolor y apto para todas las edades. Se basa en la estrategia, la rapidez y el trabajo en equipo, por lo que es perfecto tanto para quienes buscan adrenalina como para quienes simplemente quieren pasar un rato divertido con amigos, familia o compañeros de trabajo. En resumen: es como meterse dentro de un videojuego, pero en la vida real."
+      "content": "El laser tag es un juego de acción en el que los participantes se enfrentan en equipos, usando pistolas electrónicas que emiten rayos infrarrojos totalmente inofensivos. Cada jugador lleva un chaleco o sensor que registra los impactos, lo que permite acumular puntos y seguir la partida en tiempo real. \nA diferencia de otros juegos de combate, el laser tag es seguro, sin proyectiles físicos, sin dolor y apto para todas las edades. Se basa en la estrategia, la rapidez y el trabajo en equipo, por lo que es perfecto tanto para quienes buscan adrenalina como para quienes simplemente quieren pasar un rato divertido con amigos, familia o compañeros de trabajo. \nEn resumen: es como meterse dentro de un videojuego, pero en la vida real."
     },
     "howWorks": {
       "title": "Cómo funciona",
@@ -185,55 +185,144 @@
     "btnContact": "Contáctanos",
     "questions": [
       {
-        "q": "¿Cuál es la edad mínima para jugar?",
-        "a": "La edad mínima recomendada es de 6 años. Los niños menores de 8 años deben estar acompañados por un adulto en la arena."
+        "q": "¿Qué es el laser tag?",
+        "a": "El laser tag es un juego de acción y estrategia en el que los jugadores se enfrentan usando pistolas láser y chalecos con sensores.\nEl objetivo es sumar puntos impactando con el láser en los sensores de los rivales, sin contacto físico."
       },
       {
-        "q": "¿Cuántas personas pueden jugar al mismo tiempo?",
-        "a": "Nuestras instalaciones pueden acomodar de 4 a 30 jugadores simultáneamente."
+        "q": "¿Hay límite de edad?",
+        "a": "La edad mínima es de 10 años. \nLos menores de 15 años deben venir acompañados por un adulto al llegar, aunque el adulto no necesita quedarse durante la sesión de juego.\nEl juego está diseñado para edades de entre 10 y 70 años.\nAdultos y niños pueden jugar juntos en la misma sesión. \nA efectos del juego, consideraremos adultos, a todos los mayores de 15 años."
       },
       {
         "q": "¿Es seguro el laser tag?",
-        "a": "¡Absolutamente! El laser tag es completamente seguro. Utilizamos tecnología infrarroja sin proyectiles físicos."
+        "a": "¡Absolutamente!, el juego es totalmente inofensivo. \nEl juego está basado en sensores infrarrojos que son registrados por los chalecos"
       },
       {
-        "q": "¿Cuánto dura una partida?",
-        "a": "Cada partida tiene una duración aproximada de 12-15 minutos de juego activo."
+        "q": "¿Debo llevar algún tipo de ropa?",
+        "a": "Para jugar al laser tag te recomendamos llevar ropa cómoda y deportiva que te permita moverte con facilidad. \nEs mejor evitar ropa muy ancha, faldas, vestidos o calzado abierto. También se aconseja no llevar objetos sueltos como collares, gorras o bolsos. \nEn resumen: ven cómodo, listo para correr… ¡y para divertirte! "
       },
       {
-        "q": "¿Qué incluye el precio?",
-        "a": "El precio incluye todo el equipamiento necesario, acceso a la arena, y estadísticas completas."
+        "q": "¿Cuántas personas puede jugar simultáneamente?",
+        "a": "El número máximo de personas que puede jugar simultáneamente son 20 personas. \nPara grupos mayores consúltanos, tenemos diversas opciones y formatos con sesiones especiales de juego para más personas, realizando pequeños torneos por equipos."
       },
       {
-        "q": "¿Necesito reservar con anticipación?",
-        "a": "Sí, recomendamos encarecidamente hacer reserva previa."
+        "q": "¿Cuánto tiempo dura una partida?",
+        "a": ""
       },
       {
-        "q": "¿Qué ropa debo usar?",
-        "a": "Recomendamos usar ropa cómoda y deportiva. Calzado deportivo cerrado es obligatorio."
+        "q": "¿Podemos jugar si somos menos que el número requerido, por ejemplo, 2 o 3 personas?",
+        "a": "Sí, pueden jugar al laser tag 2 o 3 personas sin problema. \nEso sí, deberán apuntarse a sesiones en las que todavía haya plazas disponibles, ya que las partidas se completan con otros jugadores. \nEn nuestro sistema de reservas podrás ver fácilmente cuántas plazas quedan libres en cada sesión, para elegir la que mejor os encaje antes de confirmar la reserva."
       },
       {
-        "q": "¿Puedo traer mi propia comida y bebida?",
-        "a": "No está permitido llevar comida ni bebida dentro de la arena."
+        "q": "¿Puede unirse alguien más al equipo en el último momento?",
+        "a": "Claro que sí, siempre y cuando no se supere el número máximo de jugadores admitido en esa sesión."
       },
       {
-        "q": "¿Cuál es la política de cancelación?",
-        "a": "Puedes cancelar o reprogramar tu reserva hasta 48 horas antes sin cargo alguno."
+        "q": "¿Y si falta alguien en último momento?",
+        "a": "No hay problema, el juego continuará, hay que tener en cuenta que nunca se devolverá el importe del jugador que falte, su plaza quedará vacía."
       },
       {
-        "q": "¿Ofrecen descuentos para grupos?",
-        "a": "Sí, ofrecemos descuentos especiales para grupos grandes y eventos corporativos."
+        "q": "¿Puedo cambiar mi reserva de día o de hora?",
+        "a": "Por supuesto, nuestro sistema te permite modificar la reserva online desde la propia reserva que recibiste, siempre que se realice con 48 horas de anticipación podrásmodificarla (cambiar de fecha, número de personas o incluso cancelar), sin ningún coste, la devolución o reembolso se realizara automáticamente. \nIgualmente, puedes hacerlo, con al menos 48 horas de antelación, contactando con nuestro departamento de atención al cliente en lasertagmarbella@gmail.com. o en el tel. +34 659 000 000. "
+      },
+      {
+        "q": "¿Con cuánta antelación se recomienda llegar?",
+        "a": "Deberás llegar 15 minutos antes de la hora de tu reserva."
+      },
+      {
+        "q": "¿Qué pasa si llego tarde?",
+        "a": "Si llegáis más de 5 minutos tarde, la sesión puede ser cancelada quitando el derecho a reembolso para las personas que hayan faltado. \nSi el grupo que SI asistió es de más de 4 personas, el juego continuará sin las personas que faltan.Solo se cancelará un juego en el caso de que el grupo resultante sea menor de 4 personas. \nEn este caso las personas que sí asistieron, pero no pudieron jugar, tendrán derecho a reembolso, o a cambiar su juego de horario y de día, si así lo desean."
+      },
+      {
+        "q": "¿Cómo realizo una reserva?",
+        "a": ""
+      },
+      {
+        "q": "¿Cómo pago si he reservado por teléfono?",
+        "a": ""
+      },
+      {
+        "q": "¿Qué ocurre si no pago una reserva realizada telefónicamente?",
+        "a": ""
+      },
+      {
+        "q": "¿Se puede bloquear la sala solo para mi grupo?",
+        "a": ""
+      },
+      {
+        "q": "¿Puedo cancelar mi reserva?",
+        "a": "Es posible modificar una reserva, siempre que se realice con 48 horas de anticipación, en este caso si se realizara el reembolso correspondiente. \nNuestro sistema permite realizar la modificación de la reserva desde la propia reserva que recibiste de forma totalmente automática y online."
+      },
+      {
+        "q": "¿Puedo traer comida o bebida al recinto?",
+        "a": ""
       }
+
+
+      
     ]
   },
   "blog": {
     "title": "Novedades",
     "subtitle": "Mantente al día con las últimas noticias, consejos y novedades de Tiger Laser Tag",
     "readMore": "Leer más",
+    "back": "Volver",
+    "articleNotFound": "Artículo no encontrado",
     "newsletterTitle": "Suscríbete a nuestro newsletter",
     "newsletterText": "Recibe las últimas noticias, promociones especiales y consejos exclusivos",
     "emailPlaceholder": "Tu email",
-    "btnSubscribe": "Suscribirse"
+    "btnSubscribe": "Suscribirse",
+    "categories": {
+      "consejos": "Consejos",
+      "eventos": "Eventos",
+      "historia": "Historia",
+      "corporativo": "Corporativo",
+      "novedades": "Novedades",
+      "educacion": "Educación"
+    }
+  },
+
+  "blogArticles": {
+    "5-consejos-ganar-laser-tag": {
+      "title": "Los 5 mejores consejos para ganar en Laser Tag",
+      "date": "15 Enero 2026",
+      "excerpt": "Descubre las estrategias que usan los profesionales para dominar la arena. Desde el posicionamiento hasta el trabajo en equipo, te revelamos todos los secretos.",
+      "content": "Descubre las estrategias que usan los profesionales para dominar la arena.\n\n1. Muévete constantemente.\n2. Comunícate con tu equipo.\n3. Aprovecha las coberturas.\n\nDominar estas técnicas marcará la diferencia en cada partida."
+    },
+
+    "cumpleanos-inolvidables": {
+      "title": "Cumpleaños inolvidables: Ideas para decorar tu fiesta",
+      "date": "10 Enero 2026",
+      "excerpt": "Haz que el cumpleaños de tu hijo sea único con estas ideas de decoración temática que complementarán perfectamente la experiencia de laser tag.",
+      "content": "Convierte el cumpleaños en una experiencia inolvidable con decoración temática, iluminación especial y detalles personalizados.\n\nCombinar la fiesta con una partida de Laser Tag hará que todos los invitados lo recuerden durante años."
+    },
+
+    "historia-laser-tag": {
+      "title": "La historia del Laser Tag: De juego militar a entretenimiento",
+      "date": "5 Enero 2026",
+      "excerpt": "Conoce los orígenes fascinantes del laser tag y cómo se ha convertido en una de las actividades de entretenimiento más populares del mundo.",
+      "content": "El Laser Tag nació inspirado en sistemas de entrenamiento militar.\n\nCon el paso del tiempo evolucionó hasta convertirse en una de las actividades de ocio más populares para todas las edades."
+    },
+
+    "team-building-laser-tag": {
+      "title": "Team Building: Por qué el Laser Tag es perfecto para tu empresa",
+      "date": "28 Diciembre 2025",
+      "excerpt": "Descubre cómo el laser tag puede mejorar la cohesión de tu equipo de trabajo y fortalecer las habilidades de comunicación y estrategia.",
+      "content": "El Laser Tag fomenta el trabajo en equipo, la comunicación y la estrategia.\n\nEs una actividad ideal para fortalecer relaciones laborales en un entorno divertido y competitivo."
+    },
+
+    "nuevos-modos-juego": {
+      "title": "Nuevos modos de juego disponibles en Tiger Laser Tag",
+      "date": "20 Diciembre 2025",
+      "excerpt": "Presentamos tres nuevos modos de juego que elevarán tu experiencia al siguiente nivel. Más emoción, más estrategia, más diversión.",
+      "content": "Hemos incorporado nuevos modos de juego diseñados para aumentar la emoción y la estrategia.\n\nPrepárate para vivir partidas más intensas y dinámicas que nunca."
+    },
+
+    "beneficios-laser-tag-desarrollo-infantil": {
+      "title": "Beneficios del Laser Tag para el desarrollo infantil",
+      "date": "15 Diciembre 2025",
+      "excerpt": "El laser tag no es solo diversión. Conoce cómo esta actividad ayuda al desarrollo físico, social y cognitivo de los niños.",
+      "content": "El Laser Tag estimula la coordinación, la toma de decisiones y el trabajo en equipo.\n\nAdemás, mejora la confianza y fomenta la actividad física en un entorno seguro."
+    }
   },
   "contacto": {
     "title": "Contacto",

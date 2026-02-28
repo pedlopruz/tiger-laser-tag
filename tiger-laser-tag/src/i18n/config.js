@@ -6,6 +6,7 @@ import es from '../locales/es.json';
 import en from '../locales/en.json';
 import fr from '../locales/fr.json';
 import de from '../locales/de.json';
+import ru from '../locales/ru.json';
 
 i18n
   .use(LanguageDetector)
@@ -15,10 +16,11 @@ i18n
       es: { translation: es },
       en: { translation: en },
       fr: { translation: fr },
-      de: { translation: de }
+      de: { translation: de },
+      ru: { translation: ru }
     },
     fallbackLng: 'es',
-    supportedLngs: ['es', 'en', 'fr', 'de'],
+    supportedLngs: ['es', 'en', 'fr', 'de', 'ru'],
     detection: {
       order: ['localStorage', 'navigator'],
       caches: ['localStorage'],
