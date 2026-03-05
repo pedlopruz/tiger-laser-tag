@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "./supabaseAdmin.js";
+import { generateSlotsForMonth } from "./utils/generateSlotsLogic.js";
 
 export default async function handler(req, res) {
   try {
@@ -28,9 +29,7 @@ export default async function handler(req, res) {
 
     // 2️⃣ Si no hay slots → generarlos automáticamente
     if (count === 0) {
-      await fetch(
-        `${process.env.VERCEL_URL}/api/generateSlots?year=${year}&month=${month}`
-      );
+      await generateSlotsForMonth(year, month);
     }
 
     // 3️⃣ Obtener slots del día solicitado
