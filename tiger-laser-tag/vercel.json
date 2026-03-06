@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/utils/generateSlots",
+      "schedule": "0 3 1 * *"
+    }
+  ]
+}
