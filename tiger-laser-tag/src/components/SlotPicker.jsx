@@ -17,9 +17,7 @@ export default function SlotPicker({ date, people, onSelectSlot }) {
 
       try {
 
-        const res = await fetch(
-          `/api/slots?date=${date}&people=${people}`
-        );
+        const res = await fetch(`/api/getAvailability?date=${date}&people=${people}`);
 
         if (!res.ok) {
           throw new Error("Error cargando horarios");
