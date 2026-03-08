@@ -68,27 +68,25 @@ export default function Reservar() {
 
     <div style={{ maxWidth: 600, margin: "auto", padding: 20 }}>
 
-      <h1>Reservar partida</h1>
+      <div className="reservation-header">
 
-      {/* selector personas */}
-      {step === 1 && (
-        <div style={{ marginBottom: 20 }}>
-          <label>
-            Personas:
-          </label>
+        <h1>Reserva tu partida</h1>
+
+        <div className="people-selector">
+
+          <label>Jugadores</label>
 
           <input
             type="number"
             min="1"
             max="20"
             value={people}
-            onChange={(e) =>
-              setPeople(Number(e.target.value))
-            }
-            style={{ marginLeft: 10 }}
+            onChange={(e)=>setPeople(Number(e.target.value))}
           />
+
         </div>
-      )}
+
+      </div>
 
       {/* STEP 1 CALENDAR */}
       {step === 1 && (

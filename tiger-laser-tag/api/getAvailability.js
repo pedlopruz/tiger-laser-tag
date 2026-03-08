@@ -1,4 +1,4 @@
-import { supabase } from "./supabaseAdmin.js";
+import { supabaseAdmin } from "./supabaseAdmin.js";
 
 export default async function handler(req, res) {
 
@@ -13,9 +13,9 @@ export default async function handler(req, res) {
     const start = `${month}-01`;
     const end = `${month}-31`;
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from("time_slots")
-      .select("date, max_capacity, reserved_spots")
+      .select("date,max_capacity,reserved_spots")
       .gte("date", start)
       .lte("date", end);
 
@@ -32,6 +32,8 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
+
+    console.error(error);
 
     res.status(500).json({
       error: error.message
