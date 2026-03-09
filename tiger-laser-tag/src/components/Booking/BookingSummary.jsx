@@ -1,60 +1,80 @@
-import { Button } from "@/components/ui/button";
+import { useState } from "react";
 
-export default function BookingSummary({
-  date,
-  slot,
-  plan,
-  people,
-  setPeople,
-  onConfirm
-}) {
+import CalendarPicker from "./CalendarPicker";
+import SlotPicker from "./SlotPicker";
+import PlanPicker from "./PlanPicker";
+import BookingSummary from "./BookingSummary";
+import ReservationForm from "./ReservationForm";
+
+export default function BookingLayout() {
+
+  const [date, setDate] = useState(null);
+  const [slot, setSlot] = useState(null);
+  const [plan, setPlan] = useState(null);
+  const [people, setPeople] = useState(2);
+  const [showForm, setShowForm] = useState(false);
+
+  function handleConfirm() {
+    setShowForm(true);
+  }
 
   return (
 
-    <div className="bg-white rounded-xl shadow p-6 sticky top-20">
+    <div className="grid md:grid-cols-2 gap-10">
 
-      <h2 className="text-xl font-bold mb-6">
-        Tu reserva
-      </h2>
+      {/* COLUMNA IZQUIERDA */}
 
-      <div className="space-y-3">
+      <div className="bg-white p-6 rounded-xl shadow space-y-8">
 
-        <div>
-          <strong>Fecha:</strong> {date || "-"}
-        </div>
+        <CalendarPicker onSelectDate={setDate} />
 
-        <div>
-          <strong>Hora:</strong> {slot?.start_time || "-"}
-        </div>
-
-        <div>
-          <strong>Plan:</strong> {plan?.name || "-"}
-        </div>
-
-        <div className="flex items-center gap-3">
-
-          <strong>Jugadores:</strong>
-
-          <input
-            type="number"
-            min="1"
-            max="20"
-            value={people}
-            onChange={(e)=>setPeople(Number(e.target.value))}
-            className="border rounded px-3 py-1 w-20"
+        {date && (
+          <SlotPicker
+            date={date}
+            people={people}
+            onSelectSlot={setSlot}
           />
+        )}
+
+        {slot && (
+          <PlanPicker onSelectPlan={setPlan} />
+        )}
+
+      </div>
+
+
+      {/* COLUMNA DERECHA */}
+
+      <div className="sticky top-28">
+
+        <div className="bg-white p-6 rounded-xl shadow space-y-6">
+
+          <BookingSummary
+            date={date}
+            slot={slot}
+            plan={plan}
+            people={people}
+            setPeople={setPeople}
+            showForm={showForm}
+            onConfirm={handleConfirm}
+          />
+
+          {showForm && (
+            <div className="pt-4 border-t animate-fade-in">
+
+              <ReservationForm
+                date={date}
+                slot={slot}
+                plan={plan}
+                people={people}
+              />
+
+            </div>
+          )}
 
         </div>
 
       </div>
-
-      <Button
-        className="w-full mt-6"
-        disabled={!date || !slot || !plan}
-        onClick={onConfirm}
-      >
-        Continuar
-      </Button>
 
     </div>
 

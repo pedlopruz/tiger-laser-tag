@@ -12,7 +12,6 @@ export default function BookingLayout() {
   const [slot, setSlot] = useState(null);
   const [plan, setPlan] = useState(null);
   const [people, setPeople] = useState(2);
-
   const [showForm, setShowForm] = useState(false);
 
   function handleConfirm() {
@@ -46,31 +45,34 @@ export default function BookingLayout() {
 
       {/* COLUMNA DERECHA */}
 
-      <div className="sticky top-28 max-h-[calc(100vh-120px)] overflow-y-auto space-y-6">
+      <div className="sticky top-28">
 
-        <BookingSummary
-          date={date}
-          slot={slot}
-          plan={plan}
-          people={people}
-          setPeople={setPeople}
-          onConfirm={handleConfirm}
-        />
+        <div className="bg-white p-6 rounded-xl shadow space-y-6">
 
-        {showForm && (
+          <BookingSummary
+            date={date}
+            slot={slot}
+            plan={plan}
+            people={people}
+            setPeople={setPeople}
+            showForm={showForm}
+            onConfirm={handleConfirm}
+          />
 
-          <div className="bg-white p-6 rounded-xl shadow animate-fade-in">
+          {showForm && (
+            <div className="pt-4 border-t animate-fade-in">
 
-            <ReservationForm
-              date={date}
-              slot={slot}
-              plan={plan}
-              people={people}
-            />
+              <ReservationForm
+                date={date}
+                slot={slot}
+                plan={plan}
+                people={people}
+              />
 
-          </div>
+            </div>
+          )}
 
-        )}
+        </div>
 
       </div>
 
