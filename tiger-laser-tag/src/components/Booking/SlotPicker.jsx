@@ -1,47 +1,56 @@
 import { useEffect, useState } from "react";
 
-export default function SlotPicker({ date, people, onSelectSlot }) {
+export default function SlotPicker({ date, people = 1, onSelectSlot }) {
 
-  const [slots,setSlots] = useState([]);
-  const [selectedSlot,setSelectedSlot] = useState(null);
-  const [loading,setLoading] = useState(false);
+  const [slots, setSlots] = useState([]);
+  const [selectedSlot, setSelectedSlot] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(()=>{
-    if(date){
+  useEffect(() => {
+    if (date) {
       loadSlots();
     }
-  },[date]);
+  }, [date]);
 
-  async function loadSlots(){
+  async function loadSlots() {
 
     setLoading(true);
 
-    try{
+    try {
 
       const res = await fetch(`/api/getSlotsByDate?date=${date}`);
       const data = await res.json();
 
-      setSlots(data.slots || []);
+      // tu API devuelve directamente un array
+      setSlots(data || []);
 
-    }catch(err){
-      console.error("Error loading slots",err);
+    } catch (err) {
+
+      console.error("Error loading slots", err);
+      setSlots([]);
+
     }
 
     setLoading(false);
+
   }
 
-  function handleSelect(slot){
+  function handleSelect(slot) {
 
     setSelectedSlot(slot);
 
-    if(onSelectSlot){
+    if (onSelectSlot) {
       onSelectSlot(slot);
     }
 
   }
 
-  function remainingCapacity(slot){
-    return slot.max_capacity - slot.reserved_spots;
+  function remainingCapacity(slot) {
+    return slot.capacity - slot.reserved;
+  }
+
+  function formatTime(time) {
+    return time.slice(0, 5);
   }
 
   return (
@@ -64,13 +73,13 @@ export default function SlotPicker({ date, people, onSelectSlot }) {
         </div>
       )}
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
 
-        {slots.map((slot)=>{
+        {slots.map((slot) => {
 
           const remaining = remainingCapacity(slot);
 
-          const isAvailable = remaining >= people;
+          const isAvailable = remaining >= people && !slot.isFull;
 
           const isSelected = selectedSlot?.id === slot.id;
 
@@ -78,22 +87,23 @@ export default function SlotPicker({ date, people, onSelectSlot }) {
 
             <button
               key={slot.id}
-              onClick={()=>handleSelect(slot)}
+              onClick={() => handleSelect(slot)}
               disabled={!isAvailable}
               className={`
-                p-3 rounded-lg border text-sm
+                p-4 rounded-xl border text-sm
                 transition
-                flex flex-col items-center
+                flex flex-col items-center justify-center
+                shadow-sm
                 ${isSelected
                   ? "bg-tiger-orange text-white border-tiger-orange"
                   : isAvailable
-                    ? "bg-white hover:bg-gray-50"
-                    : "bg-gray-100 text-gray-400 cursor-not-allowed"}
+                    ? "bg-white hover:bg-gray-50 border-gray-200"
+                    : "bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200"}
               `}
             >
 
-              <span className="font-semibold">
-                {slot.start_time}
+              <span className="font-semibold text-base">
+                {formatTime(slot.start_time)}
               </span>
 
               {isAvailable ? (
@@ -115,5 +125,6 @@ export default function SlotPicker({ date, people, onSelectSlot }) {
       </div>
 
     </div>
+
   );
 }
