@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 import CalendarPicker from "./CalendarPicker";
 import SlotPicker from "./SlotPicker";
@@ -14,6 +14,21 @@ export default function BookingLayout() {
   const [people,setPeople] = useState(2);
 
   const [showForm,setShowForm] = useState(false);
+
+  const formRef = useRef(null);
+
+  function handleConfirm(){
+
+    setShowForm(true);
+
+    setTimeout(()=>{
+      formRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+    },100);
+
+  }
 
   return (
 
@@ -42,28 +57,42 @@ export default function BookingLayout() {
 
       {/* columna derecha */}
 
-      <div>
+      <div className="space-y-6">
 
-        <BookingSummary
-          date={date}
-          slot={slot}
-          plan={plan}
-          people={people}
-          setPeople={setPeople}
-          onConfirm={()=>setShowForm(true)}
-        />
+        <div className="sticky top-28">
 
-        {showForm && (
-          <ReservationForm
+          <BookingSummary
             date={date}
             slot={slot}
             plan={plan}
             people={people}
+            setPeople={setPeople}
+            onConfirm={handleConfirm}
           />
+
+        </div>
+
+        {showForm && (
+
+          <div
+            ref={formRef}
+            className="bg-white p-6 rounded-xl shadow animate-fade-in"
+          >
+
+            <ReservationForm
+              date={date}
+              slot={slot}
+              plan={plan}
+              people={people}
+            />
+
+          </div>
+
         )}
 
       </div>
 
     </div>
+
   );
 }
