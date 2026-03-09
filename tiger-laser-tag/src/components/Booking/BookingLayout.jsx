@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 import CalendarPicker from "./CalendarPicker";
 import SlotPicker from "./SlotPicker";
@@ -8,25 +8,37 @@ import ReservationForm from "./ReservationForm";
 
 export default function BookingLayout() {
 
-  const [date, setDate] = useState(null);
-  const [slot, setSlot] = useState(null);
-  const [plan, setPlan] = useState(null);
-  const [people, setPeople] = useState(2);
-  const [showForm, setShowForm] = useState(false);
+  const [date,setDate] = useState(null);
+  const [slot,setSlot] = useState(null);
+  const [plan,setPlan] = useState(null);
+  const [people,setPeople] = useState(2);
 
-  function handleConfirm() {
+  const [showForm,setShowForm] = useState(false);
+
+  const formRef = useRef(null);
+
+  function handleConfirm(){
+
     setShowForm(true);
+
+    setTimeout(()=>{
+      formRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+    },100);
+
   }
 
   return (
 
     <div className="grid md:grid-cols-2 gap-10">
 
-      {/* COLUMNA IZQUIERDA */}
+      {/* columna izquierda */}
 
-      <div className="bg-white p-6 rounded-xl shadow space-y-8">
+      <div className="bg-white p-6 rounded-xl shadow">
 
-        <CalendarPicker onSelectDate={setDate} />
+        <CalendarPicker onSelectDate={setDate}/>
 
         {date && (
           <SlotPicker
@@ -37,17 +49,17 @@ export default function BookingLayout() {
         )}
 
         {slot && (
-          <PlanPicker onSelectPlan={setPlan} />
+          <PlanPicker onSelectPlan={setPlan}/>
         )}
 
       </div>
 
 
-      {/* COLUMNA DERECHA */}
+      {/* columna derecha */}
 
-      <div className="sticky top-28">
+      <div className="space-y-6">
 
-        <div className="bg-white p-6 rounded-xl shadow space-y-6">
+        <div className="sticky top-28">
 
           <BookingSummary
             date={date}
@@ -55,24 +67,28 @@ export default function BookingLayout() {
             plan={plan}
             people={people}
             setPeople={setPeople}
-            showForm={showForm}
             onConfirm={handleConfirm}
           />
 
-          {showForm && (
-            <div className="pt-4 border-t animate-fade-in">
-
-              <ReservationForm
-                date={date}
-                slot={slot}
-                plan={plan}
-                people={people}
-              />
-
-            </div>
-          )}
-
         </div>
+
+        {showForm && (
+
+          <div
+            ref={formRef}
+            className="bg-white p-6 rounded-xl shadow animate-fade-in"
+          >
+
+            <ReservationForm
+              date={date}
+              slot={slot}
+              plan={plan}
+              people={people}
+            />
+
+          </div>
+
+        )}
 
       </div>
 
