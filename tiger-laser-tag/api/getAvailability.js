@@ -2,20 +2,34 @@ import { supabaseAdmin } from "./supabaseAdmin.js";
 
 export default async function handler(req, res) {
 
+  if (req.method !== "GET") {
+    return res.status(405).json({
+      error: "Method not allowed"
+    });
+  }
+
   const { month } = req.query;
 
   if (!month) {
-    return res.status(400).json({ error: "Month required" });
+    return res.status(400).json({
+      error: "Month required"
+    });
   }
 
   try {
 
     const start = `${month}-01`;
-    const end = `${month}-31`;
+
+    const endDate = new Date(month + "-01");
+    endDate.setMonth(endDate.getMonth() + 1);
+    endDate.setDate(0);
+
+    const end = endDate.toLocaleDateString("sv-SE");
 
     const { data, error } = await supabaseAdmin
       .from("time_slots")
       .select("date,max_capacity,reserved_spots")
+      .eq("status", "active")
       .gte("date", start)
       .lte("date", end);
 
@@ -27,7 +41,7 @@ export default async function handler(req, res) {
 
     const uniqueDays = [...new Set(availableDates)];
 
-    res.status(200).json({
+    return res.status(200).json({
       availableDays: uniqueDays
     });
 
@@ -35,8 +49,8 @@ export default async function handler(req, res) {
 
     console.error(error);
 
-    res.status(500).json({
-      error: error.message
+    return res.status(500).json({
+      error: "Error fetching availability"
     });
 
   }

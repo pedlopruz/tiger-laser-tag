@@ -1,7 +1,7 @@
 {
   "crons": [
     {
-      "path": "/api/utils/generateSlots",
+      "path": "/api/generateSlots",
       "schedule": "0 3 1 * *"
     }
   ]

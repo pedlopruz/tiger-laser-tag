@@ -1,16 +1,31 @@
-import { supabase } from "./supabaseAdmin.js";
+import { supabaseAdmin } from "./supabaseAdmin.js";
 
 export default async function handler(req, res) {
 
-  const { data, error } = await supabase
-    .from("plans")
-    .select("*")
-    .order("price");
-
-  if (error) {
-    return res.status(500).json({ error });
+  if (req.method !== "GET") {
+    return res.status(405).json({ error: "Method not allowed" });
   }
 
-  res.status(200).json(data);
+  try {
+
+    const { data, error } = await supabaseAdmin
+      .from("plans")
+      .select("*")
+      .eq("active", true)
+      .order("price");
+
+    if (error) throw error;
+
+    return res.status(200).json(data);
+
+  } catch (error) {
+
+    console.error(error);
+
+    return res.status(500).json({
+      error: "Error fetching plans"
+    });
+
+  }
 
 }
