@@ -17,12 +17,17 @@ export default function CalendarPicker({ onSelectDate }) {
 
   async function loadAvailability() {
 
-    const month = currentMonth.toISOString().slice(0,7);
+    const y = currentMonth.getFullYear();
+    const m = String(currentMonth.getMonth() + 1).padStart(2, "0");
+
+    const month = `${y}-${m}`;
 
     const res = await fetch(`/api/getAvailability?month=${month}`);
     const data = await res.json();
 
     setAvailableDays(data.availableDays || []);
+    console.log("API days", data.availableDays);
+    console.log("Example date", formatDate(1));
   }
 
   function daysInMonth(date) {
@@ -30,7 +35,8 @@ export default function CalendarPicker({ onSelectDate }) {
   }
 
   function startDay(date) {
-    return new Date(date.getFullYear(),date.getMonth(),1).getDay();
+    const day = new Date(date.getFullYear(),date.getMonth(),1).getDay();
+    return (day + 6) % 7; // lunes como primer día
   }
 
   function changeMonth(offset) {
@@ -111,7 +117,6 @@ export default function CalendarPicker({ onSelectDate }) {
 
       </div>
 
-
       {/* days header */}
 
       <div className="grid grid-cols-7 text-center text-sm text-gray-500 mb-2">
@@ -125,7 +130,6 @@ export default function CalendarPicker({ onSelectDate }) {
         <div>D</div>
 
       </div>
-
 
       {/* calendar grid */}
 
@@ -149,7 +153,7 @@ export default function CalendarPicker({ onSelectDate }) {
               onClick={()=>handleSelect(day)}
               disabled={!isAvailable}
               className={`
-                h-10 rounded-lg text-sm
+                h-10 rounded-lg text-sm font-medium
                 transition
                 ${isSelected
                   ? "bg-tiger-orange text-white"
@@ -166,7 +170,6 @@ export default function CalendarPicker({ onSelectDate }) {
         })}
 
       </div>
-
 
       {/* legend */}
 
