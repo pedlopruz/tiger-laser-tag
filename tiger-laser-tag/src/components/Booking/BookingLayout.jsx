@@ -15,12 +15,25 @@ export default function BookingLayout() {
   const [showForm, setShowForm] = useState(false);
 
   function handleConfirm() {
+
     setShowForm(true);
+
+    setTimeout(() => {
+
+      document
+        .getElementById("reservation-form")
+        ?.scrollIntoView({
+          behavior: "smooth",
+          block: "start"
+        });
+
+    }, 100);
+
   }
 
   return (
 
-    <div className="grid md:grid-cols-2 gap-10">
+    <div className="grid lg:grid-cols-2 gap-10">
 
       {/* COLUMNA IZQUIERDA */}
 
@@ -45,7 +58,7 @@ export default function BookingLayout() {
 
       {/* COLUMNA DERECHA */}
 
-      <div className="sticky top-28">
+      <div className="lg:sticky lg:top-28 h-fit">
 
         <div className="bg-white p-6 rounded-xl shadow space-y-6">
 
@@ -56,10 +69,15 @@ export default function BookingLayout() {
             people={people}
             setPeople={setPeople}
             onConfirm={handleConfirm}
+            showForm={showForm}
           />
 
           {showForm && (
-            <div className="pt-4 border-t animate-fade-in">
+
+            <div
+              id="reservation-form"
+              className="pt-6 border-t animate-fade-in"
+            >
 
               <ReservationForm
                 date={date}
@@ -69,6 +87,7 @@ export default function BookingLayout() {
               />
 
             </div>
+
           )}
 
         </div>
