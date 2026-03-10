@@ -61,30 +61,30 @@ export default async function handler(req, res) {
     // 6️⃣ Construir resultado final
     const result = slots.map(slot => {
 
-      const capacity = slot.capacity ?? 0;
+  const capacity = slot.max_capacity ?? 0;
 
-      const reserved =
-        reservedMap[slot.id] ?? slot.reserved_spots ?? 0;
+  const reserved =
+    reservedMap[slot.id] ?? slot.reserved_spots ?? 0;
 
-      const holds =
-        holdsMap[slot.id] ?? 0;
+  const holds =
+    holdsMap[slot.id] ?? 0;
 
-      const remaining =
-        capacity - reserved - holds;
+  const remaining =
+    capacity - reserved - holds;
 
-      return {
-        id: slot.id,
-        start_time: slot.start_time,
-        end_time: slot.end_time,
-        capacity,
-        reserved,
-        holds,
-        remaining,
-        isFull: remaining <= 0,
-        plan_id: slot.plan_id
-      };
+  return {
+    id: slot.id,
+    start_time: slot.start_time,
+    end_time: slot.end_time,
+    capacity,
+    reserved,
+    holds,
+    remaining,
+    isFull: remaining <= 0,
+    plan_id: slot.plan_id
+  };
 
-    });
+});
 
     res.status(200).json({
       slots: result
