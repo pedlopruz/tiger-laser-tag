@@ -9,7 +9,7 @@ import ReservationForm from "./ReservationForm";
 
 export default function BookingLayout() {
 
-  const router = useRouter();
+  const navigate = useNavigate();
 
   const [date, setDate] = useState(null);
   const [slot, setSlot] = useState(null);
@@ -34,8 +34,6 @@ export default function BookingLayout() {
 
   }
 
-  /* 👉 cuando la reserva se crea correctamente */
-
   function handleReservationSuccess(data){
 
     navigate(`/reserva-confirmada?code=${data.code}`);
@@ -45,8 +43,6 @@ export default function BookingLayout() {
   return (
 
     <div className="grid lg:grid-cols-2 gap-10">
-
-      {/* COLUMNA IZQUIERDA */}
 
       <div className="bg-white p-6 rounded-xl shadow space-y-8">
 
@@ -65,9 +61,6 @@ export default function BookingLayout() {
         )}
 
       </div>
-
-
-      {/* COLUMNA DERECHA */}
 
       <div className="lg:sticky lg:top-28 h-fit">
 
@@ -91,7 +84,6 @@ export default function BookingLayout() {
             >
 
               <ReservationForm
-                date={date}
                 slot={slot}
                 plan={plan}
                 people={people}
@@ -109,4 +101,5 @@ export default function BookingLayout() {
     </div>
 
   );
+
 }
