@@ -37,6 +37,7 @@ function App() {
                 <Route path="/blog/:slug" element={<BlogDetailPage />} />
                 <Route path="/contacto" element={<ContactoPage />} />
                 <Route path="/reserva" element={<ReservaPage />} />
+                <Route path="/reserva-confirmada" element={<ConfirmadaPage />} />
               </Routes>
             </AnimatePresence>
           </main>

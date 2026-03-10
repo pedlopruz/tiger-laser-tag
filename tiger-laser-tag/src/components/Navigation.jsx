@@ -16,7 +16,6 @@ const Navigation = () => {
     { name: t('navigation.faq'), path: '/faq' },
     { name: t('navigation.blog'), path: '/blog' },
     { name: t('navigation.contacto'), path: '/contacto' },
-    { name: t('navigation.Confirmada'), path: '/reserva-confirmada' },
   ];
 
   const languages = [
