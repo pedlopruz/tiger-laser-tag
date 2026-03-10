@@ -16,6 +16,7 @@ import FAQPage from '@/pages/FAQPage';
 import BlogPage from '@/pages/BlogPage';
 import ContactoPage from '@/pages/ContactoPage';
 import ReservaPage from '@/pages/ReservaPage';
+import ConfirmadaPage from '@/pages/ConfirmadaPage';
 import { Toaster } from '@/components/ui/toaster';
 
 function App() {
