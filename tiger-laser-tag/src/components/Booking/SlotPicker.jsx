@@ -7,10 +7,18 @@ export default function SlotPicker({ date, people = 1, onSelectSlot }) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (date) {
-      loadSlots();
-    }
+
+    if (!date) return;
+
+    loadSlots();
+
+    // refresco automático cada 10s
+    const interval = setInterval(loadSlots, 10000);
+
+    return () => clearInterval(interval);
+
   }, [date]);
+
 
   async function loadSlots() {
 
@@ -21,8 +29,7 @@ export default function SlotPicker({ date, people = 1, onSelectSlot }) {
       const res = await fetch(`/api/getSlotsByDate?date=${date}`);
       const data = await res.json();
 
-      // tu API devuelve directamente un array
-      setSlots(data || []);
+      setSlots(data.slots || []);
 
     } catch (err) {
 
@@ -35,6 +42,7 @@ export default function SlotPicker({ date, people = 1, onSelectSlot }) {
 
   }
 
+
   function handleSelect(slot) {
 
     setSelectedSlot(slot);
@@ -45,13 +53,11 @@ export default function SlotPicker({ date, people = 1, onSelectSlot }) {
 
   }
 
-  function remainingCapacity(slot) {
-    return slot.capacity - slot.reserved;
-  }
 
   function formatTime(time) {
-    return time.slice(0, 5);
+    return time?.slice(0, 5);
   }
+
 
   return (
 
@@ -61,11 +67,13 @@ export default function SlotPicker({ date, people = 1, onSelectSlot }) {
         Horarios disponibles
       </h3>
 
+
       {loading && (
         <div className="text-sm text-gray-500">
           Cargando horarios...
         </div>
       )}
+
 
       {!loading && slots.length === 0 && (
         <div className="text-sm text-gray-500">
@@ -73,11 +81,12 @@ export default function SlotPicker({ date, people = 1, onSelectSlot }) {
         </div>
       )}
 
+
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
 
         {slots.map((slot) => {
 
-          const remaining = remainingCapacity(slot);
+          const remaining = slot.remaining ?? (slot.capacity - slot.reserved);
 
           const isAvailable = remaining >= people && !slot.isFull;
 
@@ -106,14 +115,27 @@ export default function SlotPicker({ date, people = 1, onSelectSlot }) {
                 {formatTime(slot.start_time)}
               </span>
 
-              {isAvailable ? (
-                <span className="text-xs opacity-80">
-                  {remaining} plazas
-                </span>
-              ) : (
+
+              {/* estado plazas */}
+
+              {slot.isFull ? (
+
                 <span className="text-xs">
                   Completo
                 </span>
+
+              ) : remaining <= 5 ? (
+
+                <span className="text-xs text-red-500">
+                  🔥 Solo quedan {remaining}
+                </span>
+
+              ) : (
+
+                <span className="text-xs opacity-80">
+                  {remaining} plazas
+                </span>
+
               )}
 
             </button>
@@ -127,4 +149,5 @@ export default function SlotPicker({ date, people = 1, onSelectSlot }) {
     </div>
 
   );
+
 }

@@ -16,10 +16,16 @@ export default async function handler(req, res) {
       error: "Missing required fields"
     });
   }
+  await supabaseAdmin
+  .from("reservation_holds")
+  .delete()
+  .eq("slot_id", slot_id);
 
-  if (people < 1 || people > 20) {
+  const players = parseInt(people);
+
+  if (players < 1) {
     return res.status(400).json({
-      error: "Invalid number of people"
+      error: "Invalid number of players"
     });
   }
 
@@ -33,7 +39,67 @@ export default async function handler(req, res) {
 
   try {
 
+    /* --------------------------
+       1️⃣ Obtener slot
+    -------------------------- */
+
+    const { data: slot, error: slotError } = await supabaseAdmin
+      .from("time_slots")
+      .select("*")
+      .eq("id", slot_id)
+      .single();
+
+    if (slotError || !slot) {
+      return res.status(404).json({
+        error: "Slot not found"
+      });
+    }
+
+    /* --------------------------
+       2️⃣ Obtener plan
+    -------------------------- */
+
+    const { data: plan, error: planError } = await supabaseAdmin
+      .from("plans")
+      .select("*")
+      .eq("id", plan_id)
+      .single();
+
+    if (planError || !plan) {
+      return res.status(404).json({
+        error: "Plan not found"
+      });
+    }
+
+    /* --------------------------
+       3️⃣ Validar plan bloqueado
+    -------------------------- */
+
+    if (slot.plan_id && slot.plan_id !== plan_id) {
+      return res.status(409).json({
+        error: "Este horario ya tiene otro plan reservado"
+      });
+    }
+
+    /* --------------------------
+       4️⃣ Validar capacidad plan
+    -------------------------- */
+
+    if (players > plan.max_players) {
+      return res.status(409).json({
+        error: `Este plan admite máximo ${plan.max_players} jugadores`
+      });
+    }
+
+    /* --------------------------
+       5️⃣ Crear código reserva
+    -------------------------- */
+
     const reservation_code = nanoid(12);
+
+    /* --------------------------
+       6️⃣ RPC segura (anti race)
+    -------------------------- */
 
     const { data, error } = await supabaseAdmin.rpc(
       "create_reservation_safe",
@@ -43,7 +109,7 @@ export default async function handler(req, res) {
         p_name: name,
         p_email: email,
         p_phone: phone,
-        p_people: people,
+        p_people: players,
         p_reservation_code: reservation_code
       }
     );
