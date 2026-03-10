@@ -9,17 +9,13 @@ export default async function handler(req, res) {
     });
   }
 
-  const { slot_id, plan_id, name, email, phone, people } = req.body;
+  const { slot_id, plan_id, name, email, phone, people, hold_id } = req.body;
 
   if (!slot_id || !plan_id || !name || !email || !people) {
     return res.status(400).json({
       error: "Missing required fields"
     });
   }
-  await supabaseAdmin
-  .from("reservation_holds")
-  .delete()
-  .eq("slot_id", slot_id);
 
   const players = parseInt(people);
 
@@ -40,23 +36,7 @@ export default async function handler(req, res) {
   try {
 
     /* --------------------------
-       1️⃣ Obtener slot
-    -------------------------- */
-
-    const { data: slot, error: slotError } = await supabaseAdmin
-      .from("time_slots")
-      .select("*")
-      .eq("id", slot_id)
-      .single();
-
-    if (slotError || !slot) {
-      return res.status(404).json({
-        error: "Slot not found"
-      });
-    }
-
-    /* --------------------------
-       2️⃣ Obtener plan
+       1️⃣ Obtener plan
     -------------------------- */
 
     const { data: plan, error: planError } = await supabaseAdmin
@@ -72,17 +52,7 @@ export default async function handler(req, res) {
     }
 
     /* --------------------------
-       3️⃣ Validar plan bloqueado
-    -------------------------- */
-
-    if (slot.plan_id && slot.plan_id !== plan_id) {
-      return res.status(409).json({
-        error: "Este horario ya tiene otro plan reservado"
-      });
-    }
-
-    /* --------------------------
-       4️⃣ Validar capacidad plan
+       2️⃣ validar jugadores del plan
     -------------------------- */
 
     if (players > plan.max_players) {
@@ -92,13 +62,13 @@ export default async function handler(req, res) {
     }
 
     /* --------------------------
-       5️⃣ Crear código reserva
+       3️⃣ crear código reserva
     -------------------------- */
 
     const reservation_code = nanoid(12);
 
     /* --------------------------
-       6️⃣ RPC segura (anti race)
+       4️⃣ crear reserva segura
     -------------------------- */
 
     const { data, error } = await supabaseAdmin.rpc(
@@ -121,6 +91,19 @@ export default async function handler(req, res) {
       return res.status(409).json({
         error: error.message
       });
+
+    }
+
+    /* --------------------------
+       5️⃣ eliminar hold del usuario
+    -------------------------- */
+
+    if (hold_id) {
+
+      await supabaseAdmin
+        .from("reservation_holds")
+        .delete()
+        .eq("id", hold_id);
 
     }
 
