@@ -97,7 +97,7 @@ export default function SlotPicker({ date, people = 1, onSelectSlot }) {
 
         {slots.map((slot) => {
 
-          const remaining = getRemaining(slot);
+          const remaining = getRemaining(slot) ?? 0;
 
           const isAvailable = remaining >= people && !slot.isFull;
 
