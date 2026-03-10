@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useRouter } from "next/router";
+import { useNavigate } from "react-router-dom";
 
 import CalendarPicker from "./CalendarPicker";
 import SlotPicker from "./SlotPicker";
@@ -38,7 +38,7 @@ export default function BookingLayout() {
 
   function handleReservationSuccess(data){
 
-    router.push(`/reserva-confirmada?code=${data.code}`);
+    navigate(`/reserva-confirmada?code=${data.code}`);
 
   }
 
