@@ -5,6 +5,7 @@ export default function ReservationForm({
   slot,
   plan,
   people,
+  holdId,
   onSuccess
 }) {
 
@@ -41,7 +42,8 @@ export default function ReservationForm({
           name,
           email,
           phone,
-          people
+          people,
+          hold_id:holdId
         })
       });
 
@@ -68,7 +70,7 @@ export default function ReservationForm({
 
   return (
 
-    <div className="bg-white rounded-xl shadow p-6 mt-6">
+    <div className="bg-white rounded-xl shadow p-6 mt-6" id="reservation-form">
 
       <h2 className="text-xl font-bold mb-6">
         Datos de la reserva
@@ -76,14 +78,8 @@ export default function ReservationForm({
 
       <form onSubmit={handleSubmit} className="space-y-4">
 
-        {/* nombre */}
-
         <div>
-
-          <label className="text-sm font-medium">
-            Nombre
-          </label>
-
+          <label className="text-sm font-medium">Nombre</label>
           <input
             type="text"
             value={name}
@@ -91,18 +87,10 @@ export default function ReservationForm({
             className="w-full border rounded-lg px-3 py-2 mt-1"
             required
           />
-
         </div>
 
-
-        {/* email */}
-
         <div>
-
-          <label className="text-sm font-medium">
-            Email
-          </label>
-
+          <label className="text-sm font-medium">Email</label>
           <input
             type="email"
             value={email}
@@ -110,29 +98,17 @@ export default function ReservationForm({
             className="w-full border rounded-lg px-3 py-2 mt-1"
             required
           />
-
         </div>
 
-
-        {/* telefono */}
-
         <div>
-
-          <label className="text-sm font-medium">
-            Teléfono
-          </label>
-
+          <label className="text-sm font-medium">Teléfono</label>
           <input
             type="tel"
             value={phone}
             onChange={(e)=>setPhone(e.target.value)}
             className="w-full border rounded-lg px-3 py-2 mt-1"
           />
-
         </div>
-
-
-        {/* error */}
 
         {error && (
           <div className="text-red-600 text-sm">
@@ -140,19 +116,14 @@ export default function ReservationForm({
           </div>
         )}
 
-
-        {/* boton */}
-
         <Button
           type="submit"
           className="w-full"
           disabled={loading}
         >
-
           {loading
             ? "Procesando reserva..."
             : "Confirmar reserva"}
-
         </Button>
 
       </form>

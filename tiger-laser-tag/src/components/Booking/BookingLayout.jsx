@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useRouter } from "next/router";
 
 import CalendarPicker from "./CalendarPicker";
 import SlotPicker from "./SlotPicker";
@@ -7,6 +8,8 @@ import BookingSummary from "./BookingSummary";
 import ReservationForm from "./ReservationForm";
 
 export default function BookingLayout() {
+
+  const router = useRouter();
 
   const [date, setDate] = useState(null);
   const [slot, setSlot] = useState(null);
@@ -28,6 +31,14 @@ export default function BookingLayout() {
         });
 
     }, 100);
+
+  }
+
+  /* 👉 cuando la reserva se crea correctamente */
+
+  function handleReservationSuccess(data){
+
+    router.push(`/reserva-confirmada?code=${data.code}`);
 
   }
 
@@ -84,6 +95,7 @@ export default function BookingLayout() {
                 slot={slot}
                 plan={plan}
                 people={people}
+                onSuccess={handleReservationSuccess}
               />
 
             </div>
