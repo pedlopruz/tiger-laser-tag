@@ -12,7 +12,6 @@ export default function SlotPicker({ date, people = 1, onSelectSlot }) {
 
     loadSlots();
 
-    // refresco automático cada 10s
     const interval = setInterval(loadSlots, 10000);
 
     return () => clearInterval(interval);
@@ -29,7 +28,7 @@ export default function SlotPicker({ date, people = 1, onSelectSlot }) {
       const res = await fetch(`/api/getSlotsByDate?date=${date}`);
       const data = await res.json();
 
-      setSlots(data.slots || []);
+      setSlots(data.slots || data || []);
 
     } catch (err) {
 
@@ -54,6 +53,21 @@ export default function SlotPicker({ date, people = 1, onSelectSlot }) {
   }
 
 
+  function getRemaining(slot) {
+
+    if (slot.remaining !== undefined) return slot.remaining;
+
+    if (slot.available !== undefined) return slot.available;
+
+    if (slot.capacity !== undefined && slot.reserved !== undefined) {
+      return slot.capacity - slot.reserved;
+    }
+
+    return 0;
+
+  }
+
+
   function formatTime(time) {
     return time?.slice(0, 5);
   }
@@ -67,13 +81,11 @@ export default function SlotPicker({ date, people = 1, onSelectSlot }) {
         Horarios disponibles
       </h3>
 
-
       {loading && (
         <div className="text-sm text-gray-500">
           Cargando horarios...
         </div>
       )}
-
 
       {!loading && slots.length === 0 && (
         <div className="text-sm text-gray-500">
@@ -81,12 +93,11 @@ export default function SlotPicker({ date, people = 1, onSelectSlot }) {
         </div>
       )}
 
-
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
 
         {slots.map((slot) => {
 
-          const remaining = slot.remaining ?? (slot.capacity - slot.reserved);
+          const remaining = getRemaining(slot);
 
           const isAvailable = remaining >= people && !slot.isFull;
 
@@ -114,9 +125,6 @@ export default function SlotPicker({ date, people = 1, onSelectSlot }) {
               <span className="font-semibold text-base">
                 {formatTime(slot.start_time)}
               </span>
-
-
-              {/* estado plazas */}
 
               {slot.isFull ? (
 
