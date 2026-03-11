@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-export default function PlanPicker({ onSelectPlan }) {
+export default function PlanPicker({ slot, onSelectPlan }) {
 
   const [plans, setPlans] = useState([]);
   const [selectedPlan, setSelectedPlan] = useState(null);
@@ -19,8 +19,16 @@ export default function PlanPicker({ onSelectPlan }) {
       const res = await fetch("/api/getPlans");
       const data = await res.json();
 
-      // Tu API devuelve directamente un array
-      setPlans(Array.isArray(data) ? data : []);
+      let availablePlans = Array.isArray(data) ? data : [];
+
+      // 🔒 si el slot ya tiene plan asignado
+      if(slot?.plan_id){
+        availablePlans = availablePlans.filter(
+          p => p.id === slot.plan_id
+        );
+      }
+
+      setPlans(availablePlans);
 
     } catch (err) {
 
@@ -30,13 +38,14 @@ export default function PlanPicker({ onSelectPlan }) {
     }
 
     setLoading(false);
+
   }
 
   function handleSelect(plan) {
 
     setSelectedPlan(plan);
 
-    if (onSelectPlan) {
+    if(onSelectPlan){
       onSelectPlan(plan);
     }
 
@@ -64,7 +73,7 @@ export default function PlanPicker({ onSelectPlan }) {
 
       <div className="space-y-4">
 
-        {plans.map((plan) => {
+        {plans.map((plan)=>{
 
           const isSelected = selectedPlan?.id === plan.id;
 
@@ -72,7 +81,7 @@ export default function PlanPicker({ onSelectPlan }) {
 
             <button
               key={plan.id}
-              onClick={() => handleSelect(plan)}
+              onClick={()=>handleSelect(plan)}
               className={`
                 w-full text-left p-5 rounded-xl border transition
                 ${isSelected

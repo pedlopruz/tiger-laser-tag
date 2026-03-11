@@ -57,7 +57,10 @@ export default function BookingLayout() {
         )}
 
         {slot && (
-          <PlanPicker onSelectPlan={setPlan} />
+          <PlanPicker 
+            slot={slot}
+            onSelectPlan={setPlan}
+          />
         )}
 
       </div>
