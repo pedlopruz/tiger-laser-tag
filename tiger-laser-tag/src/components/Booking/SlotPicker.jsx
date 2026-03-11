@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { supabase } from "../../lib/supabaseClient";
 
 export default function SlotPicker({ date, people = 1, onSelectSlot }) {
 
@@ -6,20 +7,13 @@ export default function SlotPicker({ date, people = 1, onSelectSlot }) {
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-
-    if (!date) return;
-
-    loadSlots();
-
-    const interval = setInterval(loadSlots, 10000);
-
-    return () => clearInterval(interval);
-
-  }, [date]);
-
+  /* --------------------------
+     Cargar slots
+  -------------------------- */
 
   async function loadSlots() {
+
+    if (!date) return;
 
     setLoading(true);
 
@@ -41,6 +35,63 @@ export default function SlotPicker({ date, people = 1, onSelectSlot }) {
 
   }
 
+  /* --------------------------
+     Primera carga
+  -------------------------- */
+
+  useEffect(() => {
+    if (date) {
+      loadSlots();
+    }
+  }, [date]);
+
+  /* --------------------------
+     Realtime updates
+  -------------------------- */
+
+  useEffect(() => {
+
+    if (!date) return;
+
+    const channel = supabase
+      .channel("slots-realtime")
+
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "reservations"
+        },
+        () => {
+          loadSlots();
+        }
+      )
+
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "reservation_holds"
+        },
+        () => {
+          loadSlots();
+        }
+      )
+
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+
+  }, [date]);
+
+
+  /* --------------------------
+     Seleccionar slot
+  -------------------------- */
 
   function handleSelect(slot) {
 
@@ -52,6 +103,10 @@ export default function SlotPicker({ date, people = 1, onSelectSlot }) {
 
   }
 
+
+  /* --------------------------
+     Calcular plazas restantes
+  -------------------------- */
 
   function getRemaining(slot) {
 
@@ -72,6 +127,10 @@ export default function SlotPicker({ date, people = 1, onSelectSlot }) {
     return time?.slice(0, 5);
   }
 
+
+  /* --------------------------
+     Render
+  -------------------------- */
 
   return (
 
@@ -134,7 +193,7 @@ export default function SlotPicker({ date, people = 1, onSelectSlot }) {
 
               ) : remaining <= 5 ? (
 
-                <span className="text-xs text-red-500">
+                <span className="text-xs text-red-500 font-semibold">
                   🔥 Solo quedan {remaining}
                 </span>
 
