@@ -7,8 +7,16 @@ export default function PlanPicker({ slot, onSelectPlan }) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+
+    if (!slot) return;
+
     loadPlans();
-  }, []);
+
+    // reset plan si cambia slot
+    setSelectedPlan(null);
+
+  }, [slot]);
+
 
   async function loadPlans() {
 
@@ -22,7 +30,7 @@ export default function PlanPicker({ slot, onSelectPlan }) {
       let availablePlans = Array.isArray(data) ? data : [];
 
       // 🔒 si el slot ya tiene plan asignado
-      if(slot?.plan_id){
+      if (slot?.plan_id) {
         availablePlans = availablePlans.filter(
           p => p.id === slot.plan_id
         );
@@ -41,15 +49,17 @@ export default function PlanPicker({ slot, onSelectPlan }) {
 
   }
 
+
   function handleSelect(plan) {
 
     setSelectedPlan(plan);
 
-    if(onSelectPlan){
+    if (onSelectPlan) {
       onSelectPlan(plan);
     }
 
   }
+
 
   return (
 
@@ -73,7 +83,7 @@ export default function PlanPicker({ slot, onSelectPlan }) {
 
       <div className="space-y-4">
 
-        {plans.map((plan)=>{
+        {plans.map((plan) => {
 
           const isSelected = selectedPlan?.id === plan.id;
 
@@ -81,7 +91,7 @@ export default function PlanPicker({ slot, onSelectPlan }) {
 
             <button
               key={plan.id}
-              onClick={()=>handleSelect(plan)}
+              onClick={() => handleSelect(plan)}
               className={`
                 w-full text-left p-5 rounded-xl border transition
                 ${isSelected
@@ -129,5 +139,6 @@ export default function PlanPicker({ slot, onSelectPlan }) {
       </div>
 
     </div>
+
   );
 }
