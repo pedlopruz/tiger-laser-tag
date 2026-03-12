@@ -33,7 +33,7 @@ export default async function handler(req, res) {
         time_slots(date,start_time,end_time),
         plans(name,price,duration_minutes)
       `)
-      .eq("unique_code", code)
+      .eq("reservation_code", code)
       .eq("email", email)
       .eq("status", "confirmed")
       .single();
