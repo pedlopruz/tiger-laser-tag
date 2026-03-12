@@ -4,5 +4,8 @@
       "path": "/api/generateSlots",
       "schedule": "0 3 1 * *"
     }
+  ],
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/" }
   ]
 }
