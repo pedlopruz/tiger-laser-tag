@@ -30,10 +30,16 @@ export default function MisReservas() {
         })
       });
 
-      const data = await res.json();
+      let data = {};
+
+      try {
+        data = await res.json();
+      } catch {
+        data = {};
+      }
 
       if (!res.ok) {
-        setError(data.error || "Error buscando reserva");
+        setError(data.error || "No se encontró la reserva");
         setLoading(false);
         return;
       }
@@ -52,6 +58,7 @@ export default function MisReservas() {
   }
 
   function formatDate(date) {
+    if (!date) return "";
     return new Date(date).toLocaleDateString("es-ES", {
       weekday: "long",
       day: "numeric",
@@ -72,8 +79,6 @@ export default function MisReservas() {
         <h1 className="text-4xl font-heading font-bold text-tiger-green text-center mb-10">
           Consultar reserva
         </h1>
-
-        {/* FORMULARIO */}
 
         <form
           onSubmit={handleSearch}
@@ -127,8 +132,6 @@ export default function MisReservas() {
           )}
 
         </form>
-
-        {/* RESULTADO */}
 
         {reservation && (
 
