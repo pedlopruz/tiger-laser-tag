@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "../../lib/supabaseClient";
 
 export default function SlotPicker({ date, people = 1, onSelectSlot }) {
@@ -6,6 +6,8 @@ export default function SlotPicker({ date, people = 1, onSelectSlot }) {
   const [slots, setSlots] = useState([]);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  const refreshTimeout = useRef(null);
 
   /* --------------------------
      Cargar slots
@@ -36,13 +38,31 @@ export default function SlotPicker({ date, people = 1, onSelectSlot }) {
   }
 
   /* --------------------------
+     Debounce refresh
+  -------------------------- */
+
+  function refreshSlots() {
+
+    if (refreshTimeout.current) {
+      clearTimeout(refreshTimeout.current);
+    }
+
+    refreshTimeout.current = setTimeout(() => {
+      loadSlots();
+    }, 200);
+
+  }
+
+  /* --------------------------
      Primera carga
   -------------------------- */
 
   useEffect(() => {
+
     if (date) {
       loadSlots();
     }
+
   }, [date]);
 
   /* --------------------------
@@ -56,34 +76,58 @@ export default function SlotPicker({ date, people = 1, onSelectSlot }) {
     const channel = supabase
       .channel("slots-realtime")
 
+      /* reservas creadas */
       .on(
         "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "reservations"
-        },
-        () => {
-          loadSlots();
-        }
+        { event: "INSERT", schema: "public", table: "reservations" },
+        refreshSlots
       )
 
+      /* reservas modificadas */
       .on(
         "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "reservation_holds"
-        },
-        () => {
-          loadSlots();
-        }
+        { event: "UPDATE", schema: "public", table: "reservations" },
+        refreshSlots
+      )
+
+      /* reservas eliminadas */
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "reservations" },
+        refreshSlots
+      )
+
+      /* holds creados */
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "reservation_holds" },
+        refreshSlots
+      )
+
+      /* holds eliminados */
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "reservation_holds" },
+        refreshSlots
+      )
+
+      /* cambios en slots */
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "time_slots" },
+        refreshSlots
       )
 
       .subscribe();
 
     return () => {
+
       supabase.removeChannel(channel);
+
+      if (refreshTimeout.current) {
+        clearTimeout(refreshTimeout.current);
+      }
+
     };
 
   }, [date]);
