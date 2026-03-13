@@ -205,13 +205,6 @@ export default function MisReservas() {
                   </p>
                 </div>
 
-                <div>
-                  <span className="font-semibold">🔑 Código</span>
-                  <p className="font-mono text-tiger-green text-lg">
-                    {reservation.unique_code}
-                  </p>
-                </div>
-
               </div>
 
             </div>
