@@ -74,27 +74,39 @@ export default function MisReservas() {
 
     <section className="py-20 bg-tiger-cream min-h-screen">
 
-      <div className="container mx-auto px-4 max-w-xl">
+      <div className="container mx-auto px-4 max-w-2xl">
 
-        <h1 className="text-4xl font-heading font-bold text-tiger-green text-center mb-10">
-          Consultar reserva
-        </h1>
+        {/* HEADER */}
+
+        <div className="text-center mb-12">
+
+          <h1 className="text-4xl md:text-5xl font-heading font-bold text-tiger-green mb-3">
+            Consultar reserva
+          </h1>
+
+          <p className="text-gray-600">
+            Introduce tu código de reserva y tu email para ver los detalles.
+          </p>
+
+        </div>
+
+        {/* FORMULARIO */}
 
         <form
           onSubmit={handleSearch}
-          className="bg-white p-8 rounded-xl shadow space-y-5"
+          className="bg-white p-8 rounded-2xl shadow-lg space-y-6 border"
         >
 
           <div>
 
-            <label className="text-sm font-medium">
+            <label className="text-sm font-semibold text-gray-700">
               Código de reserva
             </label>
 
             <input
               value={code}
               onChange={(e)=>setCode(e.target.value)}
-              className="w-full border rounded-lg p-3 mt-1"
+              className="w-full border rounded-lg p-3 mt-2 focus:ring-2 focus:ring-tiger-orange"
               placeholder="Ej: Hs72Ks91dLQ"
               required
             />
@@ -103,7 +115,7 @@ export default function MisReservas() {
 
           <div>
 
-            <label className="text-sm font-medium">
+            <label className="text-sm font-semibold text-gray-700">
               Email
             </label>
 
@@ -111,7 +123,7 @@ export default function MisReservas() {
               type="email"
               value={email}
               onChange={(e)=>setEmail(e.target.value)}
-              className="w-full border rounded-lg p-3 mt-1"
+              className="w-full border rounded-lg p-3 mt-2 focus:ring-2 focus:ring-tiger-orange"
               placeholder="tu@email.com"
               required
             />
@@ -122,50 +134,93 @@ export default function MisReservas() {
             type="submit"
             className="w-full bg-tiger-orange text-white py-3 rounded-lg font-semibold hover:opacity-90 transition"
           >
-            {loading ? "Buscando..." : "Consultar reserva"}
+            {loading ? "Buscando reserva..." : "Consultar reserva"}
           </button>
 
           {error && (
-            <div className="text-red-500 text-sm text-center">
+            <div className="text-red-500 text-sm text-center font-medium">
               {error}
             </div>
           )}
 
         </form>
 
+
+        {/* RESULTADO */}
+
         {reservation && (
 
-          <div className="mt-10 bg-white p-8 rounded-xl shadow">
+          <div className="mt-12 bg-white rounded-2xl shadow-xl p-8 border">
 
-            <h2 className="text-xl font-semibold mb-6">
-              Tu reserva
-            </h2>
+            <div className="flex justify-between items-center mb-6">
 
-            <div className="space-y-3 text-sm">
+              <h2 className="text-2xl font-bold text-tiger-green">
+                🎮 Tu reserva
+              </h2>
 
-              <div>
-                <strong>Nombre:</strong> {reservation.name}
+              <span className="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full font-semibold">
+                Confirmada
+              </span>
+
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+
+              <div className="space-y-3">
+
+                <div>
+                  <span className="font-semibold">👤 Nombre</span>
+                  <p className="text-gray-700">{reservation.name}</p>
+                </div>
+
+                <div>
+                  <span className="font-semibold">🎮 Plan</span>
+                  <p className="text-gray-700">
+                    {reservation.plans?.name}
+                  </p>
+                </div>
+
+                <div>
+                  <span className="font-semibold">👥 Jugadores</span>
+                  <p className="text-gray-700">
+                    {reservation.people}
+                  </p>
+                </div>
+
               </div>
 
-              <div>
-                <strong>Plan:</strong> {reservation.plans?.name}
+              <div className="space-y-3">
+
+                <div>
+                  <span className="font-semibold">📅 Fecha</span>
+                  <p className="text-gray-700">
+                    {formatDate(reservation.time_slots?.date)}
+                  </p>
+                </div>
+
+                <div>
+                  <span className="font-semibold">⏰ Hora</span>
+                  <p className="text-gray-700">
+                    {formatTime(reservation.time_slots?.start_time)}
+                  </p>
+                </div>
+
+                <div>
+                  <span className="font-semibold">🔑 Código</span>
+                  <p className="font-mono text-tiger-green text-lg">
+                    {reservation.unique_code}
+                  </p>
+                </div>
+
               </div>
 
-              <div>
-                <strong>Fecha:</strong> {formatDate(reservation.time_slots?.date)}
-              </div>
+            </div>
 
-              <div>
-                <strong>Hora:</strong> {formatTime(reservation.time_slots?.start_time)}
-              </div>
+            {/* INFO EXTRA */}
 
-              <div>
-                <strong>Jugadores:</strong> {reservation.people}
-              </div>
+            <div className="mt-8 bg-tiger-cream rounded-lg p-4 text-sm text-gray-700">
 
-              <div>
-                <strong>Código:</strong> {reservation.unique_code}
-              </div>
+              ⚡ Llega **15 minutos antes** de tu partida para preparar el equipo.
 
             </div>
 
