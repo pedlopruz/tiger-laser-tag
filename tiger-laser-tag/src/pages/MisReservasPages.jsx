@@ -6,14 +6,22 @@ export default function MisReservas() {
   const [email, setEmail] = useState("");
 
   const [reservation, setReservation] = useState(null);
+
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+
   const [loading, setLoading] = useState(false);
+  const [cancelLoading, setCancelLoading] = useState(false);
+  const [updateLoading, setUpdateLoading] = useState(false);
+
+  const [newPeople, setNewPeople] = useState("");
 
   async function handleSearch(e) {
 
     e.preventDefault();
 
     setError("");
+    setMessage("");
     setReservation(null);
     setLoading(true);
 
@@ -54,6 +62,102 @@ export default function MisReservas() {
     }
 
     setLoading(false);
+
+  }
+
+  async function cancelReservation(){
+
+    const confirmCancel = confirm("¿Seguro que quieres cancelar tu reserva?");
+
+    if(!confirmCancel) return;
+
+    setCancelLoading(true);
+    setMessage("");
+
+    try{
+
+      const res = await fetch("/api/cancelReservation",{
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json"
+        },
+        body:JSON.stringify({
+          code,
+          email
+        })
+      });
+
+      const data = await res.json();
+
+      if(!res.ok){
+        setMessage(data.error || "Error cancelando reserva");
+        setCancelLoading(false);
+        return;
+      }
+
+      setReservation({
+        ...reservation,
+        status:"cancelled"
+      });
+
+      setMessage("✅ Reserva cancelada correctamente");
+
+    }catch(err){
+
+      console.error(err);
+      setMessage("Error de conexión");
+
+    }
+
+    setCancelLoading(false);
+
+  }
+
+  async function updatePlayers(){
+
+    if(!newPeople) return;
+
+    setUpdateLoading(true);
+    setMessage("");
+
+    try{
+
+      const res = await fetch("/api/changeReservation",{
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json"
+        },
+        body:JSON.stringify({
+          code,
+          email,
+          people:Number(newPeople)
+        })
+      });
+
+      const data = await res.json();
+
+      if(!res.ok){
+        setMessage(data.error || "Error actualizando reserva");
+        setUpdateLoading(false);
+        return;
+      }
+
+      setReservation(data.reservation);
+
+      if(data.extra_payment > 0){
+        setMessage(`Debes pagar €${data.extra_payment} por los jugadores añadidos`);
+      }else{
+        setMessage("Reserva actualizada correctamente");
+      }
+
+    }catch(err){
+
+      console.error(err);
+      setMessage("Error de conexión");
+
+    }
+
+    setUpdateLoading(false);
 
   }
 
@@ -145,7 +249,6 @@ export default function MisReservas() {
 
         </form>
 
-
         {/* RESULTADO */}
 
         {reservation && (
@@ -158,9 +261,15 @@ export default function MisReservas() {
                 🎮 Tu reserva
               </h2>
 
-              <span className="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full font-semibold">
-                Confirmada
-              </span>
+              {reservation.status === "cancelled" ? (
+                <span className="text-xs bg-red-100 text-red-700 px-3 py-1 rounded-full font-semibold">
+                  Cancelada
+                </span>
+              ) : (
+                <span className="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full font-semibold">
+                  Confirmada
+                </span>
+              )}
 
             </div>
 
@@ -212,13 +321,58 @@ export default function MisReservas() {
             {/* INFO EXTRA */}
 
             <div className="mt-8 bg-tiger-cream rounded-lg p-4 text-sm text-gray-700">
-
-              ⚡ Llega **15 minutos antes** de tu partida para preparar el equipo.
-
+              ⚡ Llega 15 minutos antes de tu partida para preparar el equipo.
             </div>
+
+            {/* ACCIONES */}
+
+            {reservation.status !== "cancelled" && (
+
+              <div className="mt-10 border-t pt-6">
+
+                <h3 className="font-semibold mb-4">
+                  Gestionar reserva
+                </h3>
+
+                <div className="flex gap-3 mb-4">
+
+                  <input
+                    type="number"
+                    min={reservation.people}
+                    placeholder="Nuevo número de jugadores"
+                    value={newPeople}
+                    onChange={(e)=>setNewPeople(e.target.value)}
+                    className="border rounded-lg p-2 w-full"
+                  />
+
+                  <button
+                    onClick={updatePlayers}
+                    className="bg-tiger-green text-white px-4 py-2 rounded-lg"
+                  >
+                    {updateLoading ? "Actualizando..." : "Actualizar"}
+                  </button>
+
+                </div>
+
+                <button
+                  onClick={cancelReservation}
+                  className="bg-red-500 text-white px-6 py-2 rounded-lg hover:opacity-90"
+                >
+                  {cancelLoading ? "Cancelando..." : "Cancelar reserva"}
+                </button>
+
+              </div>
+
+            )}
 
           </div>
 
+        )}
+
+        {message && (
+          <div className="mt-6 text-center text-sm font-medium text-tiger-green">
+            {message}
+          </div>
         )}
 
       </div>

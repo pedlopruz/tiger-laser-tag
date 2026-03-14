@@ -8,20 +8,28 @@ export default async function handler(req, res) {
     });
   }
 
-  const { code } = req.body;
+  const { code, email } = req.body;
 
-  if (!code) {
+  if (!code || !email) {
     return res.status(400).json({
-      error: "Reservation code required"
+      error: "Missing required fields"
     });
   }
 
   try {
 
+    /* --------------------------
+       1️⃣ Buscar reserva
+    -------------------------- */
+
     const { data: reservation, error } = await supabaseAdmin
       .from("reservations")
-      .select("*")
+      .select(`
+        *,
+        time_slots(date)
+      `)
       .eq("unique_code", code)
+      .eq("email", email)
       .single();
 
     if (error || !reservation) {
@@ -30,41 +38,57 @@ export default async function handler(req, res) {
       });
     }
 
-    const { data: slot } = await supabaseAdmin
-      .from("time_slots")
-      .select("date,start_time,reserved_spots")
-      .eq("id", reservation.slot_id)
-      .single();
+    /* --------------------------
+       2️⃣ Validar que no esté cancelada
+    -------------------------- */
 
-    // comprobar regla 48 horas
-    const slotDateTime = new Date(`${slot.date}T${slot.start_time}`);
-    const now = new Date();
-
-    const diffHours = (slotDateTime - now) / (1000 * 60 * 60);
-
-    if (diffHours < 48) {
-      return res.status(403).json({
-        error: "Las reservas solo pueden cancelarse con 48h de antelación"
+    if (reservation.status === "cancelled") {
+      return res.status(400).json({
+        error: "La reserva ya está cancelada"
       });
     }
 
-    // devolver plazas
-    await supabaseAdmin
-      .from("time_slots")
-      .update({
-        reserved_spots: slot.reserved_spots - reservation.people
-      })
-      .eq("id", reservation.slot_id);
+    /* --------------------------
+       3️⃣ Regla 48h
+    -------------------------- */
 
-    // eliminar reserva
-    await supabaseAdmin
-      .from("reservations")
-      .delete()
-      .eq("id", reservation.id);
+    const now = new Date();
+    const reservationDate = new Date(reservation.time_slots.date);
+
+    if (reservationDate - now < 48 * 60 * 60 * 1000) {
+      return res.status(403).json({
+        error: "Las reservas solo se pueden cancelar con 48h de antelación"
+      });
+    }
+
+    /* --------------------------
+       4️⃣ Cancelar reserva
+    -------------------------- */
+
+    const { data: updatedReservation, error: updateError } =
+      await supabaseAdmin
+        .from("reservations")
+        .update({
+          status: "cancelled"
+        })
+        .eq("id", reservation.id)
+        .select()
+        .single();
+
+    if (updateError) {
+      return res.status(500).json({
+        error: updateError.message
+      });
+    }
+
+    /* --------------------------
+       5️⃣ Respuesta
+    -------------------------- */
 
     return res.status(200).json({
       success: true,
-      message: "Reserva cancelada"
+      message: "Reserva cancelada correctamente",
+      reservation: updatedReservation
     });
 
   } catch (error) {
@@ -72,7 +96,7 @@ export default async function handler(req, res) {
     console.error(error);
 
     return res.status(500).json({
-      error: "Error cancelling reservation"
+      error: "Error cancelando la reserva"
     });
 
   }
