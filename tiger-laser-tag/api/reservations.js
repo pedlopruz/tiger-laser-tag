@@ -102,7 +102,7 @@ async function accessReservation(req, res) {
 
 }
 
-export default async function cancelReservation(req, res) {
+async function cancelReservation(req, res) {
 
   if (req.method !== "POST") {
     return res.status(405).json({
@@ -205,7 +205,7 @@ export default async function cancelReservation(req, res) {
 
 }
 
-export default async function changeReservation(req, res) {
+async function changeReservation(req, res) {
 
   if (req.method !== "POST") {
     return res.status(405).json({
@@ -394,7 +394,7 @@ export default async function changeReservation(req, res) {
 
 }
 
-export default async function createReservation(req, res) {
+async function createReservation(req, res) {
 
   if (req.method !== "POST") {
     return res.status(405).json({
