@@ -31,12 +31,13 @@ export default function ReservationForm({
 
     try{
 
-      const res = await fetch("/api/createReservation",{
+      const res = await fetch("/api/reservations",{
         method:"POST",
         headers:{
           "Content-Type":"application/json"
         },
         body:JSON.stringify({
+          action:"create",
           slot_id:slot.id,
           plan_id:plan.id,
           name,

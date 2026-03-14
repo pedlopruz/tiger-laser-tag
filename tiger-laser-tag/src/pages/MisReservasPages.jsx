@@ -27,12 +27,13 @@ export default function MisReservas() {
 
     try {
 
-      const res = await fetch("/api/reservationAccess", {
+      const res = await fetch("/api/reservations", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
+          action: "access",
           code,
           email
         })
@@ -76,12 +77,13 @@ export default function MisReservas() {
 
     try{
 
-      const res = await fetch("/api/cancelReservation",{
+      const res = await fetch("/api/reservations",{
         method:"POST",
         headers:{
           "Content-Type":"application/json"
         },
         body:JSON.stringify({
+          action:"cancel",
           code,
           email
         })
@@ -122,12 +124,13 @@ export default function MisReservas() {
 
     try{
 
-      const res = await fetch("/api/changeReservation",{
+      const res = await fetch("/api/reservations",{
         method:"POST",
         headers:{
           "Content-Type":"application/json"
         },
         body:JSON.stringify({
+          action:"change",
           code,
           email,
           people:Number(newPeople)
