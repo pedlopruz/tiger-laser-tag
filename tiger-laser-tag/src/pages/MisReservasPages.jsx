@@ -12,14 +12,17 @@ export default function MisReservas() {
   const [selectedDate,setSelectedDate] = useState(null);
   const [selectedSlot,setSelectedSlot] = useState(null);
 
-  const [newPeople,setNewPeople] = useState("");
+  const [people,setPeople] = useState(null);
+
+  const [extraPayment,setExtraPayment] = useState(0);
+  const [showPayment,setShowPayment] = useState(false);
 
   const [error,setError] = useState("");
   const [message,setMessage] = useState("");
 
   const [loading,setLoading] = useState(false);
-  const [cancelLoading,setCancelLoading] = useState(false);
   const [updateLoading,setUpdateLoading] = useState(false);
+  const [cancelLoading,setCancelLoading] = useState(false);
 
 
   async function handleSearch(e){
@@ -29,6 +32,7 @@ export default function MisReservas() {
     setError("");
     setMessage("");
     setReservation(null);
+
     setLoading(true);
 
     try{
@@ -48,12 +52,15 @@ export default function MisReservas() {
       const data = await res.json();
 
       if(!res.ok){
+
         setError(data.error || "No se encontró la reserva");
         setLoading(false);
         return;
+
       }
 
       setReservation(data.reservation);
+      setPeople(data.reservation.people);
 
     }catch(err){
 
@@ -67,9 +74,28 @@ export default function MisReservas() {
   }
 
 
+  /* =========================
+     CALCULO DE PRECIO
+  ========================= */
+
+  const pricePerPerson = reservation?.plans?.price || 0;
+
+  const originalPeople = reservation?.people || 0;
+
+  const originalTotal = pricePerPerson * originalPeople;
+
+  const newTotal = pricePerPerson * (people || 0);
+
+  const extra = Math.max(newTotal - originalTotal,0);
+
+
+  /* =========================
+     ACTUALIZAR JUGADORES
+  ========================= */
+
   async function updatePlayers(){
 
-    if(!newPeople) return;
+    if(!people) return;
 
     setUpdateLoading(true);
     setMessage("");
@@ -77,35 +103,39 @@ export default function MisReservas() {
     try{
 
       const res = await fetch("/api/reservations",{
+
         method:"POST",
         headers:{
           "Content-Type":"application/json"
         },
+
         body:JSON.stringify({
           action:"change",
           code,
           email,
-          people:Number(newPeople)
+          people:Number(people)
         })
+
       });
 
       const data = await res.json();
 
       if(!res.ok){
+
         setMessage(data.error);
         setUpdateLoading(false);
         return;
-      }
 
-      setReservation(data.reservation);
-      setNewPeople("");
+      }
 
       if(data.extra_payment > 0){
 
-        setMessage(`Debes pagar €${data.extra_payment} por jugadores añadidos`);
+        setExtraPayment(data.extra_payment);
+        setShowPayment(true);
 
       }else{
 
+        setReservation(data.reservation);
         setMessage("Reserva actualizada correctamente");
 
       }
@@ -113,7 +143,7 @@ export default function MisReservas() {
     }catch(err){
 
       console.error(err);
-      setMessage("Error actualizando");
+      setMessage("Error actualizando jugadores");
 
     }
 
@@ -122,26 +152,32 @@ export default function MisReservas() {
   }
 
 
+  /* =========================
+     CAMBIAR SLOT
+  ========================= */
+
   async function updateSlot(){
 
     if(!selectedSlot) return;
 
     setUpdateLoading(true);
-    setMessage("");
 
     try{
 
       const res = await fetch("/api/reservations",{
+
         method:"POST",
         headers:{
           "Content-Type":"application/json"
         },
+
         body:JSON.stringify({
           action:"change",
           code,
           email,
           newSlotId:selectedSlot.id
         })
+
       });
 
       const data = await res.json();
@@ -173,25 +209,31 @@ export default function MisReservas() {
   }
 
 
+  /* =========================
+     CANCELAR
+  ========================= */
+
   async function cancelReservation(){
 
     if(!confirm("¿Seguro que quieres cancelar la reserva?")) return;
 
     setCancelLoading(true);
-    setMessage("");
 
     try{
 
       const res = await fetch("/api/reservations",{
+
         method:"POST",
         headers:{
           "Content-Type":"application/json"
         },
+
         body:JSON.stringify({
           action:"cancel",
           code,
           email
         })
+
       });
 
       const data = await res.json();
@@ -220,7 +262,48 @@ export default function MisReservas() {
   }
 
 
+  /* =========================
+     PASARELA DE PAGO
+  ========================= */
+
+  async function goToPayment(){
+
+    try{
+
+      const res = await fetch("/api/createPayment",{
+
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json"
+        },
+
+        body:JSON.stringify({
+          code,
+          email,
+          amount:extraPayment
+        })
+
+      });
+
+      const data = await res.json();
+
+      if(data.url){
+
+        window.location.href = data.url;
+
+      }
+
+    }catch(err){
+
+      console.error(err);
+
+    }
+
+  }
+
+
   function formatDate(date){
+
     if(!date) return "";
 
     return new Date(date).toLocaleDateString("es-ES",{
@@ -228,10 +311,13 @@ export default function MisReservas() {
       day:"numeric",
       month:"long"
     });
+
   }
 
   function formatTime(time){
+
     return time?.slice(0,5);
+
   }
 
 
@@ -242,75 +328,47 @@ export default function MisReservas() {
 <div className="container mx-auto px-4 max-w-2xl">
 
 
-{/* HEADER */}
-
-<div className="text-center mb-12">
-
-<h1 className="text-4xl md:text-5xl font-heading font-bold text-tiger-green mb-3">
-Consultar reserva
-</h1>
-
-<p className="text-gray-600">
-Introduce tu código de reserva y tu email para ver los detalles.
-</p>
-
-</div>
-
-
-{/* FORM */}
+{/* BUSCADOR */}
 
 <form
 onSubmit={handleSearch}
-className="bg-white p-8 rounded-2xl shadow-lg space-y-6 border">
+className="bg-white p-8 rounded-2xl shadow-lg space-y-6 border"
+>
 
-<div>
-
-<label className="text-sm font-semibold text-gray-700">
-Código de reserva
-</label>
+<h1 className="text-4xl font-heading font-bold text-tiger-green text-center">
+Consultar reserva
+</h1>
 
 <input
 value={code}
 onChange={(e)=>setCode(e.target.value)}
-className="w-full border rounded-lg p-3 mt-2 focus:ring-2 focus:ring-tiger-orange"
-placeholder="Ej: Hs72Ks91dLQ"
+className="w-full border rounded-lg p-3"
+placeholder="Código de reserva"
 required
 />
-
-</div>
-
-
-<div>
-
-<label className="text-sm font-semibold text-gray-700">
-Email
-</label>
 
 <input
 type="email"
 value={email}
 onChange={(e)=>setEmail(e.target.value)}
-className="w-full border rounded-lg p-3 mt-2 focus:ring-2 focus:ring-tiger-orange"
-placeholder="tu@email.com"
+className="w-full border rounded-lg p-3"
+placeholder="Email"
 required
 />
 
-</div>
-
-
 <button
 type="submit"
-className="w-full bg-tiger-orange text-white py-3 rounded-lg font-semibold hover:opacity-90 transition"
+className="w-full bg-tiger-orange text-white py-3 rounded-lg"
 >
 
-{loading ? "Buscando reserva..." : "Consultar reserva"}
+{loading ? "Buscando..." : "Consultar reserva"}
 
 </button>
 
 
 {error && (
 
-<div className="text-red-500 text-sm text-center font-medium">
+<div className="text-red-500 text-sm text-center">
 {error}
 </div>
 
@@ -319,133 +377,124 @@ className="w-full bg-tiger-orange text-white py-3 rounded-lg font-semibold hover
 </form>
 
 
-{/* RESULTADO */}
+{/* RESERVA */}
 
 {reservation && (
 
-<div className="mt-12 bg-white rounded-2xl shadow-xl p-8 border">
+<div className="mt-10 bg-white rounded-2xl shadow-xl p-8 border space-y-8">
 
 
-<div className="flex justify-between items-center mb-6">
+{/* RESUMEN */}
 
-<h2 className="text-2xl font-bold text-tiger-green">
-🎮 Tu reserva
-</h2>
+<div className="space-y-3 text-sm">
 
-{reservation.status === "cancelled" ? (
-
-<span className="text-xs bg-red-100 text-red-700 px-3 py-1 rounded-full font-semibold">
-Cancelada
-</span>
-
-) : (
-
-<span className="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full font-semibold">
-Confirmada
-</span>
-
-)}
-
+<div className="flex justify-between">
+<span>Fecha</span>
+<span>{formatDate(reservation.time_slots?.date)}</span>
 </div>
 
-
-<div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
-
-
-<div className="space-y-3">
-
-<div>
-<span className="font-semibold">👤 Nombre</span>
-<p className="text-gray-700">{reservation.name}</p>
+<div className="flex justify-between">
+<span>Hora</span>
+<span>{formatTime(reservation.time_slots?.start_time)}</span>
 </div>
 
-<div>
-<span className="font-semibold">🎮 Plan</span>
-<p className="text-gray-700">
-{reservation.plans?.name}
-</p>
-</div>
-
-<div>
-<span className="font-semibold">👥 Jugadores</span>
-<p className="text-gray-700">
-{reservation.people}
-</p>
+<div className="flex justify-between">
+<span>Plan</span>
+<span>{reservation.plans?.name}</span>
 </div>
 
 </div>
 
 
-<div className="space-y-3">
+{/* JUGADORES */}
 
-<div>
-<span className="font-semibold">📅 Fecha</span>
-<p className="text-gray-700">
-{formatDate(reservation.time_slots?.date)}
-</p>
-</div>
+<div className="flex items-center justify-between">
 
-<div>
-<span className="font-semibold">⏰ Hora</span>
-<p className="text-gray-700">
-{formatTime(reservation.time_slots?.start_time)}
-</p>
-</div>
-
-</div>
-
-</div>
-
-
-<div className="mt-8 bg-tiger-cream rounded-lg p-4 text-sm text-gray-700">
-⚡ Llega 15 minutos antes de tu partida para preparar el equipo.
-</div>
-
-
-{reservation.status !== "cancelled" && (
-
-<div className="mt-10 border-t pt-6 space-y-8">
-
-
-{/* CAMBIAR JUGADORES */}
-
-<div>
-
-<h3 className="font-semibold mb-2">
-Añadir jugadores
-</h3>
-
-<div className="flex gap-3">
+<span>Jugadores</span>
 
 <input
 type="number"
 min={reservation.people}
-value={newPeople}
-onChange={(e)=>setNewPeople(e.target.value)}
-className="border rounded-lg p-2 w-full"
+value={people}
+onChange={(e)=>setPeople(Number(e.target.value))}
+className="border rounded-lg px-3 py-1 w-20 text-center"
 />
+
+</div>
+
+
+{/* PRECIO */}
+
+<div className="border-t pt-4 space-y-2">
+
+<div className="flex justify-between text-sm">
+
+<span>Reserva original</span>
+<span>{originalTotal}€</span>
+
+</div>
+
+{extra > 0 && (
+
+<div className="flex justify-between text-sm text-tiger-orange">
+
+<span>Jugadores añadidos</span>
+<span>+{extra}€</span>
+
+</div>
+
+)}
+
+<div className="flex justify-between font-bold text-lg">
+
+<span>Total a pagar</span>
+
+<span className="text-tiger-orange">
+
+{extra}€
+
+</span>
+
+</div>
+
+</div>
+
 
 <button
 onClick={updatePlayers}
-className="bg-tiger-green text-white px-4 py-2 rounded-lg"
+className="bg-tiger-green text-white px-6 py-2 rounded-lg"
 >
 
-{updateLoading ? "Actualizando..." : "Actualizar"}
+{updateLoading ? "Actualizando..." : "Actualizar jugadores"}
+
+</button>
+
+
+{showPayment && extraPayment > 0 && (
+
+<div className="bg-orange-50 border rounded-lg p-4">
+
+<p className="text-sm mb-3">
+
+Debes pagar <b>{extraPayment}€</b> por los jugadores añadidos.
+
+</p>
+
+<button
+onClick={goToPayment}
+className="w-full bg-tiger-orange text-white py-3 rounded-lg font-semibold"
+>
+
+Continuar al pago
 
 </button>
 
 </div>
 
-</div>
+)}
 
 
 {/* CAMBIAR FECHA */}
-
-<div>
-
-<h3 className="font-semibold mb-4">
-Cambiar día
-</h3>
 
 <CalendarPicker
 onSelectDate={(date)=>{
@@ -456,16 +505,12 @@ setSelectedSlot(null);
 }}
 />
 
-</div>
-
-
-{/* SLOT PICKER */}
 
 {selectedDate && (
 
 <SlotPicker
 date={selectedDate}
-people={reservation.people}
+people={people}
 onSelectSlot={(slot)=>{
 
 setSelectedSlot(slot);
@@ -483,18 +528,16 @@ onClick={updateSlot}
 className="bg-tiger-green text-white px-6 py-2 rounded-lg"
 >
 
-{updateLoading ? "Actualizando..." : "Confirmar nuevo horario"}
+Cambiar horario
 
 </button>
 
 )}
 
 
-{/* CANCELAR */}
-
 <button
 onClick={cancelReservation}
-className="bg-red-500 text-white px-6 py-2 rounded-lg hover:opacity-90"
+className="bg-red-500 text-white px-6 py-2 rounded-lg"
 >
 
 {cancelLoading ? "Cancelando..." : "Cancelar reserva"}
@@ -507,19 +550,13 @@ className="bg-red-500 text-white px-6 py-2 rounded-lg hover:opacity-90"
 )}
 
 
-</div>
-
-)}
-
-
 {message && (
 
-<div className="mt-6 text-center text-sm font-medium text-tiger-green">
+<div className="text-center mt-6 text-sm text-tiger-green">
 {message}
 </div>
 
 )}
-
 
 </div>
 
