@@ -1,7 +1,13 @@
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "../../lib/supabaseClient";
 
-export default function SlotPicker({ date, people = 1, onSelectSlot, initialSlot }) {
+export default function SlotPicker({
+  date,
+  people = 1,
+  onSelectSlot,
+  initialSlot,
+  reservedSlot
+}) {
 
   const [slots, setSlots] = useState([]);
   const [selectedSlot, setSelectedSlot] = useState(initialSlot || null);
@@ -65,13 +71,13 @@ export default function SlotPicker({ date, people = 1, onSelectSlot, initialSlot
 
   }, [date]);
 
-  useEffect(()=>{
+  useEffect(() => {
 
-    if(initialSlot){
-      setSelectedSlot(initialSlot)
+    if (initialSlot) {
+      setSelectedSlot(initialSlot);
     }
 
-  },[initialSlot])
+  }, [initialSlot]);
 
   /* --------------------------
      Realtime updates
@@ -84,42 +90,36 @@ export default function SlotPicker({ date, people = 1, onSelectSlot, initialSlot
     const channel = supabase
       .channel("slots-realtime")
 
-      /* reservas creadas */
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "reservations" },
         refreshSlots
       )
 
-      /* reservas modificadas */
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "reservations" },
         refreshSlots
       )
 
-      /* reservas eliminadas */
       .on(
         "postgres_changes",
         { event: "DELETE", schema: "public", table: "reservations" },
         refreshSlots
       )
 
-      /* holds creados */
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "reservation_holds" },
         refreshSlots
       )
 
-      /* holds eliminados */
       .on(
         "postgres_changes",
         { event: "DELETE", schema: "public", table: "reservation_holds" },
         refreshSlots
       )
 
-      /* cambios en slots */
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "time_slots" },
@@ -140,7 +140,6 @@ export default function SlotPicker({ date, people = 1, onSelectSlot, initialSlot
 
   }, [date]);
 
-
   /* --------------------------
      Seleccionar slot
   -------------------------- */
@@ -154,7 +153,6 @@ export default function SlotPicker({ date, people = 1, onSelectSlot, initialSlot
     }
 
   }
-
 
   /* --------------------------
      Calcular plazas restantes
@@ -174,11 +172,9 @@ export default function SlotPicker({ date, people = 1, onSelectSlot, initialSlot
 
   }
 
-
   function formatTime(time) {
     return time?.slice(0, 5);
   }
-
 
   /* --------------------------
      Render
@@ -210,9 +206,14 @@ export default function SlotPicker({ date, people = 1, onSelectSlot, initialSlot
 
           const remaining = getRemaining(slot) ?? 0;
 
-          const isAvailable = remaining >= people && !slot.isFull;
+          const isReservedSlot =
+            reservedSlot && slot.id === reservedSlot.id;
 
-          const isSelected = selectedSlot?.id === slot.id;
+          const isAvailable =
+            remaining >= people && !slot.isFull && !isReservedSlot;
+
+          const isSelected =
+            selectedSlot?.id === slot.id;
 
           return (
 
@@ -225,11 +226,15 @@ export default function SlotPicker({ date, people = 1, onSelectSlot, initialSlot
                 transition
                 flex flex-col items-center justify-center
                 shadow-sm
-                ${isSelected
-                  ? "bg-tiger-orange text-white border-tiger-orange"
-                  : isAvailable
-                    ? "bg-white hover:bg-gray-50 border-gray-200"
-                    : "bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200"}
+
+                ${isReservedSlot
+                  ? "bg-gray-300 text-gray-500 border-gray-300 cursor-not-allowed"
+                  : isSelected
+                    ? "bg-tiger-orange text-white border-tiger-orange"
+                    : isAvailable
+                      ? "bg-white hover:bg-gray-50 border-gray-200"
+                      : "bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200"
+                }
               `}
             >
 
@@ -237,7 +242,13 @@ export default function SlotPicker({ date, people = 1, onSelectSlot, initialSlot
                 {formatTime(slot.start_time)}
               </span>
 
-              {slot.isFull ? (
+              {isReservedSlot ? (
+
+                <span className="text-xs">
+                  Tu reserva actual
+                </span>
+
+              ) : slot.isFull ? (
 
                 <span className="text-xs">
                   Completo
