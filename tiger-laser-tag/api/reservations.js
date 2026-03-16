@@ -208,6 +208,7 @@ async function cancelReservation(req, res) {
   }
 
 }
+
 async function changeReservation(req, res) {
 
   if (req.method !== "POST") {
@@ -272,6 +273,12 @@ async function changeReservation(req, res) {
     }
 
     /* --------------------------
+       preparar actualización
+    -------------------------- */
+
+    const updateData = {};
+
+    /* --------------------------
        3️⃣ Cambiar jugadores
     -------------------------- */
 
@@ -316,11 +323,12 @@ async function changeReservation(req, res) {
 
       extraPayment = addedPlayers * reservation.plans.price;
 
+      updateData.people = newPeople;
     }
 
     /* --------------------------
-   4️⃣ Cambiar slot
--------------------------- */
+       4️⃣ Cambiar slot
+    -------------------------- */
 
     if (newSlotId) {
 
@@ -342,10 +350,12 @@ async function changeReservation(req, res) {
         .single();
 
       if (!plan) {
-        return res.status(404).json({ error: "Plan no encontrado" });
+        return res.status(404).json({
+          error: "Plan no encontrado"
+        });
       }
 
-      /* bloquear nuevo slot */
+      /* obtener nuevo slot */
 
       const { data: newSlot } = await supabaseAdmin
         .from("time_slots")
@@ -371,11 +381,11 @@ async function changeReservation(req, res) {
         });
       }
 
-      /* comprobar plan del slot */
+      /* validar plan del slot */
 
       if (newSlot.plan_id && newSlot.plan_id !== planId) {
         return res.status(409).json({
-          error: "Este horario ya está reservado con otro plan"
+          error: "Este horario ya tiene otro plan reservado"
         });
       }
 
@@ -398,13 +408,14 @@ async function changeReservation(req, res) {
 
       if (reservedNew + reservation.people > capacityNew) {
         return res.status(409).json({
-          error: "No hay plazas en el nuevo horario"
+          error: "No hay plazas suficientes en el nuevo horario"
         });
       }
 
       /* asignar plan al nuevo slot si está vacío */
 
       if (!newSlot.plan_id) {
+
         await supabaseAdmin
           .from("time_slots")
           .update({
@@ -412,14 +423,13 @@ async function changeReservation(req, res) {
             max_capacity: plan.max_players
           })
           .eq("id", newSlotId);
-      }
 
-      /* actualizar reserva */
+      }
 
       updateData.slot_id = newSlotId;
 
       /* --------------------------
-        recalcular slot antiguo
+         recalcular slot antiguo
       -------------------------- */
 
       const { data: oldReservations } = await supabaseAdmin
@@ -433,8 +443,6 @@ async function changeReservation(req, res) {
         (sum, r) => sum + (r.people || 0),
         0
       );
-
-      /* si no queda nadie en el slot → resetear */
 
       if (reservedOld === 0) {
 
@@ -453,11 +461,6 @@ async function changeReservation(req, res) {
     /* --------------------------
        5️⃣ Actualizar reserva
     -------------------------- */
-
-    const updateData = {};
-
-    if (people) updateData.people = Number(people);
-    if (newSlotId) updateData.slot_id = newSlotId;
 
     const { data: updatedReservation, error: updateError } =
       await supabaseAdmin
