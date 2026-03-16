@@ -1,6 +1,6 @@
 import { useState } from "react";
-import CalendarPicker from "../components/CalendarPicker";
-import SlotPicker from "../components/SlotPicker";
+import CalendarPicker from "../components/Booking/CalendarPicker";
+import SlotPicker from "../components/Booking/SlotPicker";
 
 export default function MisReservas() {
 
