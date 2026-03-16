@@ -40,7 +40,8 @@ export default async function handler(req, res) {
     const { data: reservations } = await supabaseAdmin
       .from("reservations")
       .select("slot_id, people")
-      .in("slot_id", slotIds);
+      .in("slot_id", slotIds)
+      .eq("status", "confirmed");
 
     // 4️⃣ Agrupar holds por slot
     const holdsMap = {};
