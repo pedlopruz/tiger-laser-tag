@@ -1,4 +1,6 @@
 import { useState } from "react";
+import CalendarPicker from "../components/CalendarPicker";
+import SlotPicker from "../components/SlotPicker";
 
 export default function MisReservas() {
 
@@ -7,10 +9,8 @@ export default function MisReservas() {
 
   const [reservation,setReservation] = useState(null);
 
-  const [slots,setSlots] = useState([]);
+  const [selectedDate,setSelectedDate] = useState(null);
   const [selectedSlot,setSelectedSlot] = useState(null);
-
-  const [selectedDate,setSelectedDate] = useState("");
 
   const [newPeople,setNewPeople] = useState("");
 
@@ -67,27 +67,6 @@ export default function MisReservas() {
   }
 
 
-  async function loadSlots(date){
-
-    setSelectedDate(date);
-    setSelectedSlot(null);
-
-    try{
-
-      const res = await fetch(`/api/slots?date=${date}`);
-      const data = await res.json();
-
-      setSlots(data.slots || []);
-
-    }catch(err){
-
-      console.error(err);
-
-    }
-
-  }
-
-
   async function updatePlayers(){
 
     if(!newPeople) return;
@@ -122,9 +101,13 @@ export default function MisReservas() {
       setNewPeople("");
 
       if(data.extra_payment > 0){
+
         setMessage(`Debes pagar €${data.extra_payment} por jugadores añadidos`);
+
       }else{
+
         setMessage("Reserva actualizada correctamente");
+
       }
 
     }catch(err){
@@ -157,21 +140,24 @@ export default function MisReservas() {
           action:"change",
           code,
           email,
-          newSlotId:selectedSlot
+          newSlotId:selectedSlot.id
         })
       });
 
       const data = await res.json();
 
       if(!res.ok){
+
         setMessage(data.error);
         setUpdateLoading(false);
         return;
+
       }
 
       setReservation(data.reservation);
+
+      setSelectedDate(null);
       setSelectedSlot(null);
-      setSlots([]);
 
       setMessage("Horario actualizado correctamente");
 
@@ -211,12 +197,15 @@ export default function MisReservas() {
       const data = await res.json();
 
       if(!res.ok){
+
         setMessage(data.error);
         setCancelLoading(false);
         return;
+
       }
 
       setReservation(data.reservation);
+
       setMessage("Reserva cancelada correctamente");
 
     }catch(err){
@@ -233,6 +222,7 @@ export default function MisReservas() {
 
   function formatDate(date){
     if(!date) return "";
+
     return new Date(date).toLocaleDateString("es-ES",{
       weekday:"long",
       day:"numeric",
@@ -252,6 +242,8 @@ export default function MisReservas() {
 <div className="container mx-auto px-4 max-w-2xl">
 
 
+{/* HEADER */}
+
 <div className="text-center mb-12">
 
 <h1 className="text-4xl md:text-5xl font-heading font-bold text-tiger-green mb-3">
@@ -264,6 +256,8 @@ Introduce tu código de reserva y tu email para ver los detalles.
 
 </div>
 
+
+{/* FORM */}
 
 <form
 onSubmit={handleSearch}
@@ -324,6 +318,8 @@ className="w-full bg-tiger-orange text-white py-3 rounded-lg font-semibold hover
 
 </form>
 
+
+{/* RESULTADO */}
 
 {reservation && (
 
@@ -408,8 +404,10 @@ Confirmada
 
 {reservation.status !== "cancelled" && (
 
-<div className="mt-10 border-t pt-6 space-y-6">
+<div className="mt-10 border-t pt-6 space-y-8">
 
+
+{/* CAMBIAR JUGADORES */}
 
 <div>
 
@@ -441,79 +439,58 @@ className="bg-tiger-green text-white px-4 py-2 rounded-lg"
 </div>
 
 
+{/* CAMBIAR FECHA */}
+
 <div>
 
-<h3 className="font-semibold mb-2">
+<h3 className="font-semibold mb-4">
 Cambiar día
 </h3>
 
-<input
-type="date"
-onChange={(e)=>loadSlots(e.target.value)}
-className="border rounded-lg p-2"
+<CalendarPicker
+onSelectDate={(date)=>{
+
+setSelectedDate(date);
+setSelectedSlot(null);
+
+}}
 />
 
 </div>
 
 
-{slots.length > 0 && (
+{/* SLOT PICKER */}
 
-<div>
+{selectedDate && (
 
-<h3 className="font-semibold mb-3">
-Elegir horario
-</h3>
+<SlotPicker
+date={selectedDate}
+people={reservation.people}
+onSelectSlot={(slot)=>{
 
-<div className="grid grid-cols-3 gap-3">
+setSelectedSlot(slot);
 
-{slots.map(slot=>(
+}}
+/>
 
-<button
-key={slot.id}
-disabled={slot.isFull}
-onClick={()=>setSelectedSlot(slot.id)}
-className={`p-3 rounded-lg border text-sm font-medium transition
-${slot.isFull
-? "bg-gray-200 text-gray-400 cursor-not-allowed"
-: selectedSlot === slot.id
-? "bg-tiger-green text-white"
-: "bg-white hover:bg-gray-100"}`}
-
->
-
-{slot.start_time.slice(0,5)}
-
-{!slot.isFull && (
-<div className="text-xs opacity-70">
-{slot.remaining} plazas
-</div>
 )}
 
-{slot.isFull && (
-<div className="text-xs">
-Completo
-</div>
-)}
 
-</button>
-
-))}
-
-</div>
+{selectedSlot && (
 
 <button
 onClick={updateSlot}
-className="mt-4 bg-tiger-green text-white px-6 py-2 rounded-lg"
+className="bg-tiger-green text-white px-6 py-2 rounded-lg"
 >
 
-Cambiar horario
+{updateLoading ? "Actualizando..." : "Confirmar nuevo horario"}
 
 </button>
 
-</div>
-
 )}
 
+
+{/* CANCELAR */}
 
 <button
 onClick={cancelReservation}
