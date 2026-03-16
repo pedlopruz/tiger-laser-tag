@@ -1,38 +1,37 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 export default function MisReservas() {
 
-  const [code, setCode] = useState("");
-  const [email, setEmail] = useState("");
+  const [code,setCode] = useState("");
+  const [email,setEmail] = useState("");
 
-  const [reservation, setReservation] = useState(null);
+  const [reservation,setReservation] = useState(null);
 
-  const [slots, setSlots] = useState([]);
-  const [selectedDate, setSelectedDate] = useState("");
-  const [selectedSlot, setSelectedSlot] = useState("");
+  const [slots,setSlots] = useState([]);
+  const [selectedSlot,setSelectedSlot] = useState(null);
 
-  const [newPeople, setNewPeople] = useState("");
+  const [selectedDate,setSelectedDate] = useState("");
 
-  const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
+  const [newPeople,setNewPeople] = useState("");
 
-  const [loading, setLoading] = useState(false);
-  const [cancelLoading, setCancelLoading] = useState(false);
-  const [updateLoading, setUpdateLoading] = useState(false);
+  const [error,setError] = useState("");
+  const [message,setMessage] = useState("");
 
-  /* ---------------------------------
-     CONSULTAR RESERVA
-  --------------------------------- */
+  const [loading,setLoading] = useState(false);
+  const [cancelLoading,setCancelLoading] = useState(false);
+  const [updateLoading,setUpdateLoading] = useState(false);
 
-  async function handleSearch(e) {
+
+  async function handleSearch(e){
 
     e.preventDefault();
 
     setError("");
+    setMessage("");
     setReservation(null);
     setLoading(true);
 
-    try {
+    try{
 
       const res = await fetch("/api/reservations",{
         method:"POST",
@@ -56,7 +55,7 @@ export default function MisReservas() {
 
       setReservation(data.reservation);
 
-    } catch(err){
+    }catch(err){
 
       console.error(err);
       setError("Error de conexión");
@@ -67,9 +66,6 @@ export default function MisReservas() {
 
   }
 
-  /* ---------------------------------
-     CARGAR SLOTS POR FECHA
-  --------------------------------- */
 
   async function loadSlots(date){
 
@@ -83,14 +79,107 @@ export default function MisReservas() {
       setSlots(data);
 
     }catch(err){
+
       console.error(err);
+
     }
 
   }
 
-  /* ---------------------------------
-     CANCELAR RESERVA
-  --------------------------------- */
+
+  async function updatePlayers(){
+
+    if(!newPeople) return;
+
+    setUpdateLoading(true);
+
+    try{
+
+      const res = await fetch("/api/reservations",{
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json"
+        },
+        body:JSON.stringify({
+          action:"change",
+          code,
+          email,
+          people:Number(newPeople)
+        })
+      });
+
+      const data = await res.json();
+
+      if(!res.ok){
+        setMessage(data.error);
+        setUpdateLoading(false);
+        return;
+      }
+
+      setReservation(data.reservation);
+
+      if(data.extra_payment > 0){
+        setMessage(`Debes pagar €${data.extra_payment} por jugadores añadidos`);
+      }else{
+        setMessage("Reserva actualizada correctamente");
+      }
+
+    }catch(err){
+
+      console.error(err);
+      setMessage("Error actualizando");
+
+    }
+
+    setUpdateLoading(false);
+
+  }
+
+
+  async function updateSlot(){
+
+    if(!selectedSlot) return;
+
+    setUpdateLoading(true);
+
+    try{
+
+      const res = await fetch("/api/reservations",{
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json"
+        },
+        body:JSON.stringify({
+          action:"change",
+          code,
+          email,
+          newSlotId:selectedSlot
+        })
+      });
+
+      const data = await res.json();
+
+      if(!res.ok){
+        setMessage(data.error);
+        setUpdateLoading(false);
+        return;
+      }
+
+      setReservation(data.reservation);
+
+      setMessage("Horario actualizado correctamente");
+
+    }catch(err){
+
+      console.error(err);
+      setMessage("Error cambiando horario");
+
+    }
+
+    setUpdateLoading(false);
+
+  }
+
 
   async function cancelReservation(){
 
@@ -138,118 +227,20 @@ export default function MisReservas() {
 
   }
 
-  /* ---------------------------------
-     CAMBIAR JUGADORES
-  --------------------------------- */
 
-  async function updatePlayers(){
-
-    if(!newPeople) return;
-
-    setUpdateLoading(true);
-
-    try{
-
-      const res = await fetch("/api/reservations",{
-        method:"POST",
-        headers:{
-          "Content-Type":"application/json"
-        },
-        body:JSON.stringify({
-          action:"change",
-          code,
-          email,
-          people:Number(newPeople)
-        })
-      });
-
-      const data = await res.json();
-
-      if(!res.ok){
-        setMessage(data.error);
-        setUpdateLoading(false);
-        return;
-      }
-
-      setReservation(data.reservation);
-
-      if(data.extra_payment > 0){
-        setMessage(`Debes pagar €${data.extra_payment} por jugadores extra`);
-      }else{
-        setMessage("Reserva actualizada");
-      }
-
-    }catch(err){
-
-      console.error(err);
-      setMessage("Error actualizando");
-
-    }
-
-    setUpdateLoading(false);
-
-  }
-
-  /* ---------------------------------
-     CAMBIAR HORARIO
-  --------------------------------- */
-
-  async function updateSlot(){
-
-    if(!selectedSlot) return;
-
-    setUpdateLoading(true);
-
-    try{
-
-      const res = await fetch("/api/reservations",{
-        method:"POST",
-        headers:{
-          "Content-Type":"application/json"
-        },
-        body:JSON.stringify({
-          action:"change",
-          code,
-          email,
-          newSlotId:selectedSlot
-        })
-      });
-
-      const data = await res.json();
-
-      if(!res.ok){
-        setMessage(data.error);
-        setUpdateLoading(false);
-        return;
-      }
-
-      setReservation(data.reservation);
-
-      setMessage("Horario actualizado correctamente");
-
-    }catch(err){
-
-      console.error(err);
-      setMessage("Error cambiando horario");
-
-    }
-
-    setUpdateLoading(false);
-
-  }
-
-  function formatDate(date) {
-    if (!date) return "";
-    return new Date(date).toLocaleDateString("es-ES", {
+  function formatDate(date){
+    if(!date) return "";
+    return new Date(date).toLocaleDateString("es-ES",{
       weekday:"long",
       day:"numeric",
       month:"long"
     });
   }
 
-  function formatTime(time) {
+  function formatTime(time){
     return time?.slice(0,5);
   }
+
 
   return (
 
@@ -257,79 +248,207 @@ export default function MisReservas() {
 
 <div className="container mx-auto px-4 max-w-2xl">
 
-{/* BUSCAR RESERVA */}
 
-<form onSubmit={handleSearch}
+{/* HEADER */}
+
+<div className="text-center mb-12">
+
+<h1 className="text-4xl md:text-5xl font-heading font-bold text-tiger-green mb-3">
+Consultar reserva
+</h1>
+
+<p className="text-gray-600">
+Introduce tu código de reserva y tu email para ver los detalles.
+</p>
+
+</div>
+
+
+{/* FORM */}
+
+<form
+onSubmit={handleSearch}
 className="bg-white p-8 rounded-2xl shadow-lg space-y-6 border">
+
+<div>
+
+<label className="text-sm font-semibold text-gray-700">
+Código de reserva
+</label>
 
 <input
 value={code}
 onChange={(e)=>setCode(e.target.value)}
-placeholder="Código de reserva"
-className="w-full border rounded-lg p-3"
+className="w-full border rounded-lg p-3 mt-2 focus:ring-2 focus:ring-tiger-orange"
+placeholder="Ej: Hs72Ks91dLQ"
+required
 />
+
+</div>
+
+
+<div>
+
+<label className="text-sm font-semibold text-gray-700">
+Email
+</label>
 
 <input
 type="email"
 value={email}
 onChange={(e)=>setEmail(e.target.value)}
-placeholder="Email"
-className="w-full border rounded-lg p-3"
+className="w-full border rounded-lg p-3 mt-2 focus:ring-2 focus:ring-tiger-orange"
+placeholder="tu@email.com"
+required
 />
 
-<button
-className="w-full bg-tiger-orange text-white py-3 rounded-lg">
+</div>
 
-{loading ? "Buscando..." : "Consultar reserva"}
+
+<button
+type="submit"
+className="w-full bg-tiger-orange text-white py-3 rounded-lg font-semibold hover:opacity-90 transition"
+>
+
+{loading ? "Buscando reserva..." : "Consultar reserva"}
 
 </button>
 
+
+{error && (
+
+<div className="text-red-500 text-sm text-center font-medium">
+{error}
+</div>
+
+)}
+
 </form>
+
 
 {/* RESULTADO */}
 
 {reservation && (
 
-<div className="mt-12 bg-white rounded-2xl shadow-xl p-8">
+<div className="mt-12 bg-white rounded-2xl shadow-xl p-8 border">
 
-<h2 className="text-2xl font-bold mb-6">
-Tu reserva
+
+<div className="flex justify-between items-center mb-6">
+
+<h2 className="text-2xl font-bold text-tiger-green">
+🎮 Tu reserva
 </h2>
 
-<p><b>Nombre:</b> {reservation.name}</p>
-<p><b>Jugadores:</b> {reservation.people}</p>
-<p><b>Fecha:</b> {formatDate(reservation.time_slots?.date)}</p>
-<p><b>Hora:</b> {formatTime(reservation.time_slots?.start_time)}</p>
+{reservation.status === "cancelled" ? (
+
+<span className="text-xs bg-red-100 text-red-700 px-3 py-1 rounded-full font-semibold">
+Cancelada
+</span>
+
+) : (
+
+<span className="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full font-semibold">
+Confirmada
+</span>
+
+)}
+
+</div>
+
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+
+
+<div className="space-y-3">
+
+<div>
+<span className="font-semibold">👤 Nombre</span>
+<p className="text-gray-700">{reservation.name}</p>
+</div>
+
+<div>
+<span className="font-semibold">🎮 Plan</span>
+<p className="text-gray-700">
+{reservation.plans?.name}
+</p>
+</div>
+
+<div>
+<span className="font-semibold">👥 Jugadores</span>
+<p className="text-gray-700">
+{reservation.people}
+</p>
+</div>
+
+</div>
+
+
+<div className="space-y-3">
+
+<div>
+<span className="font-semibold">📅 Fecha</span>
+<p className="text-gray-700">
+{formatDate(reservation.time_slots?.date)}
+</p>
+</div>
+
+<div>
+<span className="font-semibold">⏰ Hora</span>
+<p className="text-gray-700">
+{formatTime(reservation.time_slots?.start_time)}
+</p>
+</div>
+
+</div>
+
+</div>
+
+
+<div className="mt-8 bg-tiger-cream rounded-lg p-4 text-sm text-gray-700">
+⚡ Llega 15 minutos antes de tu partida para preparar el equipo.
+</div>
+
+
+{reservation.status !== "cancelled" && (
+
+<div className="mt-10 border-t pt-6 space-y-6">
+
 
 {/* CAMBIAR JUGADORES */}
 
-<div className="mt-8">
+<div>
 
 <h3 className="font-semibold mb-2">
 Añadir jugadores
 </h3>
+
+<div className="flex gap-3">
 
 <input
 type="number"
 min={reservation.people}
 value={newPeople}
 onChange={(e)=>setNewPeople(e.target.value)}
-className="border p-2 rounded mr-2"
+className="border rounded-lg p-2 w-full"
 />
 
 <button
 onClick={updatePlayers}
-className="bg-tiger-green text-white px-4 py-2 rounded">
+className="bg-tiger-green text-white px-4 py-2 rounded-lg"
+>
 
-Actualizar
+{updateLoading ? "Actualizando..." : "Actualizar"}
 
 </button>
 
 </div>
 
+</div>
+
+
 {/* CAMBIAR FECHA */}
 
-<div className="mt-8">
+<div>
 
 <h3 className="font-semibold mb-2">
 Cambiar día
@@ -338,44 +457,48 @@ Cambiar día
 <input
 type="date"
 onChange={(e)=>loadSlots(e.target.value)}
-className="border p-2 rounded"
+className="border rounded-lg p-2"
 />
 
 </div>
+
 
 {/* HORARIOS */}
 
 {slots.length > 0 && (
 
-<div className="mt-6">
+<div>
 
-<h3 className="font-semibold mb-2">
+<h3 className="font-semibold mb-3">
 Elegir horario
 </h3>
 
 <div className="grid grid-cols-3 gap-3">
 
 {slots.map(slot=>(
+
 <button
 key={slot.id}
 onClick={()=>setSelectedSlot(slot.id)}
-className={`p-2 rounded border ${
-selectedSlot === slot.id
+className={`p-3 rounded-lg border text-sm font-medium transition
+${selectedSlot === slot.id
 ? "bg-tiger-green text-white"
-: ""
-}`}
+: "bg-white hover:bg-gray-100"}`}
+
 >
 
 {slot.start_time.slice(0,5)}
 
 </button>
+
 ))}
 
 </div>
 
 <button
 onClick={updateSlot}
-className="mt-4 bg-tiger-green text-white px-4 py-2 rounded">
+className="mt-4 bg-tiger-green text-white px-6 py-2 rounded-lg"
+>
 
 Cambiar horario
 
@@ -385,27 +508,37 @@ Cambiar horario
 
 )}
 
-{/* CANCELAR */}
 
-<div className="mt-10">
+{/* CANCELAR */}
 
 <button
 onClick={cancelReservation}
-className="bg-red-500 text-white px-6 py-2 rounded">
+className="bg-red-500 text-white px-6 py-2 rounded-lg hover:opacity-90"
+>
 
 {cancelLoading ? "Cancelando..." : "Cancelar reserva"}
 
 </button>
 
-</div>
 
 </div>
 
 )}
+
+
+</div>
+
+)}
+
 
 {message && (
-<p className="mt-6 text-center">{message}</p>
+
+<div className="mt-6 text-center text-sm font-medium text-tiger-green">
+{message}
+</div>
+
 )}
+
 
 </div>
 
