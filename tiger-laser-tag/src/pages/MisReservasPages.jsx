@@ -24,6 +24,7 @@ export default function MisReservas() {
   const [updateLoading,setUpdateLoading] = useState(false);
   const [cancelLoading,setCancelLoading] = useState(false);
 
+
   /* =========================
      BUSCAR RESERVA
   ========================= */
@@ -55,20 +56,15 @@ export default function MisReservas() {
       const data = await res.json();
 
       if(!res.ok){
-
         setError(data.error || "No se encontró la reserva");
         setLoading(false);
         return;
-
       }
 
       const r = data.reservation;
 
       setReservation(r);
       setPeople(r.people);
-
-      setSelectedDate(r.time_slots?.date);
-      setSelectedSlot(r.time_slots);
 
     }catch(err){
 
@@ -80,6 +76,7 @@ export default function MisReservas() {
     setLoading(false);
 
   }
+
 
   /* =========================
      CALCULO PRECIO
@@ -94,6 +91,7 @@ export default function MisReservas() {
   const newTotal = pricePerPerson * (people || 0);
 
   const extra = Math.max(newTotal - originalTotal,0);
+
 
   /* =========================
      ACTUALIZAR JUGADORES
@@ -140,9 +138,6 @@ export default function MisReservas() {
 
       }else{
 
-        setReservation(data.reservation);
-        setPeople(data.reservation.people);
-
         window.location.reload();
 
       }
@@ -157,6 +152,7 @@ export default function MisReservas() {
     setUpdateLoading(false);
 
   }
+
 
   /* =========================
      CAMBIAR SLOT
@@ -207,8 +203,9 @@ export default function MisReservas() {
 
   }
 
+
   /* =========================
-     CANCELAR RESERVA
+     CANCELAR
   ========================= */
 
   async function cancelReservation(){
@@ -258,42 +255,6 @@ export default function MisReservas() {
 
   }
 
-  /* =========================
-     PASARELA DE PAGO
-  ========================= */
-
-  async function goToPayment(){
-
-    try{
-
-      const res = await fetch("/api/createPayment",{
-
-        method:"POST",
-        headers:{
-          "Content-Type":"application/json"
-        },
-
-        body:JSON.stringify({
-          code,
-          email,
-          amount:extraPayment
-        })
-
-      });
-
-      const data = await res.json();
-
-      if(data.url){
-        window.location.href = data.url;
-      }
-
-    }catch(err){
-
-      console.error(err);
-
-    }
-
-  }
 
   function formatDate(date){
 
@@ -311,11 +272,15 @@ export default function MisReservas() {
     return time?.slice(0,5) || "-";
   }
 
+
   return (
 
 <section className="py-20 bg-tiger-cream min-h-screen">
 
 <div className="container mx-auto px-4 max-w-2xl">
+
+
+{/* BUSCADOR */}
 
 <form
 onSubmit={handleSearch}
@@ -360,9 +325,15 @@ className="w-full bg-tiger-orange text-white py-3 rounded-lg"
 
 </form>
 
+
+{/* RESERVA */}
+
 {reservation && (
 
 <div className="mt-10 bg-white rounded-2xl shadow-xl p-8 border space-y-8">
+
+
+{/* RESUMEN */}
 
 <div className="space-y-3 text-sm">
 
@@ -383,6 +354,9 @@ className="w-full bg-tiger-orange text-white py-3 rounded-lg"
 
 </div>
 
+
+{/* JUGADORES */}
+
 <div className="flex items-center justify-between">
 
 <span>Jugadores</span>
@@ -396,6 +370,9 @@ className="border rounded-lg px-3 py-1 w-20 text-center"
 />
 
 </div>
+
+
+{/* PRECIO */}
 
 <div className="border-t pt-4 space-y-2">
 
@@ -425,6 +402,7 @@ className="border rounded-lg px-3 py-1 w-20 text-center"
 
 </div>
 
+
 <button
 onClick={updatePlayers}
 className="bg-tiger-green text-white px-6 py-2 rounded-lg"
@@ -434,18 +412,8 @@ className="bg-tiger-green text-white px-6 py-2 rounded-lg"
 
 </button>
 
-{showPayment && (
 
-<button
-onClick={goToPayment}
-className="w-full bg-tiger-orange text-white py-3 rounded-lg"
->
-
-Continuar al pago
-
-</button>
-
-)}
+{/* CALENDARIO */}
 
 <CalendarPicker
 initialDate={reservation?.time_slots?.date}
@@ -457,12 +425,15 @@ setSelectedSlot(null)
 }}
 />
 
+
+{/* SLOT PICKER SOLO SI SE SELECCIONA FECHA */}
+
 {selectedDate && (
 
 <SlotPicker
 date={selectedDate}
 people={people}
-initialSlot={reservation?.time_slots}
+reservedSlot={reservation?.time_slots}
 onSelectSlot={(slot)=>{
 
 setSelectedSlot(slot)
@@ -472,13 +443,12 @@ setSelectedSlot(slot)
 
 )}
 
-<div className="flex flex-col gap-4 pt-4">
 
 {selectedSlot && (
 
 <button
 onClick={updateSlot}
-className="bg-tiger-green text-white px-6 py-3 rounded-lg"
+className="bg-tiger-green text-white px-6 py-3 rounded-lg w-full"
 >
 
 Cambiar horario
@@ -487,16 +457,16 @@ Cambiar horario
 
 )}
 
+
 <button
 onClick={cancelReservation}
-className="bg-red-500 text-white px-6 py-3 rounded-lg"
+className="bg-red-500 text-white px-6 py-3 rounded-lg w-full"
 >
 
 {cancelLoading ? "Cancelando..." : "Cancelar reserva"}
 
 </button>
 
-</div>
 
 </div>
 
