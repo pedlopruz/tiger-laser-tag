@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-export default function CalendarPicker({ onSelectDate }) {
+export default function CalendarPicker({ onSelectDate, initialDate }) {
 
   const today = new Date();
 
@@ -9,11 +9,19 @@ export default function CalendarPicker({ onSelectDate }) {
   );
 
   const [availableDays, setAvailableDays] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(null);
+
+  const [selectedDate,setSelectedDate] = useState(initialDate || null)
+
 
   useEffect(() => {
     loadAvailability();
   }, [currentMonth]);
+
+  useEffect(()=>{
+  if(initialDate){
+  setSelectedDate(initialDate)
+  }
+  },[initialDate])
 
   async function loadAvailability() {
 

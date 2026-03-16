@@ -24,6 +24,9 @@ export default function MisReservas() {
   const [updateLoading,setUpdateLoading] = useState(false);
   const [cancelLoading,setCancelLoading] = useState(false);
 
+  /* =========================
+     BUSCAR RESERVA
+  ========================= */
 
   async function handleSearch(e){
 
@@ -52,15 +55,16 @@ export default function MisReservas() {
       const data = await res.json();
 
       if(!res.ok){
-
         setError(data.error || "No se encontró la reserva");
         setLoading(false);
         return;
-
       }
 
       setReservation(data.reservation);
+
       setPeople(data.reservation.people);
+
+      setSelectedDate(data.reservation.time_slots?.date);
 
     }catch(err){
 
@@ -73,9 +77,8 @@ export default function MisReservas() {
 
   }
 
-
   /* =========================
-     CALCULO DE PRECIO
+     CALCULO PRECIO
   ========================= */
 
   const pricePerPerson = reservation?.plans?.price || 0;
@@ -87,7 +90,6 @@ export default function MisReservas() {
   const newTotal = pricePerPerson * (people || 0);
 
   const extra = Math.max(newTotal - originalTotal,0);
-
 
   /* =========================
      ACTUALIZAR JUGADORES
@@ -136,6 +138,8 @@ export default function MisReservas() {
       }else{
 
         setReservation(data.reservation);
+        setPeople(data.reservation.people);
+
         setMessage("Reserva actualizada correctamente");
 
       }
@@ -150,7 +154,6 @@ export default function MisReservas() {
     setUpdateLoading(false);
 
   }
-
 
   /* =========================
      CAMBIAR SLOT
@@ -192,8 +195,10 @@ export default function MisReservas() {
 
       setReservation(data.reservation);
 
-      setSelectedDate(null);
+      setSelectedDate(data.reservation.time_slots?.date);
       setSelectedSlot(null);
+
+      setPeople(data.reservation.people);
 
       setMessage("Horario actualizado correctamente");
 
@@ -208,9 +213,8 @@ export default function MisReservas() {
 
   }
 
-
   /* =========================
-     CANCELAR
+     CANCELAR RESERVA
   ========================= */
 
   async function cancelReservation(){
@@ -261,7 +265,6 @@ export default function MisReservas() {
 
   }
 
-
   /* =========================
      PASARELA DE PAGO
   ========================= */
@@ -288,9 +291,7 @@ export default function MisReservas() {
       const data = await res.json();
 
       if(data.url){
-
         window.location.href = data.url;
-
       }
 
     }catch(err){
@@ -301,10 +302,9 @@ export default function MisReservas() {
 
   }
 
-
   function formatDate(date){
 
-    if(!date) return "";
+    if(!date) return "-";
 
     return new Date(date).toLocaleDateString("es-ES",{
       weekday:"long",
@@ -315,11 +315,8 @@ export default function MisReservas() {
   }
 
   function formatTime(time){
-
-    return time?.slice(0,5);
-
+    return time?.slice(0,5) || "-";
   }
-
 
   return (
 
@@ -327,8 +324,9 @@ export default function MisReservas() {
 
 <div className="container mx-auto px-4 max-w-2xl">
 
-
-{/* BUSCADOR */}
+{/* =========================
+   BUSCADOR
+========================= */}
 
 <form
 onSubmit={handleSearch}
@@ -365,7 +363,6 @@ className="w-full bg-tiger-orange text-white py-3 rounded-lg"
 
 </button>
 
-
 {error && (
 
 <div className="text-red-500 text-sm text-center">
@@ -376,13 +373,13 @@ className="w-full bg-tiger-orange text-white py-3 rounded-lg"
 
 </form>
 
-
-{/* RESERVA */}
+{/* =========================
+   RESERVA
+========================= */}
 
 {reservation && (
 
 <div className="mt-10 bg-white rounded-2xl shadow-xl p-8 border space-y-8">
-
 
 {/* RESUMEN */}
 
@@ -405,7 +402,6 @@ className="w-full bg-tiger-orange text-white py-3 rounded-lg"
 
 </div>
 
-
 {/* JUGADORES */}
 
 <div className="flex items-center justify-between">
@@ -422,25 +418,20 @@ className="border rounded-lg px-3 py-1 w-20 text-center"
 
 </div>
 
-
 {/* PRECIO */}
 
 <div className="border-t pt-4 space-y-2">
 
 <div className="flex justify-between text-sm">
-
 <span>Reserva original</span>
 <span>{originalTotal}€</span>
-
 </div>
 
 {extra > 0 && (
 
 <div className="flex justify-between text-sm text-tiger-orange">
-
 <span>Jugadores añadidos</span>
 <span>+{extra}€</span>
-
 </div>
 
 )}
@@ -450,15 +441,12 @@ className="border rounded-lg px-3 py-1 w-20 text-center"
 <span>Total a pagar</span>
 
 <span className="text-tiger-orange">
-
 {extra}€
-
 </span>
 
 </div>
 
 </div>
-
 
 <button
 onClick={updatePlayers}
@@ -469,15 +457,12 @@ className="bg-tiger-green text-white px-6 py-2 rounded-lg"
 
 </button>
 
-
 {showPayment && extraPayment > 0 && (
 
 <div className="bg-orange-50 border rounded-lg p-4">
 
 <p className="text-sm mb-3">
-
 Debes pagar <b>{extraPayment}€</b> por los jugadores añadidos.
-
 </p>
 
 <button
@@ -493,10 +478,10 @@ Continuar al pago
 
 )}
 
-
 {/* CAMBIAR FECHA */}
 
 <CalendarPicker
+initialDate={reservation?.time_slots?.date}
 onSelectDate={(date)=>{
 
 setSelectedDate(date);
@@ -504,7 +489,6 @@ setSelectedSlot(null);
 
 }}
 />
-
 
 {selectedDate && (
 
@@ -520,12 +504,15 @@ setSelectedSlot(slot);
 
 )}
 
+{/* BOTONES */}
+
+<div className="flex flex-col gap-4 pt-4">
 
 {selectedSlot && (
 
 <button
 onClick={updateSlot}
-className="bg-tiger-green text-white px-6 py-2 rounded-lg"
+className="bg-tiger-green text-white px-6 py-3 rounded-lg"
 >
 
 Cambiar horario
@@ -534,21 +521,20 @@ Cambiar horario
 
 )}
 
-
 <button
 onClick={cancelReservation}
-className="bg-red-500 text-white px-6 py-2 rounded-lg"
+className="bg-red-500 text-white px-6 py-3 rounded-lg"
 >
 
 {cancelLoading ? "Cancelando..." : "Cancelar reserva"}
 
 </button>
 
+</div>
 
 </div>
 
 )}
-
 
 {message && (
 
