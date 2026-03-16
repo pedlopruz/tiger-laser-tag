@@ -431,14 +431,12 @@ setSelectedSlot(null)
 {selectedDate && (
 
 <SlotPicker
-date={selectedDate}
-people={people}
-reservedSlot={reservation?.time_slots}
-onSelectSlot={(slot)=>{
-
-setSelectedSlot(slot)
-
-}}
+  date={selectedDate}
+  people={people}
+  reservedSlot={{
+    id: reservation?.slot_id
+  }}
+  onSelectSlot={(slot)=>setSelectedSlot(slot)}
 />
 
 )}
