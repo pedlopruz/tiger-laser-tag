@@ -319,8 +319,8 @@ async function changeReservation(req, res) {
     }
 
     /* --------------------------
-       4️⃣ Cambiar slot
-    -------------------------- */
+   4️⃣ Cambiar slot
+-------------------------- */
 
     if (newSlotId) {
 
@@ -330,17 +330,36 @@ async function changeReservation(req, res) {
         });
       }
 
-      const { data: newSlot, error: slotError } = await supabaseAdmin
+      const oldSlotId = reservation.slot_id;
+      const planId = reservation.plan_id;
+
+      /* obtener plan */
+
+      const { data: plan } = await supabaseAdmin
+        .from("plans")
+        .select("max_players")
+        .eq("id", planId)
+        .single();
+
+      if (!plan) {
+        return res.status(404).json({ error: "Plan no encontrado" });
+      }
+
+      /* bloquear nuevo slot */
+
+      const { data: newSlot } = await supabaseAdmin
         .from("time_slots")
         .select("*")
         .eq("id", newSlotId)
         .single();
 
-      if (slotError || !newSlot) {
+      if (!newSlot) {
         return res.status(404).json({
           error: "Nuevo horario no encontrado"
         });
       }
+
+      /* validar horario futuro */
 
       const newSlotDateTime = new Date(
         `${newSlot.date}T${newSlot.start_time}`
@@ -352,21 +371,81 @@ async function changeReservation(req, res) {
         });
       }
 
-      const { data: reservations } = await supabaseAdmin
+      /* comprobar plan del slot */
+
+      if (newSlot.plan_id && newSlot.plan_id !== planId) {
+        return res.status(409).json({
+          error: "Este horario ya está reservado con otro plan"
+        });
+      }
+
+      /* contar reservas del nuevo slot */
+
+      const { data: reservationsNew } = await supabaseAdmin
         .from("reservations")
         .select("people")
         .eq("slot_id", newSlotId)
         .eq("status", "confirmed");
 
-      const reserved = (reservations || []).reduce(
+      const reservedNew = (reservationsNew || []).reduce(
         (sum, r) => sum + (r.people || 0),
         0
       );
 
-      if (reserved + reservation.people > newSlot.max_capacity) {
+      const capacityNew = newSlot.plan_id
+        ? newSlot.max_capacity
+        : plan.max_players;
+
+      if (reservedNew + reservation.people > capacityNew) {
         return res.status(409).json({
           error: "No hay plazas en el nuevo horario"
         });
+      }
+
+      /* asignar plan al nuevo slot si está vacío */
+
+      if (!newSlot.plan_id) {
+        await supabaseAdmin
+          .from("time_slots")
+          .update({
+            plan_id: planId,
+            max_capacity: plan.max_players
+          })
+          .eq("id", newSlotId);
+      }
+
+      /* actualizar reserva */
+
+      updateData.slot_id = newSlotId;
+
+      /* --------------------------
+        recalcular slot antiguo
+      -------------------------- */
+
+      const { data: oldReservations } = await supabaseAdmin
+        .from("reservations")
+        .select("people")
+        .eq("slot_id", oldSlotId)
+        .eq("status", "confirmed")
+        .neq("id", reservation.id);
+
+      const reservedOld = (oldReservations || []).reduce(
+        (sum, r) => sum + (r.people || 0),
+        0
+      );
+
+      /* si no queda nadie en el slot → resetear */
+
+      if (reservedOld === 0) {
+
+        await supabaseAdmin
+          .from("time_slots")
+          .update({
+            plan_id: null,
+            max_capacity: null
+          })
+          .eq("id", oldSlotId);
+
       }
 
     }
