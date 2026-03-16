@@ -1,10 +1,10 @@
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "../../lib/supabaseClient";
 
-export default function SlotPicker({ date, people = 1, onSelectSlot }) {
+export default function SlotPicker({ date, people = 1, onSelectSlot, initialSlot }) {
 
   const [slots, setSlots] = useState([]);
-  const [selectedSlot, setSelectedSlot] = useState(null);
+  const [selectedSlot, setSelectedSlot] = useState(initialSlot || null);
   const [loading, setLoading] = useState(false);
 
   const refreshTimeout = useRef(null);
@@ -64,6 +64,14 @@ export default function SlotPicker({ date, people = 1, onSelectSlot }) {
     }
 
   }, [date]);
+
+  useEffect(()=>{
+
+    if(initialSlot){
+      setSelectedSlot(initialSlot)
+    }
+
+  },[initialSlot])
 
   /* --------------------------
      Realtime updates

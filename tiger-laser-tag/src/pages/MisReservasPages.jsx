@@ -55,16 +55,20 @@ export default function MisReservas() {
       const data = await res.json();
 
       if(!res.ok){
+
         setError(data.error || "No se encontró la reserva");
         setLoading(false);
         return;
+
       }
 
-      setReservation(data.reservation);
+      const r = data.reservation;
 
-      setPeople(data.reservation.people);
+      setReservation(r);
+      setPeople(r.people);
 
-      setSelectedDate(data.reservation.time_slots?.date);
+      setSelectedDate(r.time_slots?.date);
+      setSelectedSlot(r.time_slots);
 
     }catch(err){
 
@@ -100,7 +104,6 @@ export default function MisReservas() {
     if(!people) return;
 
     setUpdateLoading(true);
-    setMessage("");
 
     try{
 
@@ -140,7 +143,7 @@ export default function MisReservas() {
         setReservation(data.reservation);
         setPeople(data.reservation.people);
 
-        setMessage("Reserva actualizada correctamente");
+        window.location.reload();
 
       }
 
@@ -193,14 +196,7 @@ export default function MisReservas() {
 
       }
 
-      setReservation(data.reservation);
-
-      setSelectedDate(data.reservation.time_slots?.date);
-      setSelectedSlot(null);
-
-      setPeople(data.reservation.people);
-
-      setMessage("Horario actualizado correctamente");
+      window.location.reload();
 
     }catch(err){
 
@@ -208,8 +204,6 @@ export default function MisReservas() {
       setMessage("Error cambiando horario");
 
     }
-
-    setUpdateLoading(false);
 
   }
 
@@ -251,8 +245,7 @@ export default function MisReservas() {
       }
 
       setReservation(data.reservation);
-
-      setMessage("Reserva cancelada correctamente");
+      setMessage("Reserva cancelada");
 
     }catch(err){
 
@@ -324,16 +317,12 @@ export default function MisReservas() {
 
 <div className="container mx-auto px-4 max-w-2xl">
 
-{/* =========================
-   BUSCADOR
-========================= */}
-
 <form
 onSubmit={handleSearch}
 className="bg-white p-8 rounded-2xl shadow-lg space-y-6 border"
 >
 
-<h1 className="text-4xl font-heading font-bold text-tiger-green text-center">
+<h1 className="text-4xl font-bold text-tiger-green text-center">
 Consultar reserva
 </h1>
 
@@ -364,24 +353,16 @@ className="w-full bg-tiger-orange text-white py-3 rounded-lg"
 </button>
 
 {error && (
-
 <div className="text-red-500 text-sm text-center">
 {error}
 </div>
-
 )}
 
 </form>
 
-{/* =========================
-   RESERVA
-========================= */}
-
 {reservation && (
 
 <div className="mt-10 bg-white rounded-2xl shadow-xl p-8 border space-y-8">
-
-{/* RESUMEN */}
 
 <div className="space-y-3 text-sm">
 
@@ -402,8 +383,6 @@ className="w-full bg-tiger-orange text-white py-3 rounded-lg"
 
 </div>
 
-{/* JUGADORES */}
-
 <div className="flex items-center justify-between">
 
 <span>Jugadores</span>
@@ -417,8 +396,6 @@ className="border rounded-lg px-3 py-1 w-20 text-center"
 />
 
 </div>
-
-{/* PRECIO */}
 
 <div className="border-t pt-4 space-y-2">
 
@@ -457,35 +434,25 @@ className="bg-tiger-green text-white px-6 py-2 rounded-lg"
 
 </button>
 
-{showPayment && extraPayment > 0 && (
-
-<div className="bg-orange-50 border rounded-lg p-4">
-
-<p className="text-sm mb-3">
-Debes pagar <b>{extraPayment}€</b> por los jugadores añadidos.
-</p>
+{showPayment && (
 
 <button
 onClick={goToPayment}
-className="w-full bg-tiger-orange text-white py-3 rounded-lg font-semibold"
+className="w-full bg-tiger-orange text-white py-3 rounded-lg"
 >
 
 Continuar al pago
 
 </button>
 
-</div>
-
 )}
-
-{/* CAMBIAR FECHA */}
 
 <CalendarPicker
 initialDate={reservation?.time_slots?.date}
 onSelectDate={(date)=>{
 
-setSelectedDate(date);
-setSelectedSlot(null);
+setSelectedDate(date)
+setSelectedSlot(null)
 
 }}
 />
@@ -495,16 +462,15 @@ setSelectedSlot(null);
 <SlotPicker
 date={selectedDate}
 people={people}
+initialSlot={reservation?.time_slots}
 onSelectSlot={(slot)=>{
 
-setSelectedSlot(slot);
+setSelectedSlot(slot)
 
 }}
 />
 
 )}
-
-{/* BOTONES */}
 
 <div className="flex flex-col gap-4 pt-4">
 
