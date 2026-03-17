@@ -234,9 +234,12 @@ async function changeReservation(req, res) {
     const { data: reservation, error } = await supabaseAdmin
       .from("reservations")
       .select(`
-        *,
+        id,
+        people,
+        plan_id,
+        status,
         plans(price, max_players),
-        time_slots(id, date, start_time, max_capacity)
+        time_slots(date, start_time)
       `)
       .eq("reservation_code", code)
       .eq("email", email)
@@ -272,209 +275,89 @@ async function changeReservation(req, res) {
       });
     }
 
-    /* --------------------------
-       preparar actualización
-    -------------------------- */
-
-    const updateData = {};
-
-    /* --------------------------
-       3️⃣ Cambiar jugadores
-    -------------------------- */
-
     let extraPayment = 0;
 
-    if (people) {
+    /* --------------------------
+       3️⃣ Cambiar jugadores (solo)
+    -------------------------- */
+
+    if (people && !newSlotId) {
 
       const newPeople = Number(people);
 
       if (newPeople <= reservation.people) {
         return res.status(400).json({
-          error: "Solo puedes añadir jugadores, no reducirlos"
+          error: "Solo puedes añadir jugadores"
         });
       }
 
       if (newPeople > reservation.plans.max_players) {
         return res.status(409).json({
-          error: `Este plan admite máximo ${reservation.plans.max_players} jugadores`
+          error: `Máximo ${reservation.plans.max_players} jugadores`
         });
       }
 
       const addedPlayers = newPeople - reservation.people;
-
-      const { data: reservations } = await supabaseAdmin
-        .from("reservations")
-        .select("people")
-        .eq("slot_id", reservation.slot_id)
-        .eq("status", "confirmed");
-
-      const reserved = (reservations || []).reduce(
-        (sum, r) => sum + (r.people || 0),
-        0
-      );
-
-      const newTotal = reserved - reservation.people + newPeople;
-
-      if (newTotal > reservation.time_slots.max_capacity) {
-        return res.status(409).json({
-          error: "No hay plazas suficientes en este horario"
-        });
-      }
-
       extraPayment = addedPlayers * reservation.plans.price;
 
-      updateData.people = newPeople;
-    }
-
-    /* --------------------------
-       4️⃣ Cambiar slot
-    -------------------------- */
-
-    if (newSlotId) {
-
-      if (people) {
-        return res.status(400).json({
-          error: "No puedes cambiar jugadores y horario al mismo tiempo"
-        });
-      }
-
-      const oldSlotId = reservation.slot_id;
-      const planId = reservation.plan_id;
-
-      /* obtener plan */
-
-      const { data: plan } = await supabaseAdmin
-        .from("plans")
-        .select("max_players")
-        .eq("id", planId)
-        .single();
-
-      if (!plan) {
-        return res.status(404).json({
-          error: "Plan no encontrado"
-        });
-      }
-
-      /* obtener nuevo slot */
-
-      const { data: newSlot } = await supabaseAdmin
-        .from("time_slots")
-        .select("*")
-        .eq("id", newSlotId)
-        .single();
-
-      if (!newSlot) {
-        return res.status(404).json({
-          error: "Nuevo horario no encontrado"
-        });
-      }
-
-      /* validar horario futuro */
-
-      const newSlotDateTime = new Date(
-        `${newSlot.date}T${newSlot.start_time}`
-      );
-
-      if (newSlotDateTime <= now) {
-        return res.status(400).json({
-          error: "Debes elegir un horario futuro"
-        });
-      }
-
-      /* validar plan del slot */
-
-      if (newSlot.plan_id && newSlot.plan_id !== planId) {
-        return res.status(409).json({
-          error: "Este horario ya tiene otro plan reservado"
-        });
-      }
-
-      /* contar reservas del nuevo slot */
-
-      const { data: reservationsNew } = await supabaseAdmin
+      const { error: updateError } = await supabaseAdmin
         .from("reservations")
-        .select("people")
-        .eq("slot_id", newSlotId)
-        .eq("status", "confirmed");
+        .update({ people: newPeople })
+        .eq("id", reservation.id);
 
-      const reservedNew = (reservationsNew || []).reduce(
-        (sum, r) => sum + (r.people || 0),
-        0
-      );
-
-      const capacityNew = newSlot.plan_id
-        ? newSlot.max_capacity
-        : plan.max_players;
-
-      if (reservedNew + reservation.people > capacityNew) {
-        return res.status(409).json({
-          error: "No hay plazas suficientes en el nuevo horario"
+      if (updateError) {
+        return res.status(500).json({
+          error: updateError.message
         });
-      }
-
-      /* asignar plan al nuevo slot si está vacío */
-
-      if (!newSlot.plan_id) {
-
-        await supabaseAdmin
-          .from("time_slots")
-          .update({
-            plan_id: planId,
-            max_capacity: plan.max_players
-          })
-          .eq("id", newSlotId);
-
-      }
-
-      updateData.slot_id = newSlotId;
-
-      /* --------------------------
-         recalcular slot antiguo
-      -------------------------- */
-
-      const { data: oldReservations } = await supabaseAdmin
-        .from("reservations")
-        .select("people")
-        .eq("slot_id", oldSlotId)
-        .eq("status", "confirmed")
-        .neq("id", reservation.id);
-
-      const reservedOld = (oldReservations || []).reduce(
-        (sum, r) => sum + (r.people || 0),
-        0
-      );
-
-      if (reservedOld === 0) {
-
-        await supabaseAdmin
-          .from("time_slots")
-          .update({
-            plan_id: null,
-            max_capacity: null
-          })
-          .eq("id", oldSlotId);
-
       }
 
     }
 
     /* --------------------------
-       5️⃣ Actualizar reserva
+       4️⃣ Cambiar slot (usar SQL seguro)
     -------------------------- */
 
-    const { data: updatedReservation, error: updateError } =
-      await supabaseAdmin
-        .from("reservations")
-        .update(updateData)
-        .eq("id", reservation.id)
-        .select()
-        .single();
+    if (newSlotId && !people) {
 
-    if (updateError) {
-      return res.status(500).json({
-        error: updateError.message
+      const { error: rpcError } = await supabaseAdmin.rpc(
+        "change_reservation_safe",
+        {
+          p_reservation_id: reservation.id,
+          p_new_slot_id: newSlotId
+        }
+      );
+
+      if (rpcError) {
+        return res.status(400).json({
+          error: rpcError.message
+        });
+      }
+
+    }
+
+    /* --------------------------
+       ❌ No permitir ambos
+    -------------------------- */
+
+    if (people && newSlotId) {
+      return res.status(400).json({
+        error: "No puedes cambiar jugadores y horario al mismo tiempo"
       });
     }
+
+    /* --------------------------
+       5️⃣ Obtener reserva actualizada
+    -------------------------- */
+
+    const { data: updatedReservation } = await supabaseAdmin
+      .from("reservations")
+      .select(`
+        *,
+        plans(price),
+        time_slots(date, start_time)
+      `)
+      .eq("id", reservation.id)
+      .single();
 
     /* --------------------------
        6️⃣ Respuesta final
