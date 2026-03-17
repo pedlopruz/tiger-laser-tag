@@ -382,7 +382,6 @@ async function changeReservation(req, res) {
 }
 
 
-
 async function createReservation(req, res) {
 
   if (req.method !== "POST") {
