@@ -12,37 +12,37 @@ export default function BookingLayout() {
   const navigate = useNavigate();
 
   const [date, setDate] = useState(null);
-  const [slot, setSlot] = useState(null);
+  const [selectedSlots, setSelectedSlots] = useState([]);
   const [plan, setPlan] = useState(null);
   const [people, setPeople] = useState(2);
   const [showForm, setShowForm] = useState(false);
 
   function handleConfirm() {
 
+    if (!selectedSlots.length || !plan) return;
+
     setShowForm(true);
 
     setTimeout(() => {
-
       document
         .getElementById("reservation-form")
         ?.scrollIntoView({
           behavior: "smooth",
           block: "start"
         });
-
     }, 100);
 
   }
 
   function handleReservationSuccess(data){
-
     navigate(`/reserva-confirmada?code=${data.code}`);
-
   }
 
   return (
 
     <div className="grid lg:grid-cols-2 gap-10">
+
+      {/* LEFT */}
 
       <div className="bg-white p-6 rounded-xl shadow space-y-8">
 
@@ -52,18 +52,20 @@ export default function BookingLayout() {
           <SlotPicker
             date={date}
             people={people}
-            onSelectSlot={setSlot}
+            onSelectSlots={setSelectedSlots}
           />
         )}
 
-        {slot && (
+        {selectedSlots.length > 0 && (
           <PlanPicker 
-            slot={slot}
+            selectedSlots={selectedSlots}
             onSelectPlan={setPlan}
           />
         )}
 
       </div>
+
+      {/* RIGHT */}
 
       <div className="lg:sticky lg:top-28 h-fit">
 
@@ -71,7 +73,7 @@ export default function BookingLayout() {
 
           <BookingSummary
             date={date}
-            slot={slot}
+            slots={selectedSlots}
             plan={plan}
             people={people}
             setPeople={setPeople}
@@ -87,7 +89,7 @@ export default function BookingLayout() {
             >
 
               <ReservationForm
-                slot={slot}
+                selectedSlots={selectedSlots}
                 plan={plan}
                 people={people}
                 onSuccess={handleReservationSuccess}
