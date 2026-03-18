@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 
-export default function CalendarPicker({ onSelectDate }) {
+export default function CalendarPicker({ onSelectDate, initialDate }) {
 
   const today = new Date();
 
@@ -9,40 +9,77 @@ export default function CalendarPicker({ onSelectDate }) {
   );
 
   const [availableDays, setAvailableDays] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(initialDate || null);
 
+  /* --------------------------
+     Optimización: Set O(1)
+  -------------------------- */
+  const availableSet = useMemo(() => {
+    return new Set(availableDays);
+  }, [availableDays]);
+
+  /* --------------------------
+     Cargar disponibilidad
+  -------------------------- */
   useEffect(() => {
     loadAvailability();
   }, [currentMonth]);
 
+  /* --------------------------
+     Sync initialDate
+  -------------------------- */
+  useEffect(() => {
+    if (initialDate) {
+      setSelectedDate(initialDate);
+    }
+  }, [initialDate]);
+
+  /* --------------------------
+     Limpiar selección inválida
+  -------------------------- */
+  useEffect(() => {
+    if (selectedDate && !availableSet.has(selectedDate)) {
+      setSelectedDate(null);
+    }
+  }, [availableSet]);
+
   async function loadAvailability() {
 
-    const y = currentMonth.getFullYear();
-    const m = String(currentMonth.getMonth() + 1).padStart(2, "0");
+    try {
+      const y = currentMonth.getFullYear();
+      const m = String(currentMonth.getMonth() + 1).padStart(2, "0");
 
-    const month = `${y}-${m}`;
+      const month = `${y}-${m}`;
 
-    const res = await fetch(`/api/getAvailability?month=${month}`);
-    const data = await res.json();
+      const res = await fetch(`/api/getAvailability?month=${month}`);
 
-    setAvailableDays(data.availableDays || []);
-    console.log("API days", data.availableDays);
-    console.log("Example date", formatDate(1));
+      if (!res.ok) {
+        console.error("Error loading availability");
+        return;
+      }
+
+      const data = await res.json();
+
+      setAvailableDays(data.availableDays || []);
+
+    } catch (err) {
+      console.error("Error fetching availability:", err);
+    }
   }
 
   function daysInMonth(date) {
-    return new Date(date.getFullYear(), date.getMonth()+1,0).getDate();
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
   }
 
   function startDay(date) {
-    const day = new Date(date.getFullYear(),date.getMonth(),1).getDay();
+    const day = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
     return (day + 6) % 7; // lunes como primer día
   }
 
   function changeMonth(offset) {
     const newDate = new Date(
       currentMonth.getFullYear(),
-      currentMonth.getMonth()+offset,
+      currentMonth.getMonth() + offset,
       1
     );
 
@@ -52,8 +89,8 @@ export default function CalendarPicker({ onSelectDate }) {
   function formatDate(day) {
 
     const y = currentMonth.getFullYear();
-    const m = String(currentMonth.getMonth()+1).padStart(2,"0");
-    const d = String(day).padStart(2,"0");
+    const m = String(currentMonth.getMonth() + 1).padStart(2, "0");
+    const d = String(day).padStart(2, "0");
 
     return `${y}-${m}-${d}`;
   }
@@ -62,11 +99,11 @@ export default function CalendarPicker({ onSelectDate }) {
 
     const dateStr = formatDate(day);
 
-    if(!availableDays.includes(dateStr)) return;
+    if (!availableSet.has(dateStr)) return;
 
     setSelectedDate(dateStr);
 
-    if(onSelectDate){
+    if (onSelectDate) {
       onSelectDate(dateStr);
     }
   }
@@ -74,18 +111,18 @@ export default function CalendarPicker({ onSelectDate }) {
   const totalDays = daysInMonth(currentMonth);
   const startOffset = startDay(currentMonth);
 
-  const monthName = currentMonth.toLocaleString("es-ES",{
-    month:"long",
-    year:"numeric"
+  const monthName = currentMonth.toLocaleString("es-ES", {
+    month: "long",
+    year: "numeric"
   });
 
   const cells = [];
 
-  for(let i=0;i<startOffset;i++){
+  for (let i = 0; i < startOffset; i++) {
     cells.push(null);
   }
 
-  for(let d=1; d<=totalDays; d++){
+  for (let d = 1; d <= totalDays; d++) {
     cells.push(d);
   }
 
@@ -98,7 +135,7 @@ export default function CalendarPicker({ onSelectDate }) {
       <div className="flex justify-between items-center mb-6">
 
         <button
-          onClick={()=>changeMonth(-1)}
+          onClick={() => changeMonth(-1)}
           className="px-3 py-1 rounded hover:bg-gray-100"
         >
           ←
@@ -109,7 +146,7 @@ export default function CalendarPicker({ onSelectDate }) {
         </h2>
 
         <button
-          onClick={()=>changeMonth(1)}
+          onClick={() => changeMonth(1)}
           className="px-3 py-1 rounded hover:bg-gray-100"
         >
           →
@@ -135,22 +172,22 @@ export default function CalendarPicker({ onSelectDate }) {
 
       <div className="grid grid-cols-7 gap-2">
 
-        {cells.map((day,index)=>{
+        {cells.map((day, index) => {
 
-          if(!day){
+          if (!day) {
             return <div key={index}></div>;
           }
 
           const dateStr = formatDate(day);
 
-          const isAvailable = availableDays.includes(dateStr);
+          const isAvailable = availableSet.has(dateStr);
           const isSelected = selectedDate === dateStr;
 
           return (
 
             <button
               key={index}
-              onClick={()=>handleSelect(day)}
+              onClick={() => handleSelect(day)}
               disabled={!isAvailable}
               className={`
                 h-10 rounded-lg text-sm font-medium

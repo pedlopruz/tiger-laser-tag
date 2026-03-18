@@ -1,10 +1,15 @@
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "../../lib/supabaseClient";
 
-export default function SlotPicker({ date, people = 1, onSelectSlot }) {
+export default function SlotPicker({
+  date,
+  people = 1,
+  onSelectSlots,
+  initialSlots = []
+}) {
 
   const [slots, setSlots] = useState([]);
-  const [selectedSlot, setSelectedSlot] = useState(null);
+  const [selectedSlots, setSelectedSlots] = useState(initialSlots);
   const [loading, setLoading] = useState(false);
 
   const refreshTimeout = useRef(null);
@@ -38,7 +43,7 @@ export default function SlotPicker({ date, people = 1, onSelectSlot }) {
   }
 
   /* --------------------------
-     Debounce refresh
+     Realtime updates
   -------------------------- */
 
   function refreshSlots() {
@@ -47,27 +52,17 @@ export default function SlotPicker({ date, people = 1, onSelectSlot }) {
       clearTimeout(refreshTimeout.current);
     }
 
-    refreshTimeout.current = setTimeout(() => {
-      loadSlots();
-    }, 200);
+    refreshTimeout.current = setTimeout(loadSlots, 200);
 
   }
 
-  /* --------------------------
-     Primera carga
-  -------------------------- */
-
   useEffect(() => {
-
-    if (date) {
-      loadSlots();
-    }
-
+    if (date) loadSlots();
   }, [date]);
 
-  /* --------------------------
-     Realtime updates
-  -------------------------- */
+  useEffect(() => {
+    setSelectedSlots(initialSlots || []);
+  }, [initialSlots]);
 
   useEffect(() => {
 
@@ -75,88 +70,25 @@ export default function SlotPicker({ date, people = 1, onSelectSlot }) {
 
     const channel = supabase
       .channel("slots-realtime")
-
-      /* reservas creadas */
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "reservations" },
-        refreshSlots
-      )
-
-      /* reservas modificadas */
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "reservations" },
-        refreshSlots
-      )
-
-      /* reservas eliminadas */
-      .on(
-        "postgres_changes",
-        { event: "DELETE", schema: "public", table: "reservations" },
-        refreshSlots
-      )
-
-      /* holds creados */
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "reservation_holds" },
-        refreshSlots
-      )
-
-      /* holds eliminados */
-      .on(
-        "postgres_changes",
-        { event: "DELETE", schema: "public", table: "reservation_holds" },
-        refreshSlots
-      )
-
-      /* cambios en slots */
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "time_slots" },
-        refreshSlots
-      )
-
+      .on("postgres_changes", { event: "*", schema: "public", table: "reservations" }, refreshSlots)
+      .on("postgres_changes", { event: "*", schema: "public", table: "reservation_holds" }, refreshSlots)
+      .on("postgres_changes", { event: "*", schema: "public", table: "time_slots" }, refreshSlots)
       .subscribe();
 
     return () => {
-
       supabase.removeChannel(channel);
-
-      if (refreshTimeout.current) {
-        clearTimeout(refreshTimeout.current);
-      }
-
+      if (refreshTimeout.current) clearTimeout(refreshTimeout.current);
     };
 
   }, [date]);
 
-
   /* --------------------------
-     Seleccionar slot
-  -------------------------- */
-
-  function handleSelect(slot) {
-
-    setSelectedSlot(slot);
-
-    if (onSelectSlot) {
-      onSelectSlot(slot);
-    }
-
-  }
-
-
-  /* --------------------------
-     Calcular plazas restantes
+     Helpers
   -------------------------- */
 
   function getRemaining(slot) {
 
     if (slot.remaining !== undefined) return slot.remaining;
-
-    if (slot.available !== undefined) return slot.available;
 
     if (slot.capacity !== undefined && slot.reserved !== undefined) {
       return slot.capacity - slot.reserved;
@@ -166,11 +98,97 @@ export default function SlotPicker({ date, people = 1, onSelectSlot }) {
 
   }
 
-
   function formatTime(time) {
     return time?.slice(0, 5);
   }
 
+  function areConsecutive(a, b) {
+    return a.end_time === b.start_time;
+  }
+
+  /* --------------------------
+     Selección inteligente
+  -------------------------- */
+
+  function handleSelect(slot) {
+
+    const remaining = getRemaining(slot);
+
+    if (remaining < people) return;
+
+    let newSelection = [];
+
+    if (selectedSlots.length === 0) {
+
+      newSelection = [slot];
+
+    } else if (selectedSlots.length === 1) {
+
+      const first = selectedSlots[0];
+
+      if (first.id === slot.id) {
+        newSelection = [];
+      } else if (areConsecutive(first, slot) || areConsecutive(slot, first)) {
+
+        const sorted = [first, slot].sort(
+          (a, b) => a.start_time.localeCompare(b.start_time)
+        );
+
+        newSelection = sorted;
+
+      } else {
+
+        // reset si no son consecutivos
+        newSelection = [slot];
+
+      }
+
+    } else {
+
+      // ya hay 2 → reset
+      newSelection = [slot];
+
+    }
+
+    setSelectedSlots(newSelection);
+
+    if (onSelectSlots) {
+      onSelectSlots(newSelection);
+    }
+
+  }
+
+  /* --------------------------
+     UI logic
+  -------------------------- */
+
+  function isSelected(slot) {
+    return selectedSlots.some(s => s.id === slot.id);
+  }
+
+  function isDisabled(slot) {
+
+    const remaining = getRemaining(slot);
+
+    if (remaining < people || slot.isFull) return true;
+
+    if (selectedSlots.length === 1) {
+
+      const first = selectedSlots[0];
+
+      if (
+        slot.id !== first.id &&
+        !areConsecutive(first, slot) &&
+        !areConsecutive(slot, first)
+      ) {
+        return true;
+      }
+
+    }
+
+    return false;
+
+  }
 
   /* --------------------------
      Render
@@ -181,7 +199,7 @@ export default function SlotPicker({ date, people = 1, onSelectSlot }) {
     <div className="mt-8">
 
       <h3 className="font-semibold mb-4">
-        Horarios disponibles
+        Selecciona 1 o 2 horas consecutivas
       </h3>
 
       {loading && (
@@ -192,7 +210,7 @@ export default function SlotPicker({ date, people = 1, onSelectSlot }) {
 
       {!loading && slots.length === 0 && (
         <div className="text-sm text-gray-500">
-          No hay horarios disponibles para este día
+          No hay horarios disponibles
         </div>
       )}
 
@@ -200,54 +218,35 @@ export default function SlotPicker({ date, people = 1, onSelectSlot }) {
 
         {slots.map((slot) => {
 
-          const remaining = getRemaining(slot) ?? 0;
-
-          const isAvailable = remaining >= people && !slot.isFull;
-
-          const isSelected = selectedSlot?.id === slot.id;
+          const remaining = getRemaining(slot);
+          const disabled = isDisabled(slot);
+          const selected = isSelected(slot);
 
           return (
 
             <button
               key={slot.id}
               onClick={() => handleSelect(slot)}
-              disabled={!isAvailable}
+              disabled={disabled}
               className={`
-                p-4 rounded-xl border text-sm
-                transition
+                p-4 rounded-xl border text-sm transition
                 flex flex-col items-center justify-center
-                shadow-sm
-                ${isSelected
+
+                ${selected
                   ? "bg-tiger-orange text-white border-tiger-orange"
-                  : isAvailable
-                    ? "bg-white hover:bg-gray-50 border-gray-200"
-                    : "bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200"}
+                  : disabled
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    : "bg-white hover:bg-gray-50"}
               `}
             >
 
-              <span className="font-semibold text-base">
+              <span className="font-semibold">
                 {formatTime(slot.start_time)}
               </span>
 
-              {slot.isFull ? (
-
-                <span className="text-xs">
-                  Completo
-                </span>
-
-              ) : remaining <= 5 ? (
-
-                <span className="text-xs text-red-500 font-semibold">
-                  🔥 Solo quedan {remaining}
-                </span>
-
-              ) : (
-
-                <span className="text-xs opacity-80">
-                  {remaining} plazas
-                </span>
-
-              )}
+              <span className="text-xs">
+                {remaining} plazas
+              </span>
 
             </button>
 
@@ -258,7 +257,5 @@ export default function SlotPicker({ date, people = 1, onSelectSlot }) {
       </div>
 
     </div>
-
   );
-
 }

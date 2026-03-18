@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
 export default function ReservationForm({
-  slot,
+  selectedSlots,
   plan,
   people,
   holdId,
@@ -12,6 +12,7 @@ export default function ReservationForm({
   const [name,setName] = useState("");
   const [email,setEmail] = useState("");
   const [phone,setPhone] = useState("");
+  const [menorEdad,setMenorEdad] = useState(false);
 
   const [loading,setLoading] = useState(false);
   const [error,setError] = useState(null);
@@ -19,7 +20,6 @@ export default function ReservationForm({
   async function handleSubmit(e){
 
     e.preventDefault();
-
     setError(null);
 
     if(!name || !email){
@@ -27,23 +27,50 @@ export default function ReservationForm({
       return;
     }
 
+    if(!selectedSlots || selectedSlots.length === 0){
+      setError("Debes seleccionar al menos un horario");
+      return;
+    }
+
+    if(!plan){
+      setError("Debes seleccionar un plan");
+      return;
+    }
+
+    /* --------------------------
+       Reglas negocio
+    -------------------------- */
+
+    const basePeople = Math.max(people, 10);
+
+    const precio_total = basePeople * plan.price;
+
+    const personas_electroshock = people;
+
+    const num_horas = selectedSlots.length;
+
     setLoading(true);
 
     try{
 
-      const res = await fetch("/api/createReservation",{
+      const res = await fetch("/api/reservations",{
         method:"POST",
         headers:{
           "Content-Type":"application/json"
         },
         body:JSON.stringify({
-          slot_id:slot.id,
-          plan_id:plan.id,
+          action:"create",
+          slot_ids: selectedSlots.map(s => s.id),
+          plan_id: plan.id,
           name,
           email,
           phone,
           people,
-          hold_id:holdId
+          hold_id: holdId,
+          menor_edad: menorEdad,
+          precio_total,
+          personas_electroshock,
+          num_horas
         })
       });
 
@@ -108,6 +135,24 @@ export default function ReservationForm({
             onChange={(e)=>setPhone(e.target.value)}
             className="w-full border rounded-lg px-3 py-2 mt-1"
           />
+        </div>
+
+        {/* 👇 NUEVO CHECKBOX */}
+
+        <div className="flex items-start gap-2">
+
+          <input
+            type="checkbox"
+            checked={menorEdad}
+            onChange={(e)=>setMenorEdad(e.target.checked)}
+            className="mt-1"
+          />
+
+          <label className="text-sm text-gray-700">
+            Algún participante es menor de 15 años.  
+            Será necesario firmar un consentimiento en el recinto.
+          </label>
+
         </div>
 
         {error && (

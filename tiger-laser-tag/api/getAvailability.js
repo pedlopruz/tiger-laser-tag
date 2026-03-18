@@ -26,20 +26,23 @@ export default async function handler(req, res) {
 
     const end = endDate.toLocaleDateString("sv-SE");
 
+    /* --------------------------
+       1️⃣ Obtener días con slots activos
+    -------------------------- */
+
     const { data, error } = await supabaseAdmin
-      .from("time_slots")
-      .select("date,max_capacity,reserved_spots")
-      .eq("status", "active")
-      .gte("date", start)
-      .lte("date", end);
+      .rpc("get_available_days", {
+        start_date: start,
+        end_date: end
+      });
 
     if (error) throw error;
 
-    const availableDates = data
-      .filter(slot => slot.reserved_spots < slot.max_capacity)
-      .map(slot => slot.date);
+    /* --------------------------
+       2️⃣ Obtener días únicos
+    -------------------------- */
 
-    const uniqueDays = [...new Set(availableDates)];
+    const uniqueDays = [...new Set(data.map(s => s.date))];
 
     return res.status(200).json({
       availableDays: uniqueDays

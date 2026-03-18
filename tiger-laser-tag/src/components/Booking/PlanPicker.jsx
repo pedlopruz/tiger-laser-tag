@@ -1,22 +1,24 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 
-export default function PlanPicker({ slot, onSelectPlan }) {
+export default function PlanPicker({ selectedSlots, onSelectPlan }) {
 
   const [plans, setPlans] = useState([]);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  const slotCount = selectedSlots?.length || 0;
+
+  /* --------------------------
+     Cargar planes
+  -------------------------- */
   useEffect(() => {
 
-    if (!slot) return;
+    if (!slotCount) return;
 
     loadPlans();
-
-    // reset plan si cambia slot
     setSelectedPlan(null);
 
-  }, [slot]);
-
+  }, [slotCount]);
 
   async function loadPlans() {
 
@@ -25,18 +27,16 @@ export default function PlanPicker({ slot, onSelectPlan }) {
     try {
 
       const res = await fetch("/api/getPlans");
-      const data = await res.json();
 
-      let availablePlans = Array.isArray(data) ? data : [];
-
-      // 🔒 si el slot ya tiene plan asignado
-      if (slot?.plan_id) {
-        availablePlans = availablePlans.filter(
-          p => p.id === slot.plan_id
-        );
+      if (!res.ok) {
+        console.error("Error loading plans");
+        setPlans([]);
+        return;
       }
 
-      setPlans(availablePlans);
+      const data = await res.json();
+
+      setPlans(Array.isArray(data) ? data : []);
 
     } catch (err) {
 
@@ -49,6 +49,22 @@ export default function PlanPicker({ slot, onSelectPlan }) {
 
   }
 
+  /* --------------------------
+     Filtrar por duración
+  -------------------------- */
+  const filteredPlans = useMemo(() => {
+
+    if (!plans.length || !slotCount) return [];
+
+    const SLOT_DURATION = 60; // puedes traerlo del backend si quieres
+
+    const requiredDuration = slotCount * SLOT_DURATION;
+
+    return plans.filter(
+      plan => plan.duration_minutes === requiredDuration
+    );
+
+  }, [plans, slotCount]);
 
   function handleSelect(plan) {
 
@@ -59,7 +75,6 @@ export default function PlanPicker({ slot, onSelectPlan }) {
     }
 
   }
-
 
   return (
 
@@ -75,15 +90,15 @@ export default function PlanPicker({ slot, onSelectPlan }) {
         </div>
       )}
 
-      {!loading && plans.length === 0 && (
+      {!loading && filteredPlans.length === 0 && (
         <div className="text-sm text-gray-500">
-          No hay planes disponibles
+          No hay planes disponibles para esta duración
         </div>
       )}
 
       <div className="space-y-4">
 
-        {plans.map((plan) => {
+        {filteredPlans.map((plan) => {
 
           const isSelected = selectedPlan?.id === plan.id;
 
