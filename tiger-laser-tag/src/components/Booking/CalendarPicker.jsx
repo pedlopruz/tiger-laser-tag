@@ -99,7 +99,7 @@ export default function CalendarPicker({ onSelectDate, initialDate }) {
 
     const dateStr = formatDate(day);
 
-    if (!availableSet.has(dateStr)) return;
+    if (!availableSet.has(dateStr) || dateStr < todayStr) return;
 
     setSelectedDate(dateStr);
 
@@ -180,7 +180,11 @@ export default function CalendarPicker({ onSelectDate, initialDate }) {
 
           const dateStr = formatDate(day);
 
-          const isAvailable = availableSet.has(dateStr);
+          const todayStr = new Date().toLocaleDateString("sv-SE");
+
+          const isAvailable =
+            availableSet.has(dateStr) &&
+            dateStr >= todayStr;
           const isSelected = selectedDate === dateStr;
 
           return (

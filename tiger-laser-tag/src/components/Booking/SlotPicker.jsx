@@ -56,6 +56,12 @@ export default function SlotPicker({
 
   }
 
+  function isFutureSlot(slot) {
+    const now = new Date();
+    const slotDateTime = new Date(`${date}T${slot.start_time}`);
+    return slotDateTime > now;
+  }
+
   useEffect(() => {
     if (date) loadSlots();
   }, [date]);
@@ -169,6 +175,8 @@ export default function SlotPicker({
   function isDisabled(slot) {
 
     const remaining = getRemaining(slot);
+
+    if (!isFutureSlot(slot)) return true;
 
     if (remaining < people || slot.isFull) return true;
 

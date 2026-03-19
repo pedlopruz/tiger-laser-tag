@@ -425,6 +425,35 @@ async function createReservation(req, res) {
     });
   }
 
+  /* --------------------------
+   🚫 Validar slots no pasados
+-------------------------- */
+
+  const { data: slotsData, error: slotsError } = await supabaseAdmin
+    .from("time_slots")
+    .select("date, start_time")
+    .in("id", slot_ids);
+
+  if (slotsError || !slotsData || slotsData.length === 0) {
+    return res.status(400).json({
+      error: "Slots inválidos"
+    });
+  }
+
+  const now = new Date();
+
+  for (const s of slotsData) {
+
+    const slotDateTime = new Date(`${s.date}T${s.start_time}`);
+
+    if (slotDateTime <= now) {
+      return res.status(409).json({
+        error: "No puedes reservar un horario pasado"
+      });
+    }
+
+  }
+
   try {
 
     const reservation_code = nanoid(12);

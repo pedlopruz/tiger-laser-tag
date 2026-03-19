@@ -1,4 +1,3 @@
-// api/getSlotsByDate.js
 import { supabaseAdmin } from "./supabaseAdmin.js";
 
 export default async function handler(req, res) {
@@ -6,16 +5,12 @@ export default async function handler(req, res) {
   const { date } = req.query;
 
   if (!date) {
-    return res.status(400).json({
-      error: "Missing date"
-    });
+    return res.status(400).json({ error: "Missing date" });
   }
 
   try {
 
-    /* --------------------------
-       1️⃣ Obtener slots del día
-    -------------------------- */
+    const now = new Date();
 
     const { data: slots, error } = await supabaseAdmin
       .from("time_slots")
@@ -31,27 +26,24 @@ export default async function handler(req, res) {
       return res.status(200).json({ slots: [] });
     }
 
-    /* --------------------------
-       2️⃣ Construir respuesta
-    -------------------------- */
-
     const result = slots.map(slot => {
 
       const capacity = slot.max_capacity ?? 0;
 
-      const isAvailable = slot.status === "active";
+      const slotDateTime = new Date(`${date}T${slot.start_time}`);
+      const isPast = slotDateTime <= now;
+
+      const isAvailable =
+        slot.status === "active" && !isPast;
 
       return {
         id: slot.id,
         start_time: slot.start_time,
         end_time: slot.end_time,
 
-        // 🔥 IMPORTANTE para el frontend
         capacity,
         remaining: isAvailable ? capacity : 0,
-        reserved: isAvailable ? 0 : capacity,
 
-        // estado
         status: slot.status,
         isAvailable,
         isFull: !isAvailable
@@ -59,9 +51,7 @@ export default async function handler(req, res) {
 
     });
 
-    return res.status(200).json({
-      slots: result
-    });
+    return res.status(200).json({ slots: result });
 
   } catch (err) {
 
