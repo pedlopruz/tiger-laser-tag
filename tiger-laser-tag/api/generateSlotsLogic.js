@@ -1,4 +1,5 @@
-import { supabaseAdmin } from "../supabaseAdmin.js";
+// api/generateSlotsLogic
+import { supabaseAdmin } from "./supabaseAdmin.js";
 
 export async function generateSlotsForMonth(year, month) {
 

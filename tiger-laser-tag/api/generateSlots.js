@@ -1,5 +1,5 @@
 
-import { generateSlotsForMonth } from "../generateSlotsLogic.js";
+import { generateSlotsForMonth } from "./generateSlotsLogic.js";
 
 export default async function handler(req, res) {
 
