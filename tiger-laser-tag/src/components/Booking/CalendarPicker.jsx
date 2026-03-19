@@ -2,6 +2,17 @@ import { useEffect, useState, useMemo } from "react";
 
 export default function CalendarPicker({ onSelectDate, initialDate }) {
 
+  /* --------------------------
+     HOY normalizado (ANTI-BUG)
+  -------------------------- */
+  function getTodayStr() {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    return now.toISOString().slice(0, 10);
+  }
+
+  const todayStr = getTodayStr();
+
   const today = new Date();
 
   const [currentMonth, setCurrentMonth] = useState(
@@ -46,6 +57,7 @@ export default function CalendarPicker({ onSelectDate, initialDate }) {
   async function loadAvailability() {
 
     try {
+
       const y = currentMonth.getFullYear();
       const m = String(currentMonth.getMonth() + 1).padStart(2, "0");
 
@@ -65,6 +77,7 @@ export default function CalendarPicker({ onSelectDate, initialDate }) {
     } catch (err) {
       console.error("Error fetching availability:", err);
     }
+
   }
 
   function daysInMonth(date) {
@@ -73,17 +86,29 @@ export default function CalendarPicker({ onSelectDate, initialDate }) {
 
   function startDay(date) {
     const day = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
-    return (day + 6) % 7; // lunes como primer día
+    return (day + 6) % 7;
   }
 
+  /* --------------------------
+     BLOQUEAR meses pasados
+  -------------------------- */
   function changeMonth(offset) {
+
     const newDate = new Date(
       currentMonth.getFullYear(),
       currentMonth.getMonth() + offset,
       1
     );
 
+    const currentMonthStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, "0")}`;
+    const todayMonthStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
+    const newMonthStr = `${newDate.getFullYear()}-${String(newDate.getMonth() + 1).padStart(2, "0")}`;
+
+    // ❌ no permitir ir a meses pasados
+    if (newMonthStr < todayMonthStr) return;
+
     setCurrentMonth(newDate);
+
   }
 
   function formatDate(day) {
@@ -106,6 +131,7 @@ export default function CalendarPicker({ onSelectDate, initialDate }) {
     if (onSelectDate) {
       onSelectDate(dateStr);
     }
+
   }
 
   const totalDays = daysInMonth(currentMonth);
@@ -157,7 +183,6 @@ export default function CalendarPicker({ onSelectDate, initialDate }) {
       {/* days header */}
 
       <div className="grid grid-cols-7 text-center text-sm text-gray-500 mb-2">
-
         <div>L</div>
         <div>M</div>
         <div>X</div>
@@ -165,26 +190,22 @@ export default function CalendarPicker({ onSelectDate, initialDate }) {
         <div>V</div>
         <div>S</div>
         <div>D</div>
-
       </div>
 
-      {/* calendar grid */}
+      {/* calendar */}
 
       <div className="grid grid-cols-7 gap-2">
 
         {cells.map((day, index) => {
 
-          if (!day) {
-            return <div key={index}></div>;
-          }
+          if (!day) return <div key={index}></div>;
 
           const dateStr = formatDate(day);
-
-          const todayStr = new Date().toLocaleDateString("sv-SE");
 
           const isAvailable =
             availableSet.has(dateStr) &&
             dateStr >= todayStr;
+
           const isSelected = selectedDate === dateStr;
 
           return (
@@ -229,5 +250,7 @@ export default function CalendarPicker({ onSelectDate, initialDate }) {
       </div>
 
     </div>
+
   );
+
 }

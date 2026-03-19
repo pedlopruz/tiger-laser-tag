@@ -11,7 +11,7 @@ export default async function handler(req, res) {
   try {
 
     const today = new Date();
-    const year = today.getFullYear();
+    const year = today.getFullYear() + 1;
 
     let startDate = today;
     let endDate = new Date(year, 11, 31); // 31 diciembre
