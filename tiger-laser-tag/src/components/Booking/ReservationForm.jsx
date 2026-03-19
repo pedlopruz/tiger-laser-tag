@@ -149,7 +149,7 @@ export default function ReservationForm({
           />
 
           <label className="text-sm text-gray-700">
-            Algún participante es menor de 15 años.  
+            Marque si algún participante es menor de 15 años.  
             Será necesario firmar un consentimiento en el recinto.
           </label>
 
