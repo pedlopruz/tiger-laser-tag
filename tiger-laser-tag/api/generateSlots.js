@@ -1,5 +1,4 @@
-
-import { generateSlotsForMonth } from "./generateSlotsLogic.js";
+import { generateSlotsForRange } from "./generateSlotsLogic.js";
 
 export default async function handler(req, res) {
 
@@ -11,18 +10,23 @@ export default async function handler(req, res) {
 
   try {
 
-    const nextMonth = new Date();
-    nextMonth.setMonth(nextMonth.getMonth() + 1);
+    const today = new Date();
+    const year = today.getFullYear();
 
-    const year = nextMonth.getFullYear();
-    const month = nextMonth.getMonth() + 1;
+    let startDate = today;
+    let endDate = new Date(year, 11, 31); // 31 diciembre
 
-    await generateSlotsForMonth(year, month);
+    // 👉 si estamos en enero → generar TODO el año
+    if (today.getMonth() === 0) {
+      startDate = new Date(year, 0, 1);
+    }
+
+    await generateSlotsForRange(startDate, endDate);
 
     return res.status(200).json({
-      message: "Slots generated automatically",
-      year,
-      month
+      message: "Slots generated",
+      from: startDate,
+      to: endDate
     });
 
   } catch (error) {

@@ -1,3 +1,4 @@
+// api/getAvailability.js
 import { supabaseAdmin } from "./supabaseAdmin.js";
 
 export default async function handler(req, res) {

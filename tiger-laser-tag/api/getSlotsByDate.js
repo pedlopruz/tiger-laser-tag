@@ -19,7 +19,7 @@ export default async function handler(req, res) {
 
     const { data: slots, error } = await supabaseAdmin
       .from("time_slots")
-      .select("id, start_time, end_time, status")
+      .select("id, start_time, end_time, status, max_capacity")
       .eq("date", date)
       .order("start_time");
 
@@ -37,14 +37,24 @@ export default async function handler(req, res) {
 
     const result = slots.map(slot => {
 
+      const capacity = slot.max_capacity ?? 0;
+
       const isAvailable = slot.status === "active";
 
       return {
         id: slot.id,
         start_time: slot.start_time,
         end_time: slot.end_time,
+
+        // 🔥 IMPORTANTE para el frontend
+        capacity,
+        remaining: isAvailable ? capacity : 0,
+        reserved: isAvailable ? 0 : capacity,
+
+        // estado
         status: slot.status,
-        isAvailable
+        isAvailable,
+        isFull: !isAvailable
       };
 
     });

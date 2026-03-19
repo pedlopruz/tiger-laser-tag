@@ -1,12 +1,15 @@
-// api/generateSlotsLogic
 import { supabaseAdmin } from "./supabaseAdmin.js";
 
-export async function generateSlotsForMonth(year, month) {
+export async function generateSlotsForRange(startDate, endDate) {
 
-  const { data: settings } = await supabaseAdmin
+  const { data: settings, error } = await supabaseAdmin
     .from("business_settings")
     .select("*")
     .single();
+
+  if (error || !settings) {
+    throw new Error("Missing business_settings");
+  }
 
   const {
     slot_duration,
@@ -17,17 +20,19 @@ export async function generateSlotsForMonth(year, month) {
     weekend_end
   } = settings;
 
-  if (!slot_duration || slot_duration <= 0) {
-    throw new Error("Invalid slot_duration");
-  }
-
-  const startDate = new Date(year, month - 1, 1);
-  const endDate = new Date(year, month, 0);
-
-  for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+  for (
+    let d = new Date(startDate);
+    d <= endDate;
+    d.setDate(d.getDate() + 1)
+  ) {
 
     const dateStr = d.toLocaleDateString("sv-SE");
     const day = d.getDay();
+    const month = d.getMonth() + 1;
+
+    /* --------------------------
+       BLOQUEOS
+    -------------------------- */
 
     const { data: block } = await supabaseAdmin
       .from("slot_blocks")
@@ -37,10 +42,20 @@ export async function generateSlotsForMonth(year, month) {
 
     if (block) continue;
 
+    /* --------------------------
+       LÓGICA HORARIOS
+    -------------------------- */
+
     const isWeekend = day === 0 || day === 6;
 
-    const start = isWeekend ? weekend_start : weekday_start;
-    const end = isWeekend ? weekend_end : weekday_end;
+    // 🔥 JULIO Y AGOSTO → SIEMPRE horario fin de semana
+    const isSummer = month === 7 || month === 8;
+
+    const start =
+      isWeekend || isSummer ? weekend_start : weekday_start;
+
+    const end =
+      isWeekend || isSummer ? weekend_end : weekday_end;
 
     let currentTime = new Date(`${dateStr}T${start}`);
     const endTime = new Date(`${dateStr}T${end}`);
@@ -50,7 +65,9 @@ export async function generateSlotsForMonth(year, month) {
       const slotStart = currentTime.toTimeString().slice(0, 5);
 
       const slotEndDate = new Date(currentTime);
-      slotEndDate.setMinutes(slotEndDate.getMinutes() + slot_duration);
+      slotEndDate.setMinutes(
+        slotEndDate.getMinutes() + slot_duration
+      );
 
       const slotEnd = slotEndDate.toTimeString().slice(0, 5);
 
@@ -78,7 +95,9 @@ export async function generateSlotsForMonth(year, month) {
 
       }
 
-      currentTime.setMinutes(currentTime.getMinutes() + slot_duration);
+      currentTime.setMinutes(
+        currentTime.getMinutes() + slot_duration
+      );
 
     }
 
