@@ -23,7 +23,17 @@ export default function SlotPicker({
   }
 
   function areConsecutive(a, b) {
-    return normalize(a.end_time) === normalize(b.start_time);
+
+    const startA = a.start_time.slice(0, 5);
+    const startB = b.start_time.slice(0, 5);
+
+    const [hA, mA] = startA.split(":").map(Number);
+    const [hB, mB] = startB.split(":").map(Number);
+
+    const minutesA = hA * 60 + mA;
+    const minutesB = hB * 60 + mB;
+
+    return Math.abs(minutesA - minutesB) === 60;
   }
 
   function formatTime(time) {
@@ -183,11 +193,8 @@ export default function SlotPicker({
 
       const isSame = slot.id === first.id;
 
-      const isNext =
-        normalize(first.end_time) === normalize(slot.start_time);
-
-      const isPrev =
-        normalize(slot.end_time) === normalize(first.start_time);
+      const isNext = areConsecutive(first, slot);
+      const isPrev = areConsecutive(slot, first);
 
       if (!isSame && !isNext && !isPrev) {
         return true;
