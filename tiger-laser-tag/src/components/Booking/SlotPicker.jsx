@@ -119,41 +119,44 @@ export default function SlotPicker({
   function handleSelect(slot) {
 
     const remaining = getRemaining(slot);
-
     if (remaining < people) return;
 
     let newSelection = [];
 
+    // 🔹 NO HAY NADA SELECCIONADO
     if (selectedSlots.length === 0) {
-
       newSelection = [slot];
+    }
 
-    } else if (selectedSlots.length === 1) {
+    // 🔹 HAY 1 SLOT
+    else if (selectedSlots.length === 1) {
 
       const first = selectedSlots[0];
 
+      // quitar selección
       if (first.id === slot.id) {
         newSelection = [];
-      } else if (areConsecutive(first, slot) || areConsecutive(slot, first)) {
+      }
 
-        const sorted = [first, slot].sort(
+      // añadir segundo slot consecutivo
+      else if (areConsecutive(first, slot) || areConsecutive(slot, first)) {
+
+        newSelection = [first, slot].sort(
           (a, b) => a.start_time.localeCompare(b.start_time)
         );
 
-        newSelection = sorted;
-
-      } else {
-
-        // reset si no son consecutivos
-        newSelection = [slot];
-
       }
 
-    } else {
+      // no consecutivo → reemplazar
+      else {
+        newSelection = [slot];
+      }
 
-      // ya hay 2 → reset
+    }
+
+    // 🔹 YA HAY 2 → reset
+    else {
       newSelection = [slot];
-
     }
 
     setSelectedSlots(newSelection);
@@ -180,17 +183,17 @@ export default function SlotPicker({
 
     if (remaining < people || slot.isFull) return true;
 
+    // 🔥 CLAVE: solo permitir consecutivos si ya hay 1 seleccionado
     if (selectedSlots.length === 1) {
 
       const first = selectedSlots[0];
 
-      if (
-        slot.id !== first.id &&
-        !areConsecutive(first, slot) &&
-        !areConsecutive(slot, first)
-      ) {
-        return true;
-      }
+      const isValidSecond =
+        slot.id === first.id ||
+        areConsecutive(first, slot) ||
+        areConsecutive(slot, first);
+
+      if (!isValidSecond) return true;
 
     }
 

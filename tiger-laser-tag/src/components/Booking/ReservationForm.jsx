@@ -161,15 +161,15 @@ export default function ReservationForm({
           </div>
         )}
 
-        <button
+        <Button
           type="submit"
-          className="w-full bg-black text-white py-2 rounded"
+          className="w-full"
           disabled={loading}
         >
           {loading
             ? "Procesando reserva..."
             : "Confirmar reserva"}
-        </button>
+        </Button>
 
       </form>
 
