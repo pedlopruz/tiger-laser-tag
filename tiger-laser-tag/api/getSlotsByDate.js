@@ -1,3 +1,4 @@
+// /api/getSlotsByDate.js
 import { supabaseAdmin } from "./supabaseAdmin.js";
 
 export default async function handler(req, res) {
@@ -21,7 +22,7 @@ export default async function handler(req, res) {
     const todayStr = now.toISOString().split("T")[0];
     const currentTime = now.toTimeString().slice(0, 5);
 
-    // Usar una consulta SQL más eficiente con Supabase
+    // Obtener slots
     const { data: slots, error } = await supabaseAdmin
       .from("time_slots")
       .select(`
@@ -48,7 +49,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // Obtener todas las reservas confirmadas para estos slots
+    // Obtener reservas para estos slots
     const slotIds = slots.map(s => s.id);
     
     const { data: reservations, error: resError } = await supabaseAdmin
@@ -67,7 +68,7 @@ export default async function handler(req, res) {
       console.error("Error fetching reservations:", resError);
     }
 
-    // Crear un mapa de slot_id -> total de personas reservadas
+    // Crear mapa de reservas
     const reservedMap = new Map();
     if (reservations) {
       reservations.forEach(rs => {
@@ -76,14 +77,24 @@ export default async function handler(req, res) {
       });
     }
 
-    /* --------------------------
-        Procesar slots
-    -------------------------- */
+    // Procesar slots
     const result = slots.map(slot => {
+      // Limpiar y normalizar horas
+      let startTime = slot.start_time;
+      let endTime = slot.end_time;
+      
+      // Asegurar formato HH:MM
+      if (startTime) {
+        startTime = startTime.slice(0, 5);
+      }
+      if (endTime) {
+        endTime = endTime.slice(0, 5);
+      }
+      
       const capacity = slot.max_capacity ?? 0;
       const reservedCount = reservedMap.get(slot.id) || 0;
       
-      const isPast = date < todayStr || (date === todayStr && slot.start_time <= currentTime);
+      const isPast = date < todayStr || (date === todayStr && startTime <= currentTime);
       
       // REGLA DE NEGOCIO: Disponible solo si no tiene reservas
       const isAvailable = 
@@ -91,21 +102,10 @@ export default async function handler(req, res) {
         !isPast && 
         reservedCount === 0;
 
-      let statusMessage = "";
-      if (reservedCount > 0) {
-        statusMessage = "🔒 Reservado";
-      } else if (isPast) {
-        statusMessage = "Pasado";
-      } else if (slot.status !== "active") {
-        statusMessage = "No disponible";
-      } else if (isAvailable) {
-        statusMessage = `${capacity} plazas`;
-      }
-
       return {
         id: slot.id,
-        start_time: slot.start_time,
-        end_time: slot.end_time,
+        start_time: startTime,
+        end_time: endTime,
         capacity: capacity,
         reserved: reservedCount,
         remaining: isAvailable ? capacity : 0,
@@ -113,12 +113,23 @@ export default async function handler(req, res) {
         isBlocked: reservedCount > 0,
         isPast: isPast,
         status: slot.status,
-        statusMessage: statusMessage
+        statusMessage: reservedCount > 0 ? "Reservado" : (isAvailable ? "Disponible" : "No disponible")
       };
     });
 
+    // Filtrar slots duplicados o con horas inválidas
+    const uniqueSlots = result.filter((slot, index, self) => 
+      index === self.findIndex(s => s.start_time === slot.start_time)
+    );
+
+    console.log("Slots procesados:", uniqueSlots.map(s => ({
+      hora: s.start_time,
+      disponible: s.isAvailable,
+      reservado: s.reserved
+    })));
+
     return res.status(200).json({
-      slots: result,
+      slots: uniqueSlots,
       date: date
     });
 
