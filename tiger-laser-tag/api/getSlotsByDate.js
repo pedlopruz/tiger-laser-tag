@@ -17,32 +17,20 @@ export default async function handler(req, res) {
   }
 
   try {
-
-    /* --------------------------
-       1️⃣ Hora actual (robusta)
-    -------------------------- */
-
     const now = new Date();
-
-    // YYYY-MM-DD en UTC (consistente)
     const todayStr = now.toISOString().split("T")[0];
-
-    // HH:mm actual
     const currentTime = now.toTimeString().slice(0, 5);
 
-    /* --------------------------
-       2️⃣ Obtener slots con información de reservas
-    -------------------------- */
-
+    // Usar una consulta SQL más eficiente con Supabase
     const { data: slots, error } = await supabaseAdmin
       .from("time_slots")
       .select(`
-        id, 
-        start_time, 
-        end_time, 
-        status, 
+        id,
+        start_time,
+        end_time,
+        status,
         max_capacity,
-        reserved
+        date
       `)
       .eq("date", date)
       .order("start_time");
@@ -60,93 +48,84 @@ export default async function handler(req, res) {
       });
     }
 
+    // Obtener todas las reservas confirmadas para estos slots
+    const slotIds = slots.map(s => s.id);
+    
+    const { data: reservations, error: resError } = await supabaseAdmin
+      .from("reservation_slots")
+      .select(`
+        slot_id,
+        reservations!inner (
+          people,
+          status
+        )
+      `)
+      .in("slot_id", slotIds)
+      .eq("reservations.status", "confirmed");
+
+    if (resError) {
+      console.error("Error fetching reservations:", resError);
+    }
+
+    // Crear un mapa de slot_id -> total de personas reservadas
+    const reservedMap = new Map();
+    if (reservations) {
+      reservations.forEach(rs => {
+        const current = reservedMap.get(rs.slot_id) || 0;
+        reservedMap.set(rs.slot_id, current + (rs.reservations?.people || 0));
+      });
+    }
+
     /* --------------------------
-       3️⃣ Construcción resultado con reglas de negocio
+        Procesar slots
     -------------------------- */
-
     const result = slots.map(slot => {
-
       const capacity = slot.max_capacity ?? 0;
-      const reservedCount = slot.reserved ?? 0;
-
-      // 🔥 Detectar si el slot ya pasó
-      const isPast =
-        date < todayStr ||
-        (date === todayStr && slot.start_time <= currentTime);
-
-      // 🚫 REGLA DE NEGOCIO: Un slot está disponible SOLO si:
-      // 1. Está activo
-      // 2. No ha pasado
-      // 3. NO tiene ninguna reserva (reserved = 0)
+      const reservedCount = reservedMap.get(slot.id) || 0;
+      
+      const isPast = date < todayStr || (date === todayStr && slot.start_time <= currentTime);
+      
+      // REGLA DE NEGOCIO: Disponible solo si no tiene reservas
       const isAvailable = 
         slot.status === "active" && 
         !isPast && 
         reservedCount === 0;
 
-      // Si tiene reservas, está bloqueado (incluso si está activo)
-      const isBlocked = reservedCount > 0;
-      
-      // Para mostrar al usuario si está bloqueado por reserva
       let statusMessage = "";
-      if (isBlocked) {
-        statusMessage = "Completamente reservado";
+      if (reservedCount > 0) {
+        statusMessage = "🔒 Reservado";
       } else if (isPast) {
-        statusMessage = "Horario pasado";
+        statusMessage = "Pasado";
       } else if (slot.status !== "active") {
         statusMessage = "No disponible";
+      } else if (isAvailable) {
+        statusMessage = `${capacity} plazas`;
       }
 
       return {
         id: slot.id,
         start_time: slot.start_time,
         end_time: slot.end_time,
-        
-        // Capacidad total del slot
         capacity: capacity,
-        
-        // Número real de reservas en este slot
         reserved: reservedCount,
-        
-        // Plazas restantes según reglas de negocio
-        // Si ya tiene reserva, 0 plazas disponibles
         remaining: isAvailable ? capacity : 0,
-        
-        // Flag para saber si está bloqueado por reserva
-        isBlocked: isBlocked,
-        
-        // Flag para saber si está completamente lleno (según reglas)
-        isFull: !isAvailable,
-        
-        // Estado real del slot en BD
-        status: slot.status,
-        
-        // Disponibilidad para el usuario
         isAvailable: isAvailable,
-        
-        // Mensaje de estado para el frontend
+        isBlocked: reservedCount > 0,
+        isPast: isPast,
+        status: slot.status,
         statusMessage: statusMessage
       };
-
     });
-
-    /* --------------------------
-       4️⃣ Respuesta
-    -------------------------- */
 
     return res.status(200).json({
       slots: result,
-      date: date,
-      timestamp: now.toISOString()
+      date: date
     });
 
   } catch (err) {
-
     console.error("Error in getSlotsByDate:", err);
-
     return res.status(500).json({
       error: "Error loading slots"
     });
-
   }
-
 }

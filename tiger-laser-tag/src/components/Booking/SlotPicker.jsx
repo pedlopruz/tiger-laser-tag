@@ -44,15 +44,14 @@ export default function SlotPicker({
 
   // ✅ MEJORADO: Obtener plazas restantes según reglas de negocio
   function getRemaining(slot) {
-    // Si el slot tiene reservas, no hay plazas disponibles (regla de negocio)
-    if (slot.reserved > 0) return 0;
+    // Usar el campo remaining que viene del backend
+    if (slot.remaining !== undefined) {
+      return slot.remaining;
+    }
     
-    // Si tiene campo remaining del backend
-    if (slot.remaining !== undefined) return slot.remaining;
-    
-    // Calcular basado en capacidad
-    if (slot.capacity !== undefined) {
-      return slot.capacity;
+    // Si no viene remaining, calcular
+    if (slot.capacity !== undefined && slot.reserved !== undefined) {
+      return slot.capacity - slot.reserved;
     }
     
     return 0;
@@ -209,35 +208,35 @@ export default function SlotPicker({
     return selectedSlots.some(s => s.id === slot.id);
   }
 
-  function isDisabled(slot) {
-    // Verificar si el slot ya pasó
-    if (!isFutureSlot(slot)) return true;
+  // Actualizar isDisabled
+function isDisabled(slot) {
+  // Verificar si el slot ya pasó
+  if (!isFutureSlot(slot)) return true;
+  
+  // Verificar si está bloqueado por reserva
+  if (slot.isBlocked || slot.reserved > 0) return true;
+  
+  // Verificar disponibilidad
+  if (!slot.isAvailable) return true;
+  
+  // Verificar plazas
+  const remaining = getRemaining(slot);
+  if (remaining < people) return true;
+  
+  // Lógica de slots consecutivos
+  if (selectedSlots.length === 1) {
+    const first = selectedSlots[0];
+    const isSame = slot.id === first.id;
+    const isNext = areConsecutive(first, slot);
+    const isPrev = areConsecutive(slot, first);
     
-    // Verificar si está bloqueado por reserva
-    if (isSlotBlocked(slot)) return true;
-    
-    // Verificar disponibilidad general
-    if (!slot.isAvailable && slot.reserved === 0) return true;
-    
-    // Verificar plazas
-    const remaining = getRemaining(slot);
-    if (remaining < people) return true;
-    
-    // Lógica de selección de slots consecutivos
-    if (selectedSlots.length === 1) {
-      const first = selectedSlots[0];
-      const isSame = slot.id === first.id;
-      const isNext = areConsecutive(first, slot);
-      const isPrev = areConsecutive(slot, first);
-      
-      // Solo permitir: el mismo slot (para deseleccionar) o consecutivos
-      if (!isSame && !isNext && !isPrev) {
-        return true;
-      }
+    if (!isSame && !isNext && !isPrev) {
+      return true;
     }
-    
-    return false;
   }
+  
+  return false;
+}
 
   function getSlotStyle(slot) {
     const selected = isSelected(slot);
