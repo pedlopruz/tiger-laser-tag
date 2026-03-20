@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 
 import CalendarPicker from "./CalendarPicker";
@@ -17,10 +17,14 @@ export default function BookingLayout() {
   const [people, setPeople] = useState(2);
   const [showForm, setShowForm] = useState(false);
 
+  // ✅ Usar useCallback para evitar re-renders innecesarios
+  const handleSelectSlots = useCallback((slots) => {
+    console.log("BookingLayout - slots seleccionados:", slots.map(s => s.start_time));
+    setSelectedSlots(slots);
+  }, []);
+
   function handleConfirm() {
-
     if (!selectedSlots.length || !plan) return;
-
     setShowForm(true);
 
     setTimeout(() => {
@@ -31,7 +35,6 @@ export default function BookingLayout() {
           block: "start"
         });
     }, 100);
-
   }
 
   function handleReservationSuccess(data){
@@ -39,20 +42,18 @@ export default function BookingLayout() {
   }
 
   return (
-
     <div className="grid lg:grid-cols-2 gap-10">
-
       {/* LEFT */}
-
       <div className="bg-white p-6 rounded-xl shadow space-y-8">
-
         <CalendarPicker onSelectDate={setDate} />
 
         {date && (
           <SlotPicker
+            key={`slots-${date}`} // ✅ Usar key para forzar recarga cuando cambia la fecha
             date={date}
             people={people}
-            onSelectSlots={setSelectedSlots}
+            onSelectSlots={handleSelectSlots}
+            initialSlots={selectedSlots} // ✅ PASAR los slots seleccionados actuales
           />
         )}
 
@@ -62,15 +63,11 @@ export default function BookingLayout() {
             onSelectPlan={setPlan}
           />
         )}
-
       </div>
 
       {/* RIGHT */}
-
       <div className="lg:sticky lg:top-28 h-fit">
-
         <div className="bg-white p-6 rounded-xl shadow space-y-6">
-
           <BookingSummary
             date={date}
             slots={selectedSlots}
@@ -82,29 +79,20 @@ export default function BookingLayout() {
           />
 
           {showForm && (
-
             <div
               id="reservation-form"
               className="pt-6 border-t animate-fade-in"
             >
-
               <ReservationForm
                 selectedSlots={selectedSlots}
                 plan={plan}
                 people={people}
                 onSuccess={handleReservationSuccess}
               />
-
             </div>
-
           )}
-
         </div>
-
       </div>
-
     </div>
-
   );
-
 }

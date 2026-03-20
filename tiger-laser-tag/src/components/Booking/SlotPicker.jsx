@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "../../lib/supabaseClient";
 
 export default function SlotPicker({
@@ -14,6 +14,16 @@ export default function SlotPicker({
   const [error, setError] = useState(null);
 
   const refreshTimeout = useRef(null);
+
+  // ✅ Sincronizar con initialSlots cuando cambia desde el padre
+  useEffect(() => {
+    if (initialSlots && initialSlots.length > 0) {
+      console.log("Sincronizando con initialSlots:", initialSlots.map(s => s.start_time));
+      setSelectedSlots(initialSlots);
+    } else if (initialSlots && initialSlots.length === 0) {
+      setSelectedSlots([]);
+    }
+  }, [initialSlots]);
 
   /* --------------------------
      Helpers
@@ -61,7 +71,7 @@ export default function SlotPicker({
      Cargar slots
   -------------------------- */
 
-  async function loadSlots() {
+  const loadSlots = useCallback(async () => {
     if (!date) return;
 
     setLoading(true);
@@ -87,8 +97,7 @@ export default function SlotPicker({
                !slot.start_time.includes('undefined');
       });
       
-      console.log("Slots válidos:", validSlots.map(s => s.start_time));
-      
+      console.log("Slots cargados:", validSlots.map(s => s.start_time));
       setSlots(validSlots);
     } catch (err) {
       console.error("Error loading slots", err);
@@ -97,7 +106,7 @@ export default function SlotPicker({
     }
 
     setLoading(false);
-  }
+  }, [date]);
 
   /* --------------------------
      Realtime updates
@@ -105,11 +114,7 @@ export default function SlotPicker({
 
   useEffect(() => {
     if (date) loadSlots();
-  }, [date]);
-
-  useEffect(() => {
-    setSelectedSlots(initialSlots || []);
-  }, [initialSlots]);
+  }, [date, loadSlots]);
 
   useEffect(() => {
     if (!date) return;
@@ -124,15 +129,16 @@ export default function SlotPicker({
       supabase.removeChannel(channel);
       if (refreshTimeout.current) clearTimeout(refreshTimeout.current);
     };
-  }, [date]);
+  }, [date, loadSlots]);
 
   /* --------------------------
      Selección de slots
   -------------------------- */
 
-  function handleSelect(slot) {
+  const handleSelect = useCallback((slot) => {
+    console.log("=== SLOT PICKER - HANDLE SELECT ===");
     console.log("Click en slot:", slot.start_time);
-    console.log("Selección actual:", selectedSlots.map(s => s.start_time));
+    console.log("selectedSlots actual:", selectedSlots.map(s => s.start_time));
     
     // Verificar disponibilidad
     if (isSlotBlocked(slot)) {
@@ -150,35 +156,47 @@ export default function SlotPicker({
     
     if (selectedSlots.length === 0) {
       // Primer slot
+      console.log("Caso: Sin slots seleccionados");
       newSelection = [slot];
     } 
     else if (selectedSlots.length === 1) {
       const first = selectedSlots[0];
+      console.log("Caso: 1 slot seleccionado - actual:", first.start_time);
       
       if (first.id === slot.id) {
         // Deseleccionar
+        console.log("Subcaso: Mismo slot - deseleccionando");
         newSelection = [];
       }
       else if (areConsecutive(first, slot)) {
         // Seleccionar ambos
+        console.log("Subcaso: Slots consecutivos - seleccionando ambos");
         newSelection = [first, slot].sort((a, b) => 
           a.start_time.localeCompare(b.start_time)
         );
       } 
       else {
         // Reemplazar
+        console.log("Subcaso: No consecutivo - reemplazando");
         newSelection = [slot];
       }
     } 
     else {
-      // Reiniciar si hay 2
+      // Ya hay 2 slots, reiniciar
+      console.log("Caso: Ya hay 2 slots - reiniciando");
       newSelection = [slot];
     }
     
     console.log("Nueva selección:", newSelection.map(s => s.start_time));
+    
+    // Actualizar estado local
     setSelectedSlots(newSelection);
-    onSelectSlots?.(newSelection);
-  }
+    
+    // Notificar al padre
+    if (onSelectSlots) {
+      onSelectSlots(newSelection);
+    }
+  }, [selectedSlots, people, onSelectSlots]);
 
   /* --------------------------
      UI logic
@@ -232,6 +250,14 @@ export default function SlotPicker({
     return "bg-white hover:bg-gray-50 border-gray-200";
   }
 
+  function getSlotStatusText(slot) {
+    if (!isFutureSlot(slot)) return "⏰ Pasado";
+    if (isSlotBlocked(slot)) return "🔒 Reservado";
+    const remaining = getRemaining(slot);
+    if (remaining < people) return `⚠️ ${remaining} plazas`;
+    return `✅ ${remaining} plazas`;
+  }
+
   /* --------------------------
      Render
   -------------------------- */
@@ -245,10 +271,17 @@ export default function SlotPicker({
             (Selecciona otra hora consecutiva)
           </span>
         )}
+        {selectedSlots.length === 2 && (
+          <span className="text-sm text-green-600 ml-2">
+            ✓ 2 horas seleccionadas
+          </span>
+        )}
       </h3>
 
       {loading && (
-        <div className="text-sm text-gray-500">Cargando horarios...</div>
+        <div className="text-sm text-gray-500 animate-pulse">
+          Cargando horarios...
+        </div>
       )}
 
       {error && (
@@ -258,7 +291,9 @@ export default function SlotPicker({
       )}
 
       {!loading && !error && slots.length === 0 && (
-        <div className="text-sm text-gray-500">No hay horarios disponibles</div>
+        <div className="text-sm text-gray-500 bg-gray-50 p-4 rounded text-center">
+          No hay horarios disponibles para este día
+        </div>
       )}
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -268,30 +303,37 @@ export default function SlotPicker({
             onClick={() => handleSelect(slot)}
             disabled={isDisabled(slot)}
             className={`
-              p-4 rounded-xl border text-sm transition
+              p-4 rounded-xl border text-sm transition-all
               flex flex-col items-center justify-center
               ${getSlotStyle(slot)}
             `}
+            title={getSlotStatusText(slot)}
           >
-            <span className="font-semibold">
+            <span className="font-semibold text-base">
               {formatTime(slot.start_time)}
             </span>
-            <span className="text-xs">
-              {slot.reserved > 0 ? "🔒 Reservado" : `${getRemaining(slot)} plazas`}
+            <span className="text-xs mt-1">
+              {getSlotStatusText(slot)}
             </span>
           </button>
         ))}
       </div>
 
+      {/* Indicador de selección actual */}
       {selectedSlots.length > 0 && (
-        <div className="mt-4 p-3 bg-gray-50 rounded text-sm">
-          <span className="font-medium">Seleccionado: </span>
-          {selectedSlots.map((slot, i) => (
+        <div className="mt-4 p-3 bg-gray-50 rounded-lg text-sm">
+          <span className="font-medium">Horario seleccionado: </span>
+          {selectedSlots.map((slot, idx) => (
             <span key={slot.id}>
-              {formatTime(slot.start_time)}
-              {i < selectedSlots.length - 1 ? " - " : ""}
+              <span className="font-mono">{formatTime(slot.start_time)}</span>
+              {idx < selectedSlots.length - 1 ? " - " : ""}
             </span>
           ))}
+          {selectedSlots.length === 1 && (
+            <span className="text-gray-500 ml-2">
+              (Haz clic en una hora consecutiva para reservar 2 horas)
+            </span>
+          )}
         </div>
       )}
     </div>
