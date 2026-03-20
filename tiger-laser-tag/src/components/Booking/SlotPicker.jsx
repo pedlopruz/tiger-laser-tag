@@ -15,6 +15,39 @@ export default function SlotPicker({
   const refreshTimeout = useRef(null);
 
   /* --------------------------
+     Helpers
+  -------------------------- */
+
+  function normalize(time) {
+    return time?.slice(0, 5);
+  }
+
+  function areConsecutive(a, b) {
+    return normalize(a.end_time) === normalize(b.start_time);
+  }
+
+  function formatTime(time) {
+    return time?.slice(0, 5);
+  }
+
+  function isFutureSlot(slot) {
+    const now = new Date();
+    const slotDateTime = new Date(`${date}T${slot.start_time}`);
+    return slotDateTime > now;
+  }
+
+  function getRemaining(slot) {
+
+    if (slot.remaining !== undefined) return slot.remaining;
+
+    if (slot.capacity !== undefined && slot.reserved !== undefined) {
+      return slot.capacity - slot.reserved;
+    }
+
+    return 0;
+  }
+
+  /* --------------------------
      Cargar slots
   -------------------------- */
 
@@ -39,7 +72,6 @@ export default function SlotPicker({
     }
 
     setLoading(false);
-
   }
 
   /* --------------------------
@@ -53,13 +85,6 @@ export default function SlotPicker({
     }
 
     refreshTimeout.current = setTimeout(loadSlots, 200);
-
-  }
-
-  function isFutureSlot(slot) {
-    const now = new Date();
-    const slotDateTime = new Date(`${date}T${slot.start_time}`);
-    return slotDateTime > now;
   }
 
   useEffect(() => {
@@ -89,31 +114,7 @@ export default function SlotPicker({
   }, [date]);
 
   /* --------------------------
-     Helpers
-  -------------------------- */
-
-  function getRemaining(slot) {
-
-    if (slot.remaining !== undefined) return slot.remaining;
-
-    if (slot.capacity !== undefined && slot.reserved !== undefined) {
-      return slot.capacity - slot.reserved;
-    }
-
-    return 0;
-
-  }
-
-  function formatTime(time) {
-    return time?.slice(0, 5);
-  }
-
-  function areConsecutive(a, b) {
-    return a.end_time === b.start_time;
-  }
-
-  /* --------------------------
-     Selección inteligente
+     Selección
   -------------------------- */
 
   function handleSelect(slot) {
@@ -123,48 +124,41 @@ export default function SlotPicker({
 
     let newSelection = [];
 
-    // 🔹 NO HAY NADA SELECCIONADO
     if (selectedSlots.length === 0) {
-      newSelection = [slot];
-    }
 
-    // 🔹 HAY 1 SLOT
-    else if (selectedSlots.length === 1) {
+      newSelection = [slot];
+
+    } else if (selectedSlots.length === 1) {
 
       const first = selectedSlots[0];
 
-      // quitar selección
       if (first.id === slot.id) {
         newSelection = [];
       }
 
-      // añadir segundo slot consecutivo
-      else if (areConsecutive(first, slot) || areConsecutive(slot, first)) {
+      else if (
+        areConsecutive(first, slot) ||
+        areConsecutive(slot, first)
+      ) {
 
         newSelection = [first, slot].sort(
           (a, b) => a.start_time.localeCompare(b.start_time)
         );
 
+      } else {
+
+        newSelection = [slot]; // reset
+
       }
 
-      // no consecutivo → reemplazar
-      else {
-        newSelection = [slot];
-      }
+    } else {
 
-    }
+      newSelection = [slot]; // reset si ya hay 2
 
-    // 🔹 YA HAY 2 → reset
-    else {
-      newSelection = [slot];
     }
 
     setSelectedSlots(newSelection);
-
-    if (onSelectSlots) {
-      onSelectSlots(newSelection);
-    }
-
+    onSelectSlots?.(newSelection);
   }
 
   /* --------------------------
@@ -183,22 +177,44 @@ export default function SlotPicker({
 
     if (remaining < people || slot.isFull) return true;
 
-    // 🔥 CLAVE: solo permitir consecutivos si ya hay 1 seleccionado
     if (selectedSlots.length === 1) {
 
       const first = selectedSlots[0];
 
-      const isValidSecond =
-        slot.id === first.id ||
-        areConsecutive(first, slot) ||
-        areConsecutive(slot, first);
+      const isSame = slot.id === first.id;
 
-      if (!isValidSecond) return true;
+      const isNext =
+        normalize(first.end_time) === normalize(slot.start_time);
 
+      const isPrev =
+        normalize(slot.end_time) === normalize(first.start_time);
+
+      if (!isSame && !isNext && !isPrev) {
+        return true;
+      }
     }
 
     return false;
+  }
 
+  function getSlotStyle(slot) {
+
+    const selected = isSelected(slot);
+    const disabled = isDisabled(slot);
+
+    if (selectedSlots.length === 2 && selected) {
+      return "bg-tiger-green text-white border-tiger-green";
+    }
+
+    if (selected) {
+      return "bg-tiger-orange text-white border-tiger-orange";
+    }
+
+    if (disabled) {
+      return "bg-gray-100 text-gray-400 cursor-not-allowed";
+    }
+
+    return "bg-white hover:bg-gray-50";
   }
 
   /* --------------------------
@@ -230,24 +246,17 @@ export default function SlotPicker({
         {slots.map((slot) => {
 
           const remaining = getRemaining(slot);
-          const disabled = isDisabled(slot);
-          const selected = isSelected(slot);
 
           return (
 
             <button
               key={slot.id}
               onClick={() => handleSelect(slot)}
-              disabled={disabled}
+              disabled={isDisabled(slot)}
               className={`
                 p-4 rounded-xl border text-sm transition
                 flex flex-col items-center justify-center
-
-                ${selected
-                  ? "bg-tiger-orange text-white border-tiger-orange"
-                  : disabled
-                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                    : "bg-white hover:bg-gray-50"}
+                ${getSlotStyle(slot)}
               `}
             >
 
