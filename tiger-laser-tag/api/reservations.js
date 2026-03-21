@@ -490,7 +490,7 @@ async function createReservation(req, res) {
     console.error(error);
 
     return res.status(500).json({
-      error: "Error creating reservation"
+      error: "Error creating reservations"
     });
 
   }
