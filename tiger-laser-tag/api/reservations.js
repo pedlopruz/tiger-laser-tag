@@ -397,19 +397,32 @@ async function createReservation(req, res) {
     email,
     phone,
     people,
-    menor_edad
+    menor_edad,
+    personas_electroshock  // ✅ Nuevo campo
   } = req.body;
 
+  // ✅ Validación incluyendo personas_electroshock
   if (
     !slot_ids || !Array.isArray(slot_ids) || slot_ids.length === 0 ||
-    !plan_id || !name || !email || !people
+    !plan_id || !name || !email || !people ||
+    personas_electroshock === undefined  // ✅ Validar que viene
   ) {
+    console.error("Missing fields:", {
+      slot_ids,
+      plan_id,
+      name,
+      email,
+      people,
+      menor_edad,
+      personas_electroshock
+    });
     return res.status(400).json({
       error: "Missing required fields"
     });
   }
 
   const players = parseInt(people);
+  const electroshock = parseInt(personas_electroshock);
 
   if (players < 1) {
     return res.status(400).json({
@@ -417,8 +430,21 @@ async function createReservation(req, res) {
     });
   }
 
-  const emailRegex = /\S+@\S+\.\S+/;
+  // ✅ Validar que electroshock no sea mayor que el total de jugadores
+  if (electroshock > players) {
+    return res.status(400).json({
+      error: "El número de personas para electroshock no puede ser mayor que el total de jugadores"
+    });
+  }
 
+  // ✅ Validar que electroshock sea al menos 1
+  if (electroshock < 1) {
+    return res.status(400).json({
+      error: "Debe haber al menos 1 persona para electroshock"
+    });
+  }
+
+  const emailRegex = /\S+@\S+\.\S+/;
   if (!emailRegex.test(email)) {
     return res.status(400).json({
       error: "Invalid email"
@@ -426,9 +452,8 @@ async function createReservation(req, res) {
   }
 
   /* --------------------------
-   🚫 Validar slots no pasados
--------------------------- */
-
+     🚫 Validar slots no pasados
+  -------------------------- */
   const { data: slotsData, error: slotsError } = await supabaseAdmin
     .from("time_slots")
     .select("date, start_time")
@@ -443,19 +468,15 @@ async function createReservation(req, res) {
   const now = new Date();
 
   for (const s of slotsData) {
-
     const slotDateTime = new Date(`${s.date}T${s.start_time}`);
-
     if (slotDateTime <= now) {
       return res.status(409).json({
         error: "No puedes reservar un horario pasado"
       });
     }
-
   }
 
   try {
-
     const reservation_code = nanoid(12);
 
     const { data, error } = await supabaseAdmin.rpc(
@@ -465,15 +486,16 @@ async function createReservation(req, res) {
         p_plan_id: plan_id,
         p_name: name,
         p_email: email,
-        p_phone: phone,
+        p_phone: phone || null,
         p_people: players,
+        p_personas_electroshock: electroshock,  // ✅ Enviar a la RPC
         p_reservation_code: reservation_code,
         p_menor_edad: menor_edad ?? false
       }
     );
 
     if (error) {
-      console.error(error);
+      console.error("Error en RPC:", error);
       return res.status(409).json({
         error: error.message
       });
@@ -486,13 +508,9 @@ async function createReservation(req, res) {
     });
 
   } catch (error) {
-
-    console.error(error);
-
+    console.error("Error creating reservation:", error);
     return res.status(500).json({
-      error: "Error creating reservations"
+      error: "Error creating reservation"
     });
-
   }
-
 }
