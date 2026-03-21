@@ -1,3 +1,4 @@
+// reservations.js
 import { supabaseAdmin } from "./supabaseAdmin.js";
 import { nanoid } from "nanoid";
 
