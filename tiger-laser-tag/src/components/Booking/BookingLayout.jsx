@@ -15,16 +15,14 @@ export default function BookingLayout() {
   const [selectedSlots, setSelectedSlots] = useState([]);
   const [plan, setPlan] = useState(null);
   const [people, setPeople] = useState(2);
-  const [personasElectroshock, setPersonasElectroshock] = useState(2); // ✅ Nuevo estado
+  const [personasElectroshock, setPersonasElectroshock] = useState(2);
   const [showForm, setShowForm] = useState(false);
 
-  // ✅ Usar useCallback para evitar re-renders innecesarios
   const handleSelectSlots = useCallback((slots) => {
     console.log("BookingLayout - slots seleccionados:", slots.map(s => s.start_time));
     setSelectedSlots(slots);
   }, []);
 
-  // ✅ Manejar cambio de personas electroshock
   const handleElectroshockChange = useCallback((value) => {
     setPersonasElectroshock(value);
   }, []);
@@ -43,29 +41,45 @@ export default function BookingLayout() {
     }, 100);
   }
 
-   async function handleReservationSuccess(data) {
+  // ✅ Función auxiliar para obtener el rango de horas
+  const getTimeRange = useCallback(() => {
+    if (!selectedSlots.length) return "-";
+    if (selectedSlots.length === 1) {
+      return selectedSlots[0].start_time?.slice(0, 5);
+    }
+    const sorted = [...selectedSlots].sort(
+      (a, b) => a.start_time.localeCompare(b.start_time)
+    );
+    return `${sorted[0].start_time?.slice(0, 5)} - ${sorted[sorted.length - 1].end_time?.slice(0, 5)}`;
+  }, [selectedSlots]);
+
+  // ✅ handleReservationSuccess actualizado
+  const handleReservationSuccess = useCallback(async (reservationData) => {
+    console.log("Reserva exitosa:", reservationData);
+    
     // Primero navegar a la página de confirmación
-    navigate(`/reserva-confirmada?code=${data.code}`);
+    navigate(`/reserva-confirmada?code=${reservationData.code}`);
     
     // Luego enviar el correo de confirmación en segundo plano
     try {
       const basePeople = Math.max(people, 10);
       const total_price = basePeople * (plan?.price || 0);
+      const timeRange = getTimeRange();
       
       const emailData = {
-        name: data.name || "Cliente", // Asegúrate de tener el nombre
-        email: data.email || "",      // Asegúrate de tener el email
-        phone: data.phone || "",
-        reservation_code: data.code,
+        name: reservationData.name,
+        email: reservationData.email,
+        phone: reservationData.phone || "",
+        reservation_code: reservationData.code,
         date: date,
-        time_range: getTimeRange(),
+        time_range: timeRange,
         duration: selectedSlots.length,
         plan_name: plan?.name || "",
         plan_price: plan?.price || 0,
         people: people,
         personas_electroshock: personasElectroshock,
         total_price: total_price,
-        menor_edad: data.menor_edad || false
+        menor_edad: reservationData.menor_edad || false
       };
       
       console.log("Enviando email de confirmación:", emailData);
@@ -75,21 +89,20 @@ export default function BookingLayout() {
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({action:"reservation", ...emailData})
+        body: JSON.stringify({action: "reservation", ...emailData})
       });
       
       if (!emailRes.ok) {
-        console.error("Error sending confirmation email:", await emailRes.text());
+        const errorText = await emailRes.text();
+        console.error("Error sending confirmation email:", errorText);
       } else {
-        console.log("Email de confirmación enviado exitosamente");
+        console.log("✅ Email de confirmación enviado exitosamente");
       }
       
     } catch (emailError) {
-      console.error("Error sending confirmation email:", emailError);
-      // No mostramos error al usuario, el correo ya está confirmado
+      console.error("❌ Error sending confirmation email:", emailError);
     }
-  }
-
+  }, [navigate, people, plan, date, selectedSlots, personasElectroshock, getTimeRange]);
 
   return (
     <div className="grid lg:grid-cols-2 gap-10">
@@ -126,7 +139,7 @@ export default function BookingLayout() {
             setPeople={setPeople}
             onConfirm={handleConfirm}
             showForm={showForm}
-            onElectroshockChange={handleElectroshockChange}  // ✅ Pasar callback
+            onElectroshockChange={handleElectroshockChange}
           />
 
           {showForm && (
@@ -138,7 +151,7 @@ export default function BookingLayout() {
                 selectedSlots={selectedSlots}
                 plan={plan}
                 people={people}
-                personas_electroshock={personasElectroshock}  // ✅ Pasar el valor
+                personas_electroshock={personasElectroshock}
                 onSuccess={handleReservationSuccess}
               />
             </div>
