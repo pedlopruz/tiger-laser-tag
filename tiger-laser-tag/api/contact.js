@@ -45,7 +45,7 @@ async function ContactForm(req,res){
 
   try {
     await resend.emails.send({
-      from: "Tiger Laser Tag <onboarding@resend.dev>",
+      from: "Tiger Laser Tag <tigerlasertag.es>",
       to: 'plopez2011@gamil.com',
       subject: `Nuevo mensaje de ${name}`,
       html: `
@@ -293,7 +293,7 @@ async function sendReservationEmail(req,res){
     console.log("Intentando enviar email a:", email);
     
     const { data, error } = await resend.emails.send({
-      from: "Tiger Laser Tag <onboarding@resend.dev>",
+      from: "Tiger Laser Tag <tigerlasertag.es>",
       to: email,
       subject: `Confirmación de reserva - Tiger Laser Tag - Código: ${reservation_code}`,
       html: emailHtml
@@ -314,7 +314,7 @@ async function sendReservationEmail(req,res){
     if (process.env.ADMIN_EMAIL) {
       try {
         await resend.emails.send({
-          from: "Tiger Laser Tag <onboarding@resend.dev>",
+          from: "Tiger Laser Tag <tigerlasertag.es>",
           to: process.env.ADMIN_EMAIL,
           subject: `Nueva reserva: ${reservation_code} - ${name}`,
           html: `
