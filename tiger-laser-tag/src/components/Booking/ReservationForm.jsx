@@ -22,8 +22,8 @@ export default function ReservationForm({
     e.preventDefault();
     setError(null);
 
-    if (!name || !email) {
-      setError("Nombre y email son obligatorios");
+    if (!name || !email || !phone) {
+      setError("Todos los campos son obligatorios");
       return;
     }
 

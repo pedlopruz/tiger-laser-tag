@@ -444,10 +444,21 @@ async function createReservation(req, res) {
     });
   }
 
+  /* --------------------------
+     🚫 Validar email y telefono
+  -------------------------- */
+
   const emailRegex = /\S+@\S+\.\S+/;
   if (!emailRegex.test(email)) {
     return res.status(400).json({
       error: "Invalid email"
+    });
+  }
+
+  const phoneRegex = /^\d{10}$/;
+  if (!phoneRegex.test(phone)) {
+    return res.status(400).json({
+      error: "Invalid phone number"
     });
   }
 
