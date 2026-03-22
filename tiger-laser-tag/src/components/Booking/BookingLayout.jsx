@@ -15,12 +15,18 @@ export default function BookingLayout() {
   const [selectedSlots, setSelectedSlots] = useState([]);
   const [plan, setPlan] = useState(null);
   const [people, setPeople] = useState(2);
+  const [personasElectroshock, setPersonasElectroshock] = useState(2); // ✅ Nuevo estado
   const [showForm, setShowForm] = useState(false);
 
   // ✅ Usar useCallback para evitar re-renders innecesarios
   const handleSelectSlots = useCallback((slots) => {
     console.log("BookingLayout - slots seleccionados:", slots.map(s => s.start_time));
     setSelectedSlots(slots);
+  }, []);
+
+  // ✅ Manejar cambio de personas electroshock
+  const handleElectroshockChange = useCallback((value) => {
+    setPersonasElectroshock(value);
   }, []);
 
   function handleConfirm() {
@@ -49,11 +55,11 @@ export default function BookingLayout() {
 
         {date && (
           <SlotPicker
-            key={`slots-${date}`} // ✅ Usar key para forzar recarga cuando cambia la fecha
+            key={`slots-${date}`}
             date={date}
             people={people}
             onSelectSlots={handleSelectSlots}
-            initialSlots={selectedSlots} // ✅ PASAR los slots seleccionados actuales
+            initialSlots={selectedSlots}
           />
         )}
 
@@ -76,6 +82,7 @@ export default function BookingLayout() {
             setPeople={setPeople}
             onConfirm={handleConfirm}
             showForm={showForm}
+            onElectroshockChange={handleElectroshockChange}  // ✅ Pasar callback
           />
 
           {showForm && (
@@ -87,6 +94,7 @@ export default function BookingLayout() {
                 selectedSlots={selectedSlots}
                 plan={plan}
                 people={people}
+                personas_electroshock={personasElectroshock}  // ✅ Pasar el valor
                 onSuccess={handleReservationSuccess}
               />
             </div>
