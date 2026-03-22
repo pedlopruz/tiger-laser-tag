@@ -70,12 +70,12 @@ export default function BookingLayout() {
       
       console.log("Enviando email de confirmación:", emailData);
       
-      const emailRes = await fetch("/api/send-reservation-email", {
+      const emailRes = await fetch("/api/contact", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify(emailData)
+        body: JSON.stringify({action:"confirm", ...emailData})
       });
       
       if (!emailRes.ok) {
