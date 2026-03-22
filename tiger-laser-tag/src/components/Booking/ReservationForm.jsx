@@ -125,7 +125,14 @@ export default function ReservationForm({
       }
 
       if (onSuccess) {
-        onSuccess({data, name, email, phone, menor_edad: menorEdad});
+        onSuccess({
+          code: data.code,
+          reservation_id: data.reservation_id,
+          name: name,
+          email: email,
+          phone: phone,
+          menor_edad: menorEdad
+        });
       }
 
     } catch (err) {

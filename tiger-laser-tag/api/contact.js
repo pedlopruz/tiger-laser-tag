@@ -17,7 +17,7 @@ export default async function handler(req, res) {
       case "contact":
         return ContactForm(req,res);
 
-      case "resevation":
+      case "reservation":
         return sendReservationEmail(req,res);
 
       default:

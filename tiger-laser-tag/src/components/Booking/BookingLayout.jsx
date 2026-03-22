@@ -75,7 +75,7 @@ export default function BookingLayout() {
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({action:"confirm", ...emailData})
+        body: JSON.stringify({action:"reservation", ...emailData})
       });
       
       if (!emailRes.ok) {
