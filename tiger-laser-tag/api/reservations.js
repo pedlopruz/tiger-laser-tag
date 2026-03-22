@@ -455,11 +455,7 @@ async function createReservation(req, res) {
     });
   }
 
-  if (!isValidPhone(phone)) {
-    return res.status(400).json({
-      error: "Invalid phone number"
-    });
-  }
+
 
   /* --------------------------
      🚫 Validar slots no pasados
