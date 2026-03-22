@@ -43,9 +43,53 @@ export default function BookingLayout() {
     }, 100);
   }
 
-  function handleReservationSuccess(data){
+   async function handleReservationSuccess(data) {
+    // Primero navegar a la página de confirmación
     navigate(`/reserva-confirmada?code=${data.code}`);
+    
+    // Luego enviar el correo de confirmación en segundo plano
+    try {
+      const basePeople = Math.max(people, 10);
+      const total_price = basePeople * (plan?.price || 0);
+      
+      const emailData = {
+        name: data.name || "Cliente", // Asegúrate de tener el nombre
+        email: data.email || "",      // Asegúrate de tener el email
+        phone: data.phone || "",
+        reservation_code: data.code,
+        date: date,
+        time_range: getTimeRange(),
+        duration: selectedSlots.length,
+        plan_name: plan?.name || "",
+        plan_price: plan?.price || 0,
+        people: people,
+        personas_electroshock: personasElectroshock,
+        total_price: total_price,
+        menor_edad: data.menor_edad || false
+      };
+      
+      console.log("Enviando email de confirmación:", emailData);
+      
+      const emailRes = await fetch("/api/send-reservation-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(emailData)
+      });
+      
+      if (!emailRes.ok) {
+        console.error("Error sending confirmation email:", await emailRes.text());
+      } else {
+        console.log("Email de confirmación enviado exitosamente");
+      }
+      
+    } catch (emailError) {
+      console.error("Error sending confirmation email:", emailError);
+      // No mostramos error al usuario, el correo ya está confirmado
+    }
   }
+
 
   return (
     <div className="grid lg:grid-cols-2 gap-10">
