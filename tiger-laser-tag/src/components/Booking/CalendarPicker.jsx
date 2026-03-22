@@ -3,19 +3,27 @@ import { useEffect, useState, useMemo } from "react";
 export default function CalendarPicker({ onSelectDate, initialDate }) {
 
   /* --------------------------
-     HOY normalizado (ANTI-BUG)
+     HOY con zona horaria de España
   -------------------------- */
-  function getTodayStr() {
+  function getTodayInSpain() {
+    // Obtener fecha actual en zona horaria de España
     const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    return now.toISOString().slice(0, 10);
+    // Formatear a YYYY-MM-DD usando la zona horaria local de España
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
   }
 
-  const todayStr = getTodayStr();
+  const todayStr = getTodayInSpain();
+  
+  // Crear fecha de hoy para comparaciones de mes
   const today = new Date();
+  const todayYear = today.getFullYear();
+  const todayMonth = today.getMonth();
 
   const [currentMonth, setCurrentMonth] = useState(
-    new Date(today.getFullYear(), today.getMonth(), 1)
+    new Date(todayYear, todayMonth, 1)
   );
 
   const [availableDays, setAvailableDays] = useState([]);
@@ -91,11 +99,12 @@ export default function CalendarPicker({ onSelectDate, initialDate }) {
 
   function startDay(date) {
     const day = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+    // Ajustar para que la semana empiece en lunes (0 = domingo, 1 = lunes...)
     return (day + 6) % 7;
   }
 
   /* --------------------------
-     BLOQUEAR meses pasados
+     BLOQUEAR meses pasados (usando año y mes local)
   -------------------------- */
   function changeMonth(offset) {
     const newDate = new Date(
@@ -104,11 +113,14 @@ export default function CalendarPicker({ onSelectDate, initialDate }) {
       1
     );
 
-    const todayMonthStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
-    const newMonthStr = `${newDate.getFullYear()}-${String(newDate.getMonth() + 1).padStart(2, "0")}`;
-
-    // ❌ no permitir ir a meses pasados
-    if (newMonthStr < todayMonthStr) return;
+    // Comparar año y mes
+    const newYear = newDate.getFullYear();
+    const newMonth = newDate.getMonth();
+    
+    // No permitir ir a meses anteriores al mes actual
+    if (newYear < todayYear || (newYear === todayYear && newMonth < todayMonth)) {
+      return;
+    }
 
     setCurrentMonth(newDate);
   }
@@ -120,7 +132,7 @@ export default function CalendarPicker({ onSelectDate, initialDate }) {
     return `${y}-${m}-${d}`;
   }
 
-  // ✅ Función para verificar si un día es pasado
+  // ✅ Función para verificar si un día es pasado (comparación con fecha de hoy en España)
   function isPastDay(day) {
     const dateStr = formatDate(day);
     return dateStr < todayStr;
@@ -128,18 +140,18 @@ export default function CalendarPicker({ onSelectDate, initialDate }) {
 
   // ✅ Función para verificar si un día está disponible
   function isDayAvailable(day) {
-    const dateStr = formatDate(day);
-    // Día pasado = no disponible
-    if (dateStr < todayStr) return false;
-    // Verificar si está en la lista de disponibles
-    return availableSet.has(dateStr);
+    // Días pasados nunca están disponibles
+    if (isPastDay(day)) return false;
+    // Verificar si está en la lista de disponibles de la API
+    return availableSet.has(formatDate(day));
   }
 
   function handleSelect(day) {
     const dateStr = formatDate(day);
     
-    // ✅ No permitir seleccionar días pasados
+    // No permitir seleccionar días pasados
     if (isPastDay(day)) return;
+    // No permitir seleccionar días no disponibles
     if (!availableSet.has(dateStr)) return;
 
     setSelectedDate(dateStr);
@@ -181,13 +193,13 @@ export default function CalendarPicker({ onSelectDate, initialDate }) {
           onClick={() => changeMonth(-1)}
           className={`
             px-3 py-1 rounded transition
-            ${currentMonth.getFullYear() === today.getFullYear() && 
-              currentMonth.getMonth() === today.getMonth()
+            ${currentMonth.getFullYear() === todayYear && 
+              currentMonth.getMonth() === todayMonth
               ? "text-gray-400 cursor-not-allowed"
               : "hover:bg-gray-100"}
           `}
-          disabled={currentMonth.getFullYear() === today.getFullYear() && 
-                    currentMonth.getMonth() === today.getMonth()}
+          disabled={currentMonth.getFullYear() === todayYear && 
+                    currentMonth.getMonth() === todayMonth}
         >
           ←
         </button>
