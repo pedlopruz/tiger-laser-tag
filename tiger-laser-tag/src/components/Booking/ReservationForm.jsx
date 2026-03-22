@@ -99,6 +99,7 @@ export default function ReservationForm({
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
+          action: "create",
           slot_ids: selectedSlots.map(s => s.id),
           plan_id: plan.id,
           name,
