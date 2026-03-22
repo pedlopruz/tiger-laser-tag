@@ -46,7 +46,7 @@ async function ContactForm(req,res){
   try {
     await resend.emails.send({
       from: "Tiger Laser Tag <onboarding@resend.dev>",
-      to: 'pl836261@gmail.com',
+      to: 'plopez2011@gamil.com',
       subject: `Nuevo mensaje de ${name}`,
       html: `
         <h2>Nuevo mensaje desde la web</h2>
