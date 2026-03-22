@@ -18,33 +18,37 @@ export default function ReservationForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // ✅ Función para validar número de teléfono (español o internacional)
+  // ✅ Función corregida para validar número de teléfono
   function isValidPhone(phoneNumber) {
-    // Eliminar espacios, guiones y paréntesis
-    const cleaned = phoneNumber.replace(/[\s\-\(\)]/g, '');
+    // Eliminar espacios, guiones, paréntesis y puntos
+    const cleaned = phoneNumber.replace(/[\s\-\(\)\.]/g, '');
     
     // Patrones válidos:
-    // Español: 6, 7, 9 seguido de 8 dígitos (9 en total)
-    // Español con prefijo: +34 seguido de 9 dígitos
-    // Internacional: + seguido de 1-3 dígitos de prefijo y 6-12 dígitos
     const patterns = [
-      /^[679]\d{8}$/,                    // Español sin prefijo: 6XXXXXXXX, 7XXXXXXXX, 9XXXXXXXX
-      /^\+34[679]\d{8}$/,                // Español con prefijo +34
-      /^\+[1-9]\d{1,2}\d{6,12}$/,       // Internacional: +XX XXXXXX...
-      /^00[1-9]\d{1,2}\d{6,12}$/        // Internacional con 00 en lugar de +
+      /^[679]\d{8}$/,                           // Español: 612345678
+      /^\+34[679]\d{8}$/,                       // Español con +34: +34612345678
+      /^0034[679]\d{8}$/,                       // Español con 0034: 0034612345678
+      /^\+[1-9]\d{1,2}\d{6,12}$/,               // Internacional: +XX XXXXXX...
+      /^00[1-9]\d{1,2}\d{6,12}$/                // Internacional con 00: 00XX XXXXXX...
     ];
     
     return patterns.some(pattern => pattern.test(cleaned));
   }
 
-  // ✅ Función para formatear teléfono mientras escribe (opcional)
+  // ✅ Función para formatear teléfono mientras escribe
   function formatPhoneInput(value) {
-    // Eliminar todo lo que no sea número o +
-    let cleaned = value.replace(/[^\d+]/g, '');
+    // Eliminar espacios, guiones, paréntesis y puntos
+    let cleaned = value.replace(/[\s\-\(\)\.]/g, '');
     
-    // Si empieza con +, mantenerlo
-    if (!cleaned.startsWith('+') && cleaned.length > 0 && !cleaned.startsWith('00')) {
-      cleaned = cleaned.replace(/^0+/, ''); // Eliminar ceros iniciales
+    if (!cleaned) return '';
+    
+    // Mantener prefijos internacionales
+    if (cleaned.startsWith('+')) return cleaned;
+    if (cleaned.startsWith('00')) return cleaned;
+    
+    // Eliminar ceros iniciales para números españoles
+    if (cleaned.length > 0) {
+      cleaned = cleaned.replace(/^0+/, '');
     }
     
     return cleaned;
@@ -60,9 +64,9 @@ export default function ReservationForm({
       return;
     }
 
-    // ✅ Validación de teléfono mejorada
+    // ✅ Validación de teléfono
     if (!isValidPhone(phone)) {
-      setError("Por favor, introduce un número de teléfono válido (ej: 612345678, +34612345678, +441234567890)");
+      setError("Por favor, introduce un número de teléfono válido. Ejemplos: 612345678, +34693786919, +441234567890");
       return;
     }
 
@@ -132,7 +136,6 @@ export default function ReservationForm({
     setLoading(false);
   }
 
-  // ✅ Manejar cambio de teléfono con formato opcional
   const handlePhoneChange = (e) => {
     const rawValue = e.target.value;
     const formattedValue = formatPhoneInput(rawValue);
@@ -178,10 +181,10 @@ export default function ReservationForm({
             onChange={handlePhoneChange}
             className="w-full border rounded-lg px-3 py-2 mt-1"
             required
-            placeholder="612345678 o +34612345678"
+            placeholder="612345678 o +34693786919"
           />
           <p className="text-xs text-gray-500 mt-1">
-            📱 Ejemplos válidos: 612345678, +34612345678, +441234567890
+            📱 Ejemplos: 612345678, +34693786919, +441234567890
           </p>
         </div>
 
