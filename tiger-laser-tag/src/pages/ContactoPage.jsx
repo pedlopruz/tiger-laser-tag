@@ -46,7 +46,7 @@ const ContactoPage = () => {
       const response = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify( {action:"contact", ...formData}),
       });
 
       if (!response.ok) {

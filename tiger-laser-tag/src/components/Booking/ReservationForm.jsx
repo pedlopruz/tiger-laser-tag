@@ -5,7 +5,7 @@ export default function ReservationForm({
   selectedSlots,
   plan,
   people,
-  personas_electroshock,  // ✅ Nuevo prop
+  personas_electroshock,
   holdId,
   onSuccess
 }) {
@@ -18,12 +18,55 @@ export default function ReservationForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // ✅ Función corregida para validar número de teléfono
+  function isValidPhone(phoneNumber) {
+    // Eliminar espacios, guiones, paréntesis y puntos
+    const cleaned = phoneNumber.replace(/[\s\-\(\)\.]/g, '');
+    
+    // Patrones válidos:
+    const patterns = [
+      /^[679]\d{8}$/,                           // Español: 612345678
+      /^\+34[679]\d{8}$/,                       // Español con +34: +34612345678
+      /^0034[679]\d{8}$/,                       // Español con 0034: 0034612345678
+      /^\+[1-9]\d{1,2}\d{6,12}$/,               // Internacional: +XX XXXXXX...
+      /^00[1-9]\d{1,2}\d{6,12}$/                // Internacional con 00: 00XX XXXXXX...
+    ];
+    
+    return patterns.some(pattern => pattern.test(cleaned));
+  }
+
+  // ✅ Función para formatear teléfono mientras escribe
+  function formatPhoneInput(value) {
+    // Eliminar espacios, guiones, paréntesis y puntos
+    let cleaned = value.replace(/[\s\-\(\)\.]/g, '');
+    
+    if (!cleaned) return '';
+    
+    // Mantener prefijos internacionales
+    if (cleaned.startsWith('+')) return cleaned;
+    if (cleaned.startsWith('00')) return cleaned;
+    
+    // Eliminar ceros iniciales para números españoles
+    if (cleaned.length > 0) {
+      cleaned = cleaned.replace(/^0+/, '');
+    }
+    
+    return cleaned;
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setError(null);
 
-    if (!name || !email) {
-      setError("Nombre y email son obligatorios");
+    // Validación de campos obligatorios
+    if (!name || !email || !phone) {
+      setError("Todos los campos son obligatorios");
+      return;
+    }
+
+    // ✅ Validación de teléfono
+    if (!isValidPhone(phone)) {
+      setError("Por favor, introduce un número de teléfono válido. Ejemplos: 612345678, +34693786919, +441234567890");
       return;
     }
 
@@ -37,21 +80,15 @@ export default function ReservationForm({
       return;
     }
 
-    // ✅ Validar que personas_electroshock no sea mayor que people
     if (personas_electroshock > people) {
       setError("El número de personas para electroshock no puede ser mayor que el total de jugadores");
       return;
     }
 
-    // ✅ Validar que personas_electroshock sea al menos 1
     if (personas_electroshock < 1) {
       setError("Debe haber al menos 1 persona para electroshock");
       return;
     }
-
-    /* --------------------------
-       Reglas negocio
-    -------------------------- */
 
     const basePeople = Math.max(people, 10);
     const precio_total = basePeople * plan.price;
@@ -66,17 +103,17 @@ export default function ReservationForm({
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          action:"create",
+          action: "create",
           slot_ids: selectedSlots.map(s => s.id),
           plan_id: plan.id,
           name,
           email,
-          phone,
+          phone: phone.trim(),
           people,
           hold_id: holdId,
           menor_edad: menorEdad,
           precio_total,
-          personas_electroshock,  // ✅ Enviar el valor real
+          personas_electroshock,
           num_horas
         })
       });
@@ -88,7 +125,14 @@ export default function ReservationForm({
       }
 
       if (onSuccess) {
-        onSuccess(data);
+        onSuccess({
+          code: data.code,
+          reservation_id: data.reservation_id,
+          name: name,
+          email: email,
+          phone: phone,
+          menor_edad: menorEdad
+        });
       }
 
     } catch (err) {
@@ -99,6 +143,12 @@ export default function ReservationForm({
     setLoading(false);
   }
 
+  const handlePhoneChange = (e) => {
+    const rawValue = e.target.value;
+    const formattedValue = formatPhoneInput(rawValue);
+    setPhone(formattedValue);
+  };
+
   return (
     <div className="bg-white rounded-xl shadow p-6 mt-6" id="reservation-form">
       <h2 className="text-xl font-bold mb-6">
@@ -107,38 +157,44 @@ export default function ReservationForm({
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="text-sm font-medium">Nombre</label>
+          <label className="text-sm font-medium">Nombre *</label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             className="w-full border rounded-lg px-3 py-2 mt-1"
             required
+            placeholder="Nombre completo"
           />
         </div>
 
         <div>
-          <label className="text-sm font-medium">Email</label>
+          <label className="text-sm font-medium">Email *</label>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="w-full border rounded-lg px-3 py-2 mt-1"
             required
+            placeholder="ejemplo@correo.com"
           />
         </div>
 
         <div>
-          <label className="text-sm font-medium">Teléfono</label>
+          <label className="text-sm font-medium">Teléfono *</label>
           <input
             type="tel"
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            onChange={handlePhoneChange}
             className="w-full border rounded-lg px-3 py-2 mt-1"
+            required
+            placeholder="612345678 o +34693786919"
           />
+          <p className="text-xs text-gray-500 mt-1">
+            📱 Ejemplos: 612345678, +34693786919, +441234567890
+          </p>
         </div>
 
-        {/* ✅ Mostrar información de electroshock */}
         {personas_electroshock < people && (
           <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded">
             💡 {people - personas_electroshock} persona(s) no participarán en Electroshock
@@ -159,8 +215,8 @@ export default function ReservationForm({
         </div>
 
         {error && (
-          <div className="text-red-600 text-sm">
-            {error}
+          <div className="text-red-600 text-sm bg-red-50 p-3 rounded">
+            ❌ {error}
           </div>
         )}
 
