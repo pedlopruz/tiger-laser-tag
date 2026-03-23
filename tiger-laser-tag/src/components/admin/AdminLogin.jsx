@@ -22,7 +22,7 @@ export default function AdminLogin({ onLogin }) {
       const res = await fetch('/api/admin/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password })
+        body: JSON.stringify({ action: 'login', password })
       });
 
       console.log("2. Respuesta recibida, status:", res.status);

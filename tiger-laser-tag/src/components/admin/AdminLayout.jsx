@@ -31,12 +31,27 @@ export default function AdminLayout() {
     if (savedName) setAdminName(savedName);
   }, []);
 
-  const handleLogout = () => {
+const handleLogout = async () => {
+  try {
+    // Opcional: Notificar al backend
+    await fetch('/api/admin/logout', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+  } catch (error) {
+    console.error("Error en logout:", error);
+  } finally {
+    // Limpiar localStorage
     localStorage.removeItem('adminToken');
     localStorage.removeItem('adminLoginTime');
     localStorage.removeItem('adminName');
-    navigate('/admin/login');
-  };
+    
+    // Redirigir al login
+    navigate('/admin');
+  }
+};
 
   const tabs = [
     { id: 'reservations', name: 'Reservas', icon: LayoutDashboard, color: 'text-tiger-orange' },

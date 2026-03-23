@@ -312,17 +312,6 @@ export default function CalendarView() {
                           <div className="text-2xl font-bold text-tiger-orange">€{res.precio_total}</div>
                           <div className="text-xs text-gray-500">Total reserva</div>
                         </div>
-                        <div className="flex gap-2 mt-2">
-                          <button
-                            onClick={() => {
-                              const url = `${window.location.origin}/mis-reservas?code=${res.reservation_code}`;
-                              window.open(url, '_blank');
-                            }}
-                            className="px-3 py-1 text-xs bg-tiger-green text-white rounded hover:opacity-90 transition"
-                          >
-                            Ver detalles
-                          </button>
-                        </div>
                       </div>
                     </div>
                   </div>
