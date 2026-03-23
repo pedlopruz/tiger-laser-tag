@@ -31,12 +31,15 @@ export default function AdminLayout() {
     if (savedName) setAdminName(savedName);
   }, []);
 
+// src/components/admin/AdminLayout.jsx
 const handleLogout = async () => {
   try {
-    // Opcional: Notificar al backend
+    // Llamar al endpoint de logout
     await fetch('/api/admin/auth', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify({ action: 'logout' })
     });
   } catch (error) {
@@ -47,8 +50,8 @@ const handleLogout = async () => {
     localStorage.removeItem('adminLoginTime');
     localStorage.removeItem('adminName');
     
-    // Redirigir al login
-    navigate('/admin');
+    // ✅ Forzar recarga completa para resetear el estado
+    window.location.href = '/admin';
   }
 };
 
