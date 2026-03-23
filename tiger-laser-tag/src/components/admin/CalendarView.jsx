@@ -1,7 +1,7 @@
 // src/components/admin/CalendarView.jsx
 import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
-import { supabaseAdmin } from '../../../api/supabaseAdmin';
+import { supabase } from '../../lib/supabaseClient';
 
 export default function CalendarView() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -21,7 +21,7 @@ export default function CalendarView() {
     const endDate = new Date(year, currentDate.getMonth() + 1, 0).toISOString().split('T')[0];
 
     try {
-      const { data, error } = await supabaseAdmin
+      const { data, error } = await supabase
         .from('reservations')
         .select(`
           *,

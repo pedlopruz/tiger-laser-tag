@@ -1,7 +1,7 @@
 // src/components/admin/SettingsPanel.jsx
 import { useState, useEffect } from 'react';
 import { Save, RefreshCw, AlertCircle } from 'lucide-react';
-import { supabaseAdmin } from '../../../api/supabaseAdmin';
+import { supabase } from '../../lib/supabase'; // ✅ Cambiar a supabase
 import { Button } from '@/components/ui/button';
 
 export default function SettingsPanel() {
@@ -24,7 +24,7 @@ export default function SettingsPanel() {
   const loadSettings = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabaseAdmin
+      const { data, error } = await supabase
         .from('business_settings')
         .select('*')
         .single();

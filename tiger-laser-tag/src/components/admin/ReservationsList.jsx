@@ -1,7 +1,7 @@
 // src/components/admin/ReservationsList.jsx
 import { useState, useEffect } from 'react';
 import { Search, Filter, Calendar as CalendarIcon, X, Eye, Trash2, CheckCircle } from 'lucide-react';
-import { supabaseAdmin } from '../../../api/supabaseAdmin';
+import { supabase } from '../../lib/supabaseClient';
 import { Button } from '@/components/ui/button';
 
 export default function ReservationsList() {
@@ -20,7 +20,7 @@ export default function ReservationsList() {
   const loadReservations = async () => {
     setLoading(true);
     try {
-      let query = supabaseAdmin
+      let query = supabase
         .from('reservations')
         .select(`
           *,
@@ -53,7 +53,7 @@ export default function ReservationsList() {
     if (!confirm(`¿Estás seguro de cancelar la reserva ${reservationCode}?`)) return;
 
     try {
-      const { error } = await supabaseAdmin
+      const { error } = await supabase
         .from('reservations')
         .update({ status: 'cancelled' })
         .eq('id', id);
@@ -71,7 +71,7 @@ export default function ReservationsList() {
     if (!confirm('¿Confirmar esta reserva?')) return;
 
     try {
-      const { error } = await supabaseAdmin
+      const { error } = await supabase
         .from('reservations')
         .update({ status: 'confirmed' })
         .eq('id', id);

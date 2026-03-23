@@ -1,7 +1,7 @@
 // src/components/admin/StatsCards.jsx
 import { useState, useEffect } from 'react';
 import { Calendar, Users, CreditCard, TrendingUp, TrendingDown } from 'lucide-react';
-import { supabaseAdmin } from '../../../api/supabaseAdmin';
+import { supabase } from '../../lib/supabase';
 
 export default function StatsCards() {
   const [stats, setStats] = useState({
@@ -36,7 +36,7 @@ export default function StatsCards() {
       }
 
       // Reservas totales del período
-      const { data: reservations, error } = await supabaseAdmin
+      const { data: reservations, error } = await supabase
         .from('reservations')
         .select('*')
         .gte('created_at', startDate)
@@ -45,7 +45,7 @@ export default function StatsCards() {
       if (error) throw error;
 
       // Reservas del período anterior para crecimiento
-      const { data: prevReservations } = await supabaseAdmin
+      const { data: prevReservations } = await supabase
         .from('reservations')
         .select('*')
         .gte('created_at', prevStartDate)
@@ -54,7 +54,7 @@ export default function StatsCards() {
 
       // Reservas de hoy
       const today = new Date().toISOString().split('T')[0];
-      const { data: todayRes } = await supabaseAdmin
+      const { data: todayRes } = await supabase
         .from('reservations')
         .select('*')
         .gte('created_at', `${today}T00:00:00`)
