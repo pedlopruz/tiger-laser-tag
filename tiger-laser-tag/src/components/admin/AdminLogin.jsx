@@ -16,22 +16,41 @@ export default function AdminLogin({ onLogin }) {
     setError('');
 
     try {
+      console.log("1. Enviando petición...");
+      console.log("Contraseña:", password);
+      
       const res = await fetch('/api/admin/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password })
       });
 
-      const data = await res.json();
+      console.log("2. Respuesta recibida, status:", res.status);
+      
+      // Intentar leer la respuesta como texto primero para depurar
+      const text = await res.text();
+      console.log("3. Respuesta texto:", text);
+      
+      let data;
+      try {
+        data = JSON.parse(text);
+        console.log("4. Datos parseados:", data);
+      } catch (e) {
+        console.error("Error parseando JSON:", e);
+        throw new Error("Respuesta inválida del servidor");
+      }
 
-      if (res.ok) {
+      if (res.status === 200 && data.success) {
+        console.log("5. Login exitoso, guardando token");
         localStorage.setItem('adminToken', data.token);
         localStorage.setItem('adminLoginTime', Date.now());
         onLogin();
       } else {
+        console.log("5. Login fallido");
         setError(data.error || 'Contraseña incorrecta');
       }
     } catch (err) {
+      console.error("❌ Error en fetch:", err);
       setError('Error al conectar con el servidor');
     } finally {
       setLoading(false);
@@ -52,7 +71,6 @@ export default function AdminLogin({ onLogin }) {
           transition={{ duration: 0.8 }}
           className="max-w-md w-full"
         >
-          {/* Logo y título */}
           <div className="text-center mb-8">
             <motion.div
               initial={{ scale: 0 }}
@@ -82,7 +100,6 @@ export default function AdminLogin({ onLogin }) {
             </motion.p>
           </div>
 
-          {/* Formulario */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -143,7 +160,6 @@ export default function AdminLogin({ onLogin }) {
               </Button>
             </form>
 
-            {/* Footer */}
             <div className="mt-6 pt-4 border-t border-gray-200 text-center">
               <p className="text-xs text-gray-400">
                 Área restringida para administradores

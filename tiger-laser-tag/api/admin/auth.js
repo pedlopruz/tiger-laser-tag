@@ -8,9 +8,11 @@ export default async function handler(req, res) {
   const adminPassword = process.env.ADMIN_PASSWORD;
 
   if (password === adminPassword) {
-    // Generar token simple (expira en 24h)
     const token = Buffer.from(`${Date.now()}:${password}`).toString('base64');
-    return res.status(200).json({ success: true, token });
+    return res.status(200).json({ 
+      success: true,  // ✅ Importante: enviar success: true
+      token 
+    });
   }
 
   return res.status(401).json({ error: "Invalid password" });
