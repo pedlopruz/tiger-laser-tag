@@ -1,7 +1,7 @@
 // src/components/admin/SettingsPanel.jsx
 import { useState, useEffect } from 'react';
 import { Save, RefreshCw, AlertCircle } from 'lucide-react';
-import { supabase } from '../../lib/supabase'; // ✅ Cambiar a supabase
+import { supabase } from '../../lib/supabaseClient'; // ✅ Cambiar a supabase
 import { Button } from '@/components/ui/button';
 
 export default function SettingsPanel() {

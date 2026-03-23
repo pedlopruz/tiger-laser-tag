@@ -1,7 +1,7 @@
 // src/components/admin/StatsCards.jsx
 import { useState, useEffect } from 'react';
 import { Calendar, Users, CreditCard, TrendingUp, TrendingDown } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '../../lib/supabaseClient';
 
 export default function StatsCards() {
   const [stats, setStats] = useState({
