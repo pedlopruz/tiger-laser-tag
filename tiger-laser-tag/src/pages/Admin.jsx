@@ -14,33 +14,42 @@ export default function Admin() {
     const token = localStorage.getItem('adminToken');
     const loginTime = localStorage.getItem('adminLoginTime');
     
+    console.log("Admin.jsx - Verificando token");
+    
     if (token && loginTime && (Date.now() - parseInt(loginTime) < 24 * 60 * 60 * 1000)) {
+      console.log("Token válido");
       setIsAuthenticated(true);
     } else {
+      console.log("Token inválido, limpiando");
       localStorage.removeItem('adminToken');
       localStorage.removeItem('adminLoginTime');
-      navigate('/admin/login');
+      setIsAuthenticated(false);
+      // ❌ NO navegues aquí
     }
     setLoading(false);
-  }, [navigate]);
+  }, []);
 
   const handleLogin = () => {
+    console.log("handleLogin llamado");
     setIsAuthenticated(true);
-    navigate('/admin');
+    // ✅ No navegues, solo cambia el estado
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-tiger-green to-tiger-green-dark">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-tiger-golden"></div>
+      <div className="min-h-screen flex items-center justify-center bg-tiger-cream">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-tiger-orange"></div>
       </div>
     );
   }
 
+  // ✅ Mostrar login directamente en la misma ruta
   if (!isAuthenticated) {
+    console.log("Mostrando AdminLogin con onLogin");
     return <AdminLogin onLogin={handleLogin} />;
   }
 
+  console.log("Mostrando AdminLayout");
   return (
     <>
       <Helmet>
