@@ -51,7 +51,7 @@ const handleLogout = async () => {
     localStorage.removeItem('adminName');
     
     // ✅ Forzar recarga completa para resetear el estado
-    window.location.href = '/admin';
+    window.location.href = '/';
   }
 };
 
