@@ -1,7 +1,7 @@
 // src/components/admin/CalendarView.jsx
 import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
-import { supabaseAdmin } from '../../lib/supabaseAdmin';
+import { supabaseAdmin } from '../../../api/supabaseAdmin';
 
 export default function CalendarView() {
   const [currentDate, setCurrentDate] = useState(new Date());

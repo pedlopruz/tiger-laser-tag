@@ -1,7 +1,7 @@
 // src/components/admin/ReservationsList.jsx
 import { useState, useEffect } from 'react';
 import { Search, Filter, Calendar as CalendarIcon, X, Eye, Trash2, CheckCircle } from 'lucide-react';
-import { supabaseAdmin } from '../../lib/supabaseAdmin';
+import { supabaseAdmin } from '../../../api/supabaseAdmin';
 import { Button } from '@/components/ui/button';
 
 export default function ReservationsList() {
