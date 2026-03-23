@@ -45,7 +45,7 @@ export default function AdminLogin({ onLogin }) {
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
 
-      <div className="min-h-screen bg-gradient-to-b from-tiger-green to-tiger-green-dark flex items-center justify-center py-12 px-4">
+      <div className="min-h-screen bg-tiger-cream flex items-center justify-center py-12 px-4">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -54,23 +54,40 @@ export default function AdminLogin({ onLogin }) {
         >
           {/* Logo y título */}
           <div className="text-center mb-8">
-            <div className="flex justify-center mb-4">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="flex justify-center mb-4"
+            >
               <div className="bg-tiger-golden/20 p-4 rounded-full">
                 <Shield className="text-tiger-golden" size={48} />
               </div>
-            </div>
-            <h1 className="text-3xl md:text-4xl font-heading font-bold text-tiger-golden mb-2">
+            </motion.div>
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="text-3xl md:text-4xl font-heading font-bold text-tiger-green mb-2"
+            >
               Tiger Laser Tag
-            </h1>
-            <p className="text-tiger-cream/80">Panel de Administración</p>
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="text-tiger-green/70"
+            >
+              Panel de Administración
+            </motion.p>
           </div>
 
           {/* Formulario */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="bg-white rounded-2xl shadow-2xl p-8"
+            transition={{ duration: 0.6, delay: 0.5 }}
+            className="bg-white rounded-2xl shadow-xl p-8"
           >
             <div className="text-center mb-6">
               <Lock className="mx-auto text-tiger-green mb-2" size={32} />
