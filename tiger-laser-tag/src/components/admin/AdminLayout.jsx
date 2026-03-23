@@ -34,7 +34,7 @@ export default function AdminLayout() {
 const handleLogout = async () => {
   try {
     // Opcional: Notificar al backend
-    await fetch('/api/admin/logout', {
+    await fetch('/api/admin/auth', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
