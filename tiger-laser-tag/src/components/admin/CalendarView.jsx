@@ -1,6 +1,6 @@
 // src/components/admin/CalendarView.jsx
 import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 
 export default function CalendarView() {
@@ -21,21 +21,32 @@ export default function CalendarView() {
     const endDate = new Date(year, currentDate.getMonth() + 1, 0).toISOString().split('T')[0];
 
     try {
+      // ✅ CORREGIDO: Filtrar por la fecha del slot (date en time_slots)
       const { data, error } = await supabase
         .from('reservations')
         .select(`
           *,
           reservation_slots (
             slot_id,
-            time_slots (start_time, date)
+            time_slots (
+              start_time, 
+              date
+            )
           )
         `)
-        .gte('created_at', startDate)
-        .lte('created_at', endDate)
         .eq('status', 'confirmed');
 
       if (error) throw error;
-      setReservations(data || []);
+
+      // ✅ Filtrar las reservas que tengan slots dentro del rango de fechas
+      const filteredReservations = (data || []).filter(reservation => {
+        return reservation.reservation_slots?.some(slot => {
+          const slotDate = slot.time_slots?.date;
+          return slotDate && slotDate >= startDate && slotDate <= endDate;
+        });
+      });
+
+      setReservations(filteredReservations);
     } catch (error) {
       console.error('Error loading reservations:', error);
     } finally {
@@ -51,7 +62,6 @@ export default function CalendarView() {
     const days = [];
     
     // Días del mes anterior
-    const prevMonthLastDay = new Date(year, month, 0).getDate();
     const firstDayOfWeek = firstDay.getDay();
     const startOffset = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
     
