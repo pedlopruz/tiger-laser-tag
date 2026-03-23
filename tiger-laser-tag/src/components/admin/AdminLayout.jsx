@@ -36,9 +36,7 @@ const handleLogout = async () => {
     // Opcional: Notificar al backend
     await fetch('/api/admin/auth', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'logout' })
     });
   } catch (error) {
