@@ -45,7 +45,6 @@ function App() {
                 <Route path="/reserva-confirmada" element={<ConfirmadaPage />} />
                 <Route path="/mis-reservas" element={<MisReservas />} />
                 <Route path="/admin" element={<Admin />} />
-                <Route path="/admin/login" element={<AdminLogin />} />  
               </Routes>
             </AnimatePresence>
           </main>
