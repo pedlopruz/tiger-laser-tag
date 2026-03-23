@@ -1,8 +1,9 @@
-// /pages/Admin.jsx
+// src/pages/Admin.jsx
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import AdminLayout from '../components/admin/AdminLayout';
 import AdminLogin from '../components/admin/AdminLogin';
+import AdminLayout from '../components/admin/AdminLayout';
+import { Helmet } from 'react-helmet';
 
 export default function Admin() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -13,28 +14,40 @@ export default function Admin() {
     const token = localStorage.getItem('adminToken');
     const loginTime = localStorage.getItem('adminLoginTime');
     
-    // Verificar si el token existe y no ha expirado (24h)
     if (token && loginTime && (Date.now() - parseInt(loginTime) < 24 * 60 * 60 * 1000)) {
       setIsAuthenticated(true);
     } else {
-      // Limpiar datos expirados
       localStorage.removeItem('adminToken');
       localStorage.removeItem('adminLoginTime');
+      navigate('/admin/login');
     }
     setLoading(false);
-  }, []);
+  }, [navigate]);
 
   const handleLogin = () => {
     setIsAuthenticated(true);
+    navigate('/admin');
   };
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Cargando...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-tiger-green to-tiger-green-dark">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-tiger-golden"></div>
+      </div>
+    );
   }
 
   if (!isAuthenticated) {
     return <AdminLogin onLogin={handleLogin} />;
   }
 
-  return <AdminLayout />;
+  return (
+    <>
+      <Helmet>
+        <title>Panel de Administración - Tiger Laser Tag</title>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
+      <AdminLayout />
+    </>
+  );
 }
