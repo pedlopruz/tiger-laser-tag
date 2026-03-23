@@ -18,6 +18,7 @@ import ContactoPage from '@/pages/ContactoPage';
 import ReservaPage from '@/pages/ReservaPage';
 import ConfirmadaPage from '@/pages/ConfirmadaPage';
 import MisReservas from '@/pages/MisReservasPages';
+import AdminLogin from '@/components/admin/AdminLogin'; 
 import Admin from '@/pages/Admin';
 import { Toaster } from '@/components/ui/toaster';
 
