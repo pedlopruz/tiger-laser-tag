@@ -7,7 +7,6 @@ export default function CalendarView() {
   // ✅ Obtener fecha actual en España
   const getTodayInSpain = () => {
     const now = new Date();
-    // Formatear usando la zona horaria local de España
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, "0");
     const day = String(now.getDate()).padStart(2, "0");
@@ -18,6 +17,22 @@ export default function CalendarView() {
   const getCurrentDateInSpain = () => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  };
+
+  // ✅ Crear fecha local a partir de string YYYY-MM-DD
+  const createLocalDate = (dateStr) => {
+    if (!dateStr) return null;
+    const [year, month, day] = dateStr.split('-');
+    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+  };
+
+  // ✅ Formatear fecha a YYYY-MM-DD local
+  const formatLocalDate = (date) => {
+    if (!date) return null;
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   };
 
   const [currentDate, setCurrentDate] = useState(getCurrentDateInSpain());
@@ -55,7 +70,7 @@ export default function CalendarView() {
 
       if (error) throw error;
 
-      // ✅ Filtrar reservas por fecha del slot (comparación con string YYYY-MM-DD)
+      // ✅ Filtrar reservas por fecha del slot
       const filteredReservations = (data || []).filter(reservation => {
         return reservation.reservation_slots?.some(slot => {
           const slotDate = slot.time_slots?.date;
@@ -78,11 +93,9 @@ export default function CalendarView() {
     const lastDay = new Date(year, month + 1, 0);
     const days = [];
     
-    // ✅ Obtener día de la semana (lunes = 0, domingo = 6)
     const firstDayOfWeek = firstDay.getDay();
     const startOffset = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
     
-    // Días del mes anterior
     for (let i = startOffset; i > 0; i--) {
       const prevDate = new Date(year, month, -i + 1);
       days.push({
@@ -91,7 +104,6 @@ export default function CalendarView() {
       });
     }
     
-    // Días del mes actual
     for (let i = 1; i <= lastDay.getDate(); i++) {
       days.push({
         date: new Date(year, month, i),
@@ -99,7 +111,6 @@ export default function CalendarView() {
       });
     }
     
-    // Días del mes siguiente
     const remainingDays = 42 - days.length;
     for (let i = 1; i <= remainingDays; i++) {
       days.push({
@@ -112,11 +123,9 @@ export default function CalendarView() {
   };
 
   const getReservationsForDate = (date) => {
-    // ✅ Formatear fecha correctamente en España
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const dateStr = `${year}-${month}-${day}`;
+    // ✅ Usar formato local YYYY-MM-DD
+    const dateStr = formatLocalDate(date);
+    if (!dateStr) return [];
     
     return reservations.filter(r => 
       r.reservation_slots?.some(slot => 
@@ -135,7 +144,6 @@ export default function CalendarView() {
     setTimeout(() => setCopiedCode(null), 2000);
   };
 
-  // ✅ Verificar si una fecha es hoy (en España)
   const isToday = (date) => {
     const today = getCurrentDateInSpain();
     return date.getFullYear() === today.getFullYear() &&
@@ -146,7 +154,6 @@ export default function CalendarView() {
   const days = getDaysInMonth(currentDate);
   const weekDays = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
-  // ✅ Formatear fecha para mostrar
   const formatDisplayDate = (date) => {
     return date.toLocaleDateString('es-ES', {
       weekday: 'long',
@@ -154,6 +161,23 @@ export default function CalendarView() {
       month: 'long',
       year: 'numeric'
     });
+  };
+
+  // ✅ Manejar selección de fecha
+  const handleDateSelect = (date) => {
+    const dateStr = formatLocalDate(date);
+    if (selectedDate === dateStr) {
+      setSelectedDate(null);
+    } else {
+      setSelectedDate(dateStr);
+    }
+  };
+
+  // ✅ Obtener objeto Date local a partir de selectedDate string
+  const getSelectedDateObj = () => {
+    if (!selectedDate) return null;
+    const [year, month, day] = selectedDate.split('-');
+    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
   };
 
   return (
@@ -202,12 +226,13 @@ export default function CalendarView() {
             {days.map((day, idx) => {
               const dayReservations = getReservationsForDate(day.date);
               const isTodayDate = isToday(day.date);
-              const isSelected = selectedDate === day.date.toISOString().split('T')[0];
+              const dateStr = formatLocalDate(day.date);
+              const isSelected = selectedDate === dateStr;
               
               return (
                 <button
                   key={idx}
-                  onClick={() => setSelectedDate(isSelected ? null : day.date.toISOString().split('T')[0])}
+                  onClick={() => handleDateSelect(day.date)}
                   className={`
                     min-h-[120px] p-2 rounded-lg border transition-all relative
                     ${!day.isCurrentMonth ? 'bg-gray-50 text-gray-400' : 'bg-white'}
@@ -274,7 +299,7 @@ export default function CalendarView() {
             <div className="mt-8 pt-6 border-t">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-tiger-green">
-                  Reservas confirmadas para {formatDisplayDate(new Date(selectedDate))}
+                  Reservas confirmadas para {formatDisplayDate(createLocalDate(selectedDate))}
                 </h3>
                 <button
                   onClick={() => setSelectedDate(null)}
@@ -286,7 +311,7 @@ export default function CalendarView() {
               
               <div className="space-y-4">
                 {(() => {
-                  const dateObj = new Date(selectedDate);
+                  const dateObj = createLocalDate(selectedDate);
                   const dayReservations = getReservationsForDate(dateObj);
                   
                   return dayReservations.map(res => (
@@ -372,7 +397,7 @@ export default function CalendarView() {
                   ));
                 })()}
                 
-                {getReservationsForDate(new Date(selectedDate)).length === 0 && (
+                {selectedDate && getReservationsForDate(createLocalDate(selectedDate)).length === 0 && (
                   <div className="text-center py-12 bg-gray-50 rounded-xl">
                     <div className="text-gray-400 mb-2">📅</div>
                     <p className="text-gray-500">No hay reservas confirmadas para este día</p>
