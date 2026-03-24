@@ -15,18 +15,22 @@ export default function ReservationsList() {
 
   useEffect(() => {
     loadReservations();
-  }, [filter, dateFilter]);
+  }, [filter]); // ✅ Solo recargar cuando cambia el filtro de estado
 
   const loadReservations = async () => {
     setLoading(true);
     try {
+      // ✅ Traer todas las reservas sin filtrar por fecha en la query
       let query = supabase
         .from('reservations')
         .select(`
           *,
           reservation_slots (
             slot_id,
-            time_slots (start_time, date)
+            time_slots (
+              start_time, 
+              date
+            )
           )
         `)
         .order('created_at', { ascending: false });
@@ -35,19 +39,80 @@ export default function ReservationsList() {
         query = query.eq('status', filter);
       }
 
-      if (dateFilter) {
-        query = query.eq('reservation_slots.time_slots.date', dateFilter);
-      }
-
       const { data, error } = await query;
       if (error) throw error;
-      setReservations(data || []);
+      
+      // ✅ Filtrar por fecha después de obtener los datos
+      let filteredData = data || [];
+      
+      if (dateFilter) {
+        filteredData = filteredData.filter(reservation => {
+          // Verificar si la reserva tiene slots con la fecha filtrada
+          return reservation.reservation_slots?.some(slot => {
+            const slotDate = slot.time_slots?.date;
+            return slotDate === dateFilter;
+          });
+        });
+      }
+      
+      setReservations(filteredData);
     } catch (error) {
       console.error('Error loading reservations:', error);
     } finally {
       setLoading(false);
     }
   };
+
+  // ✅ Recargar cuando cambia el filtro de fecha (sin recargar toda la BD)
+  useEffect(() => {
+    if (reservations.length > 0 || !loading) {
+      // Ya tenemos los datos, solo filtramos
+      const applyDateFilter = async () => {
+        setLoading(true);
+        try {
+          let query = supabase
+            .from('reservations')
+            .select(`
+              *,
+              reservation_slots (
+                slot_id,
+                time_slots (
+                  start_time, 
+                  date
+                )
+              )
+            `)
+            .order('created_at', { ascending: false });
+
+          if (filter !== 'all') {
+            query = query.eq('status', filter);
+          }
+
+          const { data, error } = await query;
+          if (error) throw error;
+          
+          let filteredData = data || [];
+          
+          if (dateFilter) {
+            filteredData = filteredData.filter(reservation => {
+              return reservation.reservation_slots?.some(slot => {
+                const slotDate = slot.time_slots?.date;
+                return slotDate === dateFilter;
+              });
+            });
+          }
+          
+          setReservations(filteredData);
+        } catch (error) {
+          console.error('Error loading reservations:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      
+      applyDateFilter();
+    }
+  }, [dateFilter, filter]);
 
   const cancelReservation = async (id, reservationCode) => {
     if (!confirm(`¿Estás seguro de cancelar la reserva ${reservationCode}?`)) return;
@@ -85,12 +150,37 @@ export default function ReservationsList() {
     }
   };
 
+  // ✅ Filtrar por término de búsqueda
   const filteredReservations = reservations.filter(res => {
     if (!searchTerm) return true;
-    return res.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           res.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           res.reservation_code.toLowerCase().includes(searchTerm.toLowerCase());
+    return res.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           res.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           res.reservation_code?.toLowerCase().includes(searchTerm.toLowerCase());
   });
+
+  // ✅ Función para obtener la fecha del slot (evitando N/D)
+  const getSlotDate = (reservation) => {
+    const slot = reservation.reservation_slots?.[0]?.time_slots;
+    if (slot?.date) {
+      // Formatear fecha a español
+      const [year, month, day] = slot.date.split('-');
+      return new Date(year, month - 1, day).toLocaleDateString('es-ES', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long'
+      });
+    }
+    return 'Fecha no disponible';
+  };
+
+  // ✅ Función para obtener la hora del slot
+  const getSlotTime = (reservation) => {
+    const slot = reservation.reservation_slots?.[0]?.time_slots;
+    if (slot?.start_time) {
+      return slot.start_time.slice(0, 5);
+    }
+    return 'Hora no disponible';
+  };
 
   const getStatusBadge = (status) => {
     const styles = {
@@ -191,7 +281,7 @@ export default function ReservationsList() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
-              </tr>
+               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredReservations.map((res) => (
@@ -200,19 +290,18 @@ export default function ReservationsList() {
                     <span className="font-mono text-sm font-medium text-tiger-green">
                       {res.reservation_code}
                     </span>
-                  </td>
+                   </td>
                   <td className="px-6 py-4">
                     <div className="font-medium text-gray-900">{res.name}</div>
                     <div className="text-sm text-gray-500">{res.email}</div>
                     {res.phone && <div className="text-xs text-gray-400">{res.phone}</div>}
-                  </td>
+                   </td>
                   <td className="px-6 py-4 text-sm">
-                    {res.reservation_slots?.[0]?.time_slots?.date || 'N/A'}
-                    <br />
+                    <div>{getSlotDate(res)}</div>
                     <span className="text-xs text-gray-500">
-                      {res.reservation_slots?.[0]?.time_slots?.start_time?.slice(0,5)}
+                      {getSlotTime(res)}
                     </span>
-                  </td>
+                   </td>
                   <td className="px-6 py-4 text-sm">{res.people} personas</td>
                   <td className="px-6 py-4 text-sm font-medium">€{res.precio_total}</td>
                   <td className="px-6 py-4">{getStatusBadge(res.status)}</td>
@@ -228,7 +317,7 @@ export default function ReservationsList() {
                       >
                         <Eye size={18} />
                       </button>
-                      {res.status !== 'confirmed' && (
+                      {res.status !== 'confirmed' && res.status !== 'cancelled' && (
                         <button
                           onClick={() => confirmReservation(res.id)}
                           className="text-green-600 hover:text-green-800 transition"
@@ -247,7 +336,7 @@ export default function ReservationsList() {
                         </button>
                       )}
                     </div>
-                  </td>
+                   </td>
                 </tr>
               ))}
             </tbody>
@@ -294,8 +383,8 @@ export default function ReservationsList() {
                 
                 <div>
                   <label className="text-xs text-gray-500">Detalles de la partida</label>
-                  <p>Fecha: {selectedReservation.reservation_slots?.[0]?.time_slots?.date}</p>
-                  <p>Hora: {selectedReservation.reservation_slots?.[0]?.time_slots?.start_time?.slice(0,5)}</p>
+                  <p>Fecha: {getSlotDate(selectedReservation)}</p>
+                  <p>Hora: {getSlotTime(selectedReservation)}</p>
                   <p>Jugadores: {selectedReservation.people}</p>
                   <p>Participan en Electroshock: {selectedReservation.personas_electroshock}</p>
                   <p>Plan: {selectedReservation.plan_name || 'N/A'}</p>

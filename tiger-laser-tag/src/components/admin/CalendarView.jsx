@@ -4,7 +4,23 @@ import { ChevronLeft, ChevronRight, Copy, Mail, Phone, User, Users, Clock, Dolla
 import { supabase } from '../../lib/supabaseClient';
 
 export default function CalendarView() {
-  const [currentDate, setCurrentDate] = useState(new Date());
+  // ✅ Obtener fecha actual en España
+  const getTodayInSpain = () => {
+    const now = new Date();
+    // Formatear usando la zona horaria local de España
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  // ✅ Obtener fecha como objeto Date con zona España
+  const getCurrentDateInSpain = () => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  };
+
+  const [currentDate, setCurrentDate] = useState(getCurrentDateInSpain());
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(null);
@@ -19,10 +35,10 @@ export default function CalendarView() {
     const year = currentDate.getFullYear();
     const month = String(currentDate.getMonth() + 1).padStart(2, '0');
     const startDate = `${year}-${month}-01`;
-    const endDate = new Date(year, currentDate.getMonth() + 1, 0).toISOString().split('T')[0];
+    const endDate = new Date(year, currentDate.getMonth() + 1, 0);
+    const endDateStr = `${year}-${month}-${String(endDate.getDate()).padStart(2, '0')}`;
 
     try {
-      // ✅ FILTRO: Solo reservas CONFIRMADAS
       const { data, error } = await supabase
         .from('reservations')
         .select(`
@@ -35,15 +51,15 @@ export default function CalendarView() {
             )
           )
         `)
-        .eq('status', 'confirmed');  // ✅ Solo reservas confirmadas
+        .eq('status', 'confirmed');
 
       if (error) throw error;
 
-      // Filtrar reservas por fecha del slot
+      // ✅ Filtrar reservas por fecha del slot (comparación con string YYYY-MM-DD)
       const filteredReservations = (data || []).filter(reservation => {
         return reservation.reservation_slots?.some(slot => {
           const slotDate = slot.time_slots?.date;
-          return slotDate && slotDate >= startDate && slotDate <= endDate;
+          return slotDate && slotDate >= startDate && slotDate <= endDateStr;
         });
       });
 
@@ -62,16 +78,20 @@ export default function CalendarView() {
     const lastDay = new Date(year, month + 1, 0);
     const days = [];
     
+    // ✅ Obtener día de la semana (lunes = 0, domingo = 6)
     const firstDayOfWeek = firstDay.getDay();
     const startOffset = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
     
+    // Días del mes anterior
     for (let i = startOffset; i > 0; i--) {
+      const prevDate = new Date(year, month, -i + 1);
       days.push({
-        date: new Date(year, month, -i + 1),
+        date: prevDate,
         isCurrentMonth: false
       });
     }
     
+    // Días del mes actual
     for (let i = 1; i <= lastDay.getDate(); i++) {
       days.push({
         date: new Date(year, month, i),
@@ -79,6 +99,7 @@ export default function CalendarView() {
       });
     }
     
+    // Días del mes siguiente
     const remainingDays = 42 - days.length;
     for (let i = 1; i <= remainingDays; i++) {
       days.push({
@@ -91,7 +112,12 @@ export default function CalendarView() {
   };
 
   const getReservationsForDate = (date) => {
-    const dateStr = date.toISOString().split('T')[0];
+    // ✅ Formatear fecha correctamente en España
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
+    
     return reservations.filter(r => 
       r.reservation_slots?.some(slot => 
         slot.time_slots?.date === dateStr
@@ -109,8 +135,26 @@ export default function CalendarView() {
     setTimeout(() => setCopiedCode(null), 2000);
   };
 
+  // ✅ Verificar si una fecha es hoy (en España)
+  const isToday = (date) => {
+    const today = getCurrentDateInSpain();
+    return date.getFullYear() === today.getFullYear() &&
+           date.getMonth() === today.getMonth() &&
+           date.getDate() === today.getDate();
+  };
+
   const days = getDaysInMonth(currentDate);
   const weekDays = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+
+  // ✅ Formatear fecha para mostrar
+  const formatDisplayDate = (date) => {
+    return date.toLocaleDateString('es-ES', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+  };
 
   return (
     <div className="bg-white rounded-xl shadow-sm p-6">
@@ -156,19 +200,18 @@ export default function CalendarView() {
           
           <div className="grid grid-cols-7 gap-2">
             {days.map((day, idx) => {
-              const dateStr = day.date.toISOString().split('T')[0];
               const dayReservations = getReservationsForDate(day.date);
-              const isToday = day.date.toDateString() === new Date().toDateString();
-              const isSelected = selectedDate === dateStr;
+              const isTodayDate = isToday(day.date);
+              const isSelected = selectedDate === day.date.toISOString().split('T')[0];
               
               return (
                 <button
                   key={idx}
-                  onClick={() => setSelectedDate(isSelected ? null : dateStr)}
+                  onClick={() => setSelectedDate(isSelected ? null : day.date.toISOString().split('T')[0])}
                   className={`
                     min-h-[120px] p-2 rounded-lg border transition-all relative
                     ${!day.isCurrentMonth ? 'bg-gray-50 text-gray-400' : 'bg-white'}
-                    ${isToday ? 'border-tiger-orange ring-2 ring-tiger-orange/20' : 'border-gray-200'}
+                    ${isTodayDate ? 'border-tiger-orange ring-2 ring-tiger-orange/20' : 'border-gray-200'}
                     ${isSelected ? 'bg-tiger-green/5 border-tiger-green' : ''}
                     hover:shadow-md hover:border-tiger-green
                   `}
@@ -231,12 +274,7 @@ export default function CalendarView() {
             <div className="mt-8 pt-6 border-t">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-tiger-green">
-                  Reservas confirmadas para {new Date(selectedDate).toLocaleDateString('es-ES', {
-                    weekday: 'long',
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric'
-                  })}
+                  Reservas confirmadas para {formatDisplayDate(new Date(selectedDate))}
                 </h3>
                 <button
                   onClick={() => setSelectedDate(null)}
@@ -247,87 +285,92 @@ export default function CalendarView() {
               </div>
               
               <div className="space-y-4">
-                {getReservationsForDate(new Date(selectedDate)).map(res => (
-                  <div key={res.id} className="bg-gray-50 rounded-xl p-5 hover:shadow-md transition-all">
-                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                      {/* Información principal */}
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-3 flex-wrap">
-                          <h4 className="font-bold text-lg text-tiger-green">{res.name}</h4>
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => copyToClipboard(res.reservation_code)}
-                              className="flex items-center gap-1 text-xs bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded transition"
-                            >
-                              <Copy size={12} />
-                              <span className="font-mono">{res.reservation_code}</span>
-                              {copiedCode === res.reservation_code && (
-                                <span className="text-green-600 text-[10px]">✓</span>
-                              )}
-                            </button>
+                {(() => {
+                  const dateObj = new Date(selectedDate);
+                  const dayReservations = getReservationsForDate(dateObj);
+                  
+                  return dayReservations.map(res => (
+                    <div key={res.id} className="bg-gray-50 rounded-xl p-5 hover:shadow-md transition-all">
+                      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                        {/* Información principal */}
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-3 flex-wrap">
+                            <h4 className="font-bold text-lg text-tiger-green">{res.name}</h4>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => copyToClipboard(res.reservation_code)}
+                                className="flex items-center gap-1 text-xs bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded transition"
+                              >
+                                <Copy size={12} />
+                                <span className="font-mono">{res.reservation_code}</span>
+                                {copiedCode === res.reservation_code && (
+                                  <span className="text-green-600 text-[10px]">✓</span>
+                                )}
+                              </button>
+                            </div>
+                            {res.menor_edad && (
+                              <span className="flex items-center gap-1 text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded">
+                                <AlertCircle size={12} />
+                                Menores de 15
+                              </span>
+                            )}
                           </div>
-                          {res.menor_edad && (
-                            <span className="flex items-center gap-1 text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded">
-                              <AlertCircle size={12} />
-                              Menores de 15
-                            </span>
-                          )}
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                          <div className="flex items-center gap-2 text-gray-600">
-                            <Mail size={14} />
-                            <a href={`mailto:${res.email}`} className="hover:text-tiger-green">
-                              {res.email}
-                            </a>
-                          </div>
-                          {res.phone && (
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                             <div className="flex items-center gap-2 text-gray-600">
-                              <Phone size={14} />
-                              <a href={`tel:${res.phone}`} className="hover:text-tiger-green">
-                                {res.phone}
+                              <Mail size={14} />
+                              <a href={`mailto:${res.email}`} className="hover:text-tiger-green">
+                                {res.email}
                               </a>
                             </div>
-                          )}
-                          <div className="flex items-center gap-2 text-gray-600">
-                            <Clock size={14} />
-                            <span>
-                              {res.reservation_slots?.[0]?.time_slots?.start_time?.slice(0,5)}
-                              {res.reservation_slots?.length > 1 && 
-                                ` - ${res.reservation_slots[res.reservation_slots.length - 1]?.time_slots?.end_time?.slice(0,5)}`
-                              }
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2 text-gray-600">
-                            <Users size={14} />
-                            <span>{res.people} jugadores</span>
-                            <span className="text-gray-400">•</span>
-                            <span>Electroshock: {res.personas_electroshock}</span>
+                            {res.phone && (
+                              <div className="flex items-center gap-2 text-gray-600">
+                                <Phone size={14} />
+                                <a href={`tel:${res.phone}`} className="hover:text-tiger-green">
+                                  {res.phone}
+                                </a>
+                              </div>
+                            )}
+                            <div className="flex items-center gap-2 text-gray-600">
+                              <Clock size={14} />
+                              <span>
+                                {res.reservation_slots?.[0]?.time_slots?.start_time?.slice(0,5)}
+                                {res.reservation_slots?.length > 1 && 
+                                  ` - ${res.reservation_slots[res.reservation_slots.length - 1]?.time_slots?.end_time?.slice(0,5)}`
+                                }
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 text-gray-600">
+                              <Users size={14} />
+                              <span>{res.people} jugadores</span>
+                              <span className="text-gray-400">•</span>
+                              <span>Electroshock: {res.personas_electroshock}</span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      
-                      {/* Total y acciones */}
-                      <div className="flex flex-col items-end gap-2">
-                        <div className="text-right">
-                          <div className="text-2xl font-bold text-tiger-orange">€{res.precio_total}</div>
-                          <div className="text-xs text-gray-500">Total reserva</div>
-                        </div>
-                        <div className="flex gap-2 mt-2">
-                          <button
-                            onClick={() => {
-                              const url = `${window.location.origin}/mis-reservas?code=${res.reservation_code}`;
-                              window.open(url, '_blank');
-                            }}
-                            className="px-3 py-1 text-xs bg-tiger-green text-white rounded hover:opacity-90 transition"
-                          >
-                            Ver detalles
-                          </button>
+                        
+                        {/* Total y acciones */}
+                        <div className="flex flex-col items-end gap-2">
+                          <div className="text-right">
+                            <div className="text-2xl font-bold text-tiger-orange">€{res.precio_total}</div>
+                            <div className="text-xs text-gray-500">Total reserva</div>
+                          </div>
+                          <div className="flex gap-2 mt-2">
+                            <button
+                              onClick={() => {
+                                const url = `${window.location.origin}/mis-reservas?code=${res.reservation_code}`;
+                                window.open(url, '_blank');
+                              }}
+                              className="px-3 py-1 text-xs bg-tiger-green text-white rounded hover:opacity-90 transition"
+                            >
+                              Ver detalles
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ));
+                })()}
                 
                 {getReservationsForDate(new Date(selectedDate)).length === 0 && (
                   <div className="text-center py-12 bg-gray-50 rounded-xl">
