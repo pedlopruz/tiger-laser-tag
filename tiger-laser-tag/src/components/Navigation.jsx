@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import {logo} from '../assets/logo.png';
+import logo from '../assets/logo.png';
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
