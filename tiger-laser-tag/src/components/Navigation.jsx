@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import logo from '../assets/logo.png';
+import logo from ''
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -47,7 +47,7 @@ const Navigation = () => {
           {/* LOGO */}
           <Link to="/" className="flex items-center space-x-3">
             <img
-              src={logo}
+              src="/logo.png"
               alt="Tiger Laser Tag Logo"
               className="h-14 w-14 object-contain"
             />
