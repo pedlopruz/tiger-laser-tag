@@ -51,10 +51,10 @@ export default function SettingsPanel() {
     setSaving(true);
     setMessage(null);
     try {
-      const { error } = await supabaseAdmin
+      const { error } = await supabase
         .from('business_settings')
         .update(settings)
-        .eq('id', (await supabaseAdmin.from('business_settings').select('id').single()).data?.id);
+        .eq('id', (await supabase.from('business_settings').select('id').single()).data?.id);
 
       if (error) throw error;
       setMessage({ type: 'success', text: 'Configuración guardada correctamente' });
