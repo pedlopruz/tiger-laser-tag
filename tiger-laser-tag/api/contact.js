@@ -129,8 +129,24 @@ async function sendReservationEmail(req, res) {
 
     const noElectroshock = people - personas_electroshock;
     
-    
-    const logoUrl = `https://imgur.com/a/3mkLHC4`; // ✅ Asegúrate que el archivo existe en public/logo.png
+    // ✅ Función mejorada para obtener la URL base
+    const getBaseUrl = () => {
+      // En producción, Vercel proporciona VERCEL_URL
+      if (process.env.VERCEL_URL) {
+        const url = process.env.VERCEL_URL.startsWith('https://') 
+          ? process.env.VERCEL_URL 
+          : `https://${process.env.VERCEL_URL}`;
+        console.log("Usando VERCEL_URL:", url);
+        return url;
+      }
+      
+      // En desarrollo local
+      console.log("Usando localhost");
+      return 'http://localhost:5173'; // Cambia según tu puerto de desarrollo
+    };
+
+    const baseUrl = getBaseUrl();
+    const logoUrl = `https://imgur.com/a/ExTW1LX`; // ✅ Asegúrate que el archivo existe en public/logo.png
     
     console.log("URL del logo:", logoUrl);
 
