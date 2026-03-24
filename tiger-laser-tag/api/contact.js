@@ -146,7 +146,7 @@ async function sendReservationEmail(req, res) {
     };
 
     const baseUrl = getBaseUrl();
-    const logoUrl = `https://imgur.com/a/ExTW1LX`; // ✅ Asegúrate que el archivo existe en public/logo.png
+    const logoUrl = `https://imgur.com/CKWBWRc`; // ✅ Asegúrate que el archivo existe en public/logo.png
     
     console.log("URL del logo:", logoUrl);
 
