@@ -1,282 +1,345 @@
-import { useEffect, useState, useMemo } from "react";
+// src/components/admin/CalendarView.jsx
+import { useState, useEffect } from 'react';
+import { ChevronLeft, ChevronRight, Copy, Mail, Phone, User, Users, Clock, DollarSign, AlertCircle } from 'lucide-react';
+import { supabase } from '../../lib/supabaseClient';
 
-export default function CalendarPicker({ onSelectDate, initialDate }) {
+export default function CalendarView() {
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [reservations, setReservations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [copiedCode, setCopiedCode] = useState(null);
 
-  /* --------------------------
-     HOY con zona horaria de España
-  -------------------------- */
-  function getTodayInSpain() {
-    // Obtener fecha actual en zona horaria de España
-    const now = new Date();
-    // Formatear a YYYY-MM-DD usando la zona horaria local de España
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, "0");
-    const day = String(now.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  }
-
-  const todayStr = getTodayInSpain();
-  
-  // Crear fecha de hoy para comparaciones de mes
-  const today = new Date();
-  const todayYear = today.getFullYear();
-  const todayMonth = today.getMonth();
-
-  const [currentMonth, setCurrentMonth] = useState(
-    new Date(todayYear, todayMonth, 1)
-  );
-
-  const [availableDays, setAvailableDays] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(initialDate || null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  /* --------------------------
-     Optimización: Set O(1)
-  -------------------------- */
-  const availableSet = useMemo(() => {
-    return new Set(availableDays);
-  }, [availableDays]);
-
-  /* --------------------------
-     Cargar disponibilidad
-  -------------------------- */
   useEffect(() => {
-    loadAvailability();
-  }, [currentMonth]);
+    loadReservations();
+  }, [currentDate]);
 
-  /* --------------------------
-     Sync initialDate
-  -------------------------- */
-  useEffect(() => {
-    if (initialDate) {
-      setSelectedDate(initialDate);
-    }
-  }, [initialDate]);
+  const loadReservations = async () => {
+    setLoading(true);
+    const year = currentDate.getFullYear();
+    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+    const startDate = `${year}-${month}-01`;
+    const endDate = new Date(year, currentDate.getMonth() + 1, 0).toISOString().split('T')[0];
 
-  /* --------------------------
-     Limpiar selección inválida
-  -------------------------- */
-  useEffect(() => {
-    if (selectedDate && (!availableSet.has(selectedDate) || selectedDate < todayStr)) {
-      setSelectedDate(null);
-      if (onSelectDate) onSelectDate(null);
-    }
-  }, [availableSet, selectedDate, onSelectDate, todayStr]);
-
-  async function loadAvailability() {
     try {
-      setLoading(true);
-      setError(null);
-      
-      const y = currentMonth.getFullYear();
-      const m = String(currentMonth.getMonth() + 1).padStart(2, "0");
-      const month = `${y}-${m}`;
+      // ✅ FILTRO: Solo reservas CONFIRMADAS
+      const { data, error } = await supabase
+        .from('reservations')
+        .select(`
+          *,
+          reservation_slots (
+            slot_id,
+            time_slots (
+              start_time, 
+              date
+            )
+          )
+        `)
+        .eq('status', 'confirmed');  // ✅ Solo reservas confirmadas
 
-      const res = await fetch(`/api/getAvailability?month=${month}`);
+      if (error) throw error;
 
-      if (!res.ok) {
-        console.error("Error loading availability");
-        setAvailableDays([]);
-        return;
-      }
+      // Filtrar reservas por fecha del slot
+      const filteredReservations = (data || []).filter(reservation => {
+        return reservation.reservation_slots?.some(slot => {
+          const slotDate = slot.time_slots?.date;
+          return slotDate && slotDate >= startDate && slotDate <= endDate;
+        });
+      });
 
-      const data = await res.json();
-      setAvailableDays(data.availableDays || []);
-
-    } catch (err) {
-      console.error("Error fetching availability:", err);
-      setError("Error cargando disponibilidad");
-      setAvailableDays([]);
+      setReservations(filteredReservations);
+    } catch (error) {
+      console.error('Error loading reservations:', error);
     } finally {
       setLoading(false);
     }
-  }
+  };
 
-  function daysInMonth(date) {
-    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-  }
-
-  function startDay(date) {
-    const day = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
-    // Ajustar para que la semana empiece en lunes (0 = domingo, 1 = lunes...)
-    return (day + 6) % 7;
-  }
-
-  /* --------------------------
-     BLOQUEAR meses pasados (usando año y mes local)
-  -------------------------- */
-  function changeMonth(offset) {
-    const newDate = new Date(
-      currentMonth.getFullYear(),
-      currentMonth.getMonth() + offset,
-      1
-    );
-
-    // Comparar año y mes
-    const newYear = newDate.getFullYear();
-    const newMonth = newDate.getMonth();
+  const getDaysInMonth = (date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const days = [];
     
-    // No permitir ir a meses anteriores al mes actual
-    if (newYear < todayYear || (newYear === todayYear && newMonth < todayMonth)) {
-      return;
-    }
-
-    setCurrentMonth(newDate);
-  }
-
-  function formatDate(day) {
-    const y = currentMonth.getFullYear();
-    const m = String(currentMonth.getMonth() + 1).padStart(2, "0");
-    const d = String(day).padStart(2, "0");
-    return `${y}-${m}-${d}`;
-  }
-
-  // ✅ Función para verificar si un día es pasado (comparación con fecha de hoy en España)
-  function isPastDay(day) {
-    const dateStr = formatDate(day);
-    return dateStr < todayStr;
-  }
-
-  // ✅ Función para verificar si un día está disponible
-  function isDayAvailable(day) {
-    // Días pasados nunca están disponibles
-    if (isPastDay(day)) return false;
-    // Verificar si está en la lista de disponibles de la API
-    return availableSet.has(formatDate(day));
-  }
-
-  function handleSelect(day) {
-    const dateStr = formatDate(day);
+    const firstDayOfWeek = firstDay.getDay();
+    const startOffset = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
     
-    // No permitir seleccionar días pasados
-    if (isPastDay(day)) return;
-    // No permitir seleccionar días no disponibles
-    if (!availableSet.has(dateStr)) return;
-
-    setSelectedDate(dateStr);
-    if (onSelectDate) {
-      onSelectDate(dateStr);
+    for (let i = startOffset; i > 0; i--) {
+      days.push({
+        date: new Date(year, month, -i + 1),
+        isCurrentMonth: false
+      });
     }
-  }
+    
+    for (let i = 1; i <= lastDay.getDate(); i++) {
+      days.push({
+        date: new Date(year, month, i),
+        isCurrentMonth: true
+      });
+    }
+    
+    const remainingDays = 42 - days.length;
+    for (let i = 1; i <= remainingDays; i++) {
+      days.push({
+        date: new Date(year, month + 1, i),
+        isCurrentMonth: false
+      });
+    }
+    
+    return days;
+  };
 
-  const totalDays = daysInMonth(currentMonth);
-  const startOffset = startDay(currentMonth);
-  const monthName = currentMonth.toLocaleString("es-ES", {
-    month: "long",
-    year: "numeric"
-  });
-
-  const cells = [];
-
-  for (let i = 0; i < startOffset; i++) {
-    cells.push(null);
-  }
-
-  for (let d = 1; d <= totalDays; d++) {
-    cells.push(d);
-  }
-
-  if (error) {
-    return (
-      <div className="w-full p-4 bg-red-50 rounded-lg text-red-600 text-center">
-        {error}
-      </div>
+  const getReservationsForDate = (date) => {
+    const dateStr = date.toISOString().split('T')[0];
+    return reservations.filter(r => 
+      r.reservation_slots?.some(slot => 
+        slot.time_slots?.date === dateStr
+      )
     );
-  }
+  };
+
+  const changeMonth = (offset) => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + offset, 1));
+  };
+
+  const copyToClipboard = (code) => {
+    navigator.clipboard.writeText(code);
+    setCopiedCode(code);
+    setTimeout(() => setCopiedCode(null), 2000);
+  };
+
+  const days = getDaysInMonth(currentDate);
+  const weekDays = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
   return (
-    <div className="w-full">
-      {/* header */}
-      <div className="flex justify-between items-center mb-6">
-        <button
-          onClick={() => changeMonth(-1)}
-          className={`
-            px-3 py-1 rounded transition
-            ${currentMonth.getFullYear() === todayYear && 
-              currentMonth.getMonth() === todayMonth
-              ? "text-gray-400 cursor-not-allowed"
-              : "hover:bg-gray-100"}
-          `}
-          disabled={currentMonth.getFullYear() === todayYear && 
-                    currentMonth.getMonth() === todayMonth}
-        >
-          ←
-        </button>
-        <h2 className="font-semibold capitalize">{monthName}</h2>
-        <button
-          onClick={() => changeMonth(1)}
-          className="px-3 py-1 rounded hover:bg-gray-100"
-        >
-          →
-        </button>
-      </div>
-
-      {/* days header */}
-      <div className="grid grid-cols-7 text-center text-sm text-gray-500 mb-2">
-        <div>L</div>
-        <div>M</div>
-        <div>X</div>
-        <div>J</div>
-        <div>V</div>
-        <div>S</div>
-        <div>D</div>
-      </div>
-
-      {/* calendar */}
-      <div className="grid grid-cols-7 gap-2">
-        {cells.map((day, index) => {
-          if (!day) return <div key={index}></div>;
-
-          const dateStr = formatDate(day);
-          const isPast = isPastDay(day);
-          const isAvailableDay = isDayAvailable(day);
-          const isSelected = selectedDate === dateStr;
-
-          return (
-            <button
-              key={index}
-              onClick={() => handleSelect(day)}
-              disabled={!isAvailableDay}
-              title={isPast ? "Día pasado" : (!isAvailableDay ? "No disponible" : "Disponible")}
-              className={`
-                h-10 rounded-lg text-sm font-medium transition-all duration-200
-                ${isSelected
-                  ? "bg-tiger-orange text-white ring-2 ring-tiger-orange/50"
-                  : isAvailableDay
-                    ? "bg-tiger-green text-white hover:opacity-90 hover:scale-105 cursor-pointer"
-                    : isPast
-                      ? "bg-gray-200 text-gray-400 cursor-not-allowed line-through"
-                      : "bg-gray-100 text-gray-400 cursor-not-allowed"}
-              `}
-            >
-              {day}
-            </button>
-          );
-        })}
-      </div>
-
-      {loading && (
-        <div className="text-center text-sm text-gray-500 mt-4">
-          Cargando disponibilidad...
+    <div className="bg-white rounded-xl shadow-sm p-6">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-xl font-bold text-tiger-green">Calendario de Reservas</h2>
+          <p className="text-sm text-gray-500 mt-1">Visualiza las reservas confirmadas</p>
         </div>
+        <div className="flex gap-2">
+          <button
+            onClick={() => changeMonth(-1)}
+            className="p-2 hover:bg-gray-100 rounded-lg transition"
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <span className="text-lg font-semibold px-4">
+            {currentDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+          </span>
+          <button
+            onClick={() => changeMonth(1)}
+            className="p-2 hover:bg-gray-100 rounded-lg transition"
+          >
+            <ChevronRight size={20} />
+          </button>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-tiger-orange"></div>
+        </div>
+      ) : (
+        <>
+          {/* Calendario */}
+          <div className="grid grid-cols-7 gap-2 mb-2">
+            {weekDays.map(day => (
+              <div key={day} className="text-center text-sm font-medium text-gray-500 py-2">
+                {day}
+              </div>
+            ))}
+          </div>
+          
+          <div className="grid grid-cols-7 gap-2">
+            {days.map((day, idx) => {
+              const dateStr = day.date.toISOString().split('T')[0];
+              const dayReservations = getReservationsForDate(day.date);
+              const isToday = day.date.toDateString() === new Date().toDateString();
+              const isSelected = selectedDate === dateStr;
+              
+              return (
+                <button
+                  key={idx}
+                  onClick={() => setSelectedDate(isSelected ? null : dateStr)}
+                  className={`
+                    min-h-[120px] p-2 rounded-lg border transition-all relative
+                    ${!day.isCurrentMonth ? 'bg-gray-50 text-gray-400' : 'bg-white'}
+                    ${isToday ? 'border-tiger-orange ring-2 ring-tiger-orange/20' : 'border-gray-200'}
+                    ${isSelected ? 'bg-tiger-green/5 border-tiger-green' : ''}
+                    hover:shadow-md hover:border-tiger-green
+                  `}
+                >
+                  <div className="font-medium text-sm mb-2">
+                    {day.date.getDate()}
+                  </div>
+                  <div className="space-y-1">
+                    {dayReservations.slice(0, 3).map((res, i) => (
+                      <div key={i} className="text-xs bg-tiger-green/10 rounded px-1 py-0.5 group relative">
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="font-medium text-tiger-green">
+                            {res.reservation_slots?.[0]?.time_slots?.start_time?.slice(0,5)}
+                          </span>
+                          <span className="text-gray-500 font-mono text-[10px]">
+                            {res.reservation_code?.slice(0, 6)}
+                          </span>
+                        </div>
+                        <div className="truncate text-gray-700">{res.name}</div>
+                        
+                        {/* Tooltip */}
+                        <div className="absolute hidden group-hover:block z-20 bg-gray-900 text-white text-xs rounded-lg p-2 bottom-full left-0 mb-1 w-56 shadow-xl">
+                          <div className="font-semibold mb-1 text-tiger-golden">{res.name}</div>
+                          <div className="flex items-center gap-1 mt-1">
+                            <Mail size={10} />
+                            <span className="truncate">{res.email}</span>
+                          </div>
+                          {res.phone && (
+                            <div className="flex items-center gap-1 mt-1">
+                              <Phone size={10} />
+                              <span>{res.phone}</span>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-1 mt-1">
+                            <User size={10} />
+                            <span>{res.people} personas</span>
+                            <span className="mx-1">•</span>
+                            <DollarSign size={10} />
+                            <span>€{res.precio_total}</span>
+                          </div>
+                          <div className="text-gray-400 text-[10px] mt-1 font-mono">
+                            Código: {res.reservation_code}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {dayReservations.length > 3 && (
+                      <div className="text-xs text-gray-500 text-center">
+                        +{dayReservations.length - 3} más
+                      </div>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Detalle de reservas por día */}
+          {selectedDate && (
+            <div className="mt-8 pt-6 border-t">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-tiger-green">
+                  Reservas confirmadas para {new Date(selectedDate).toLocaleDateString('es-ES', {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                  })}
+                </h3>
+                <button
+                  onClick={() => setSelectedDate(null)}
+                  className="text-gray-400 hover:text-gray-600 text-sm"
+                >
+                  Cerrar
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                {getReservationsForDate(new Date(selectedDate)).map(res => (
+                  <div key={res.id} className="bg-gray-50 rounded-xl p-5 hover:shadow-md transition-all">
+                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                      {/* Información principal */}
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-3 flex-wrap">
+                          <h4 className="font-bold text-lg text-tiger-green">{res.name}</h4>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => copyToClipboard(res.reservation_code)}
+                              className="flex items-center gap-1 text-xs bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded transition"
+                            >
+                              <Copy size={12} />
+                              <span className="font-mono">{res.reservation_code}</span>
+                              {copiedCode === res.reservation_code && (
+                                <span className="text-green-600 text-[10px]">✓</span>
+                              )}
+                            </button>
+                          </div>
+                          {res.menor_edad && (
+                            <span className="flex items-center gap-1 text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded">
+                              <AlertCircle size={12} />
+                              Menores de 15
+                            </span>
+                          )}
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                          <div className="flex items-center gap-2 text-gray-600">
+                            <Mail size={14} />
+                            <a href={`mailto:${res.email}`} className="hover:text-tiger-green">
+                              {res.email}
+                            </a>
+                          </div>
+                          {res.phone && (
+                            <div className="flex items-center gap-2 text-gray-600">
+                              <Phone size={14} />
+                              <a href={`tel:${res.phone}`} className="hover:text-tiger-green">
+                                {res.phone}
+                              </a>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-2 text-gray-600">
+                            <Clock size={14} />
+                            <span>
+                              {res.reservation_slots?.[0]?.time_slots?.start_time?.slice(0,5)}
+                              {res.reservation_slots?.length > 1 && 
+                                ` - ${res.reservation_slots[res.reservation_slots.length - 1]?.time_slots?.end_time?.slice(0,5)}`
+                              }
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-gray-600">
+                            <Users size={14} />
+                            <span>{res.people} jugadores</span>
+                            <span className="text-gray-400">•</span>
+                            <span>Electroshock: {res.personas_electroshock}</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Total y acciones */}
+                      <div className="flex flex-col items-end gap-2">
+                        <div className="text-right">
+                          <div className="text-2xl font-bold text-tiger-orange">€{res.precio_total}</div>
+                          <div className="text-xs text-gray-500">Total reserva</div>
+                        </div>
+                        <div className="flex gap-2 mt-2">
+                          <button
+                            onClick={() => {
+                              const url = `${window.location.origin}/mis-reservas?code=${res.reservation_code}`;
+                              window.open(url, '_blank');
+                            }}
+                            className="px-3 py-1 text-xs bg-tiger-green text-white rounded hover:opacity-90 transition"
+                          >
+                            Ver detalles
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                
+                {getReservationsForDate(new Date(selectedDate)).length === 0 && (
+                  <div className="text-center py-12 bg-gray-50 rounded-xl">
+                    <div className="text-gray-400 mb-2">📅</div>
+                    <p className="text-gray-500">No hay reservas confirmadas para este día</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </>
       )}
-
-      {/* legend */}
-      <div className="flex gap-6 text-xs mt-4 text-gray-600">
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-tiger-green rounded"></div>
-          Disponible
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-gray-200 rounded"></div>
-          No disponible
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-gray-300 rounded line-through"></div>
-          Día pasado
-        </div>
-      </div>
     </div>
   );
 }
