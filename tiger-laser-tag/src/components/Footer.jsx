@@ -95,7 +95,7 @@ const Footer = () => {
           {/* Business Info */}
           <div>
             <img 
-              src="https://horizons-cdn.hostinger.com/a7a25aad-bbc8-4902-9e19-553c079a77c2/ea48480a66418958fadd30f1f8277b35.png" 
+              src="../../assets/logo.png" 
               alt="Tiger Laser Tag" 
               className="h-16 w-16 mb-4"
             />
