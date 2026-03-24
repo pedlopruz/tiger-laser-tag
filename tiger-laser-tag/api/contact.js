@@ -128,7 +128,9 @@ async function sendReservationEmail(req,res){
     });
 
     const noElectroshock = people - personas_electroshock;
-    const logoUrl = "https://horizons-cdn.hostinger.com/a7a25aad-bbc8-4902-9e19-553c079a77c2/ea48480a66418958fadd30f1f8277b35.png";
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+                    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+    const logoUrl = `${baseUrl}/logo.png`;
 
     const emailHtml = `
       <!DOCTYPE html>
