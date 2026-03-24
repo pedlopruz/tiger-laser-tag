@@ -22,6 +22,7 @@ export default function CalendarView() {
     const endDate = new Date(year, currentDate.getMonth() + 1, 0).toISOString().split('T')[0];
 
     try {
+      // ✅ FILTRO: Solo reservas CONFIRMADAS
       const { data, error } = await supabase
         .from('reservations')
         .select(`
@@ -34,7 +35,7 @@ export default function CalendarView() {
             )
           )
         `)
-        .eq('status', 'confirmed');
+        .eq('status', 'confirmed');  // ✅ Solo reservas confirmadas
 
       if (error) throw error;
 
@@ -117,7 +118,7 @@ export default function CalendarView() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-xl font-bold text-tiger-green">Calendario de Reservas</h2>
-          <p className="text-sm text-gray-500 mt-1">Visualiza y gestiona todas las reservas</p>
+          <p className="text-sm text-gray-500 mt-1">Visualiza las reservas confirmadas</p>
         </div>
         <div className="flex gap-2">
           <button
@@ -230,7 +231,7 @@ export default function CalendarView() {
             <div className="mt-8 pt-6 border-t">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-tiger-green">
-                  Reservas para {new Date(selectedDate).toLocaleDateString('es-ES', {
+                  Reservas confirmadas para {new Date(selectedDate).toLocaleDateString('es-ES', {
                     weekday: 'long',
                     day: 'numeric',
                     month: 'long',
@@ -312,6 +313,17 @@ export default function CalendarView() {
                           <div className="text-2xl font-bold text-tiger-orange">€{res.precio_total}</div>
                           <div className="text-xs text-gray-500">Total reserva</div>
                         </div>
+                        <div className="flex gap-2 mt-2">
+                          <button
+                            onClick={() => {
+                              const url = `${window.location.origin}/mis-reservas?code=${res.reservation_code}`;
+                              window.open(url, '_blank');
+                            }}
+                            className="px-3 py-1 text-xs bg-tiger-green text-white rounded hover:opacity-90 transition"
+                          >
+                            Ver detalles
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -320,7 +332,7 @@ export default function CalendarView() {
                 {getReservationsForDate(new Date(selectedDate)).length === 0 && (
                   <div className="text-center py-12 bg-gray-50 rounded-xl">
                     <div className="text-gray-400 mb-2">📅</div>
-                    <p className="text-gray-500">No hay reservas para este día</p>
+                    <p className="text-gray-500">No hay reservas confirmadas para este día</p>
                   </div>
                 )}
               </div>
