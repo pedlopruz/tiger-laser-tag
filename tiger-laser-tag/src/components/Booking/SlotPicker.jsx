@@ -15,20 +15,16 @@ export default function SlotPicker({
 
   const refreshTimeout = useRef(null);
 
-  // ✅ Sincronizar con initialSlots cuando cambia desde el padre
+  // Sincronizar con initialSlots
   useEffect(() => {
     if (initialSlots && initialSlots.length > 0) {
-      console.log("Sincronizando con initialSlots:", initialSlots.map(s => s.start_time));
       setSelectedSlots(initialSlots);
     } else if (initialSlots && initialSlots.length === 0) {
       setSelectedSlots([]);
     }
   }, [initialSlots]);
 
-  /* --------------------------
-     Helpers
-  -------------------------- */
-
+  // Helpers
   function formatTime(time) {
     if (!time) return "--:--";
     return time.slice(0, 5);
@@ -42,11 +38,9 @@ export default function SlotPicker({
 
   function areConsecutive(a, b) {
     if (!a?.start_time || !b?.start_time) return false;
-    
     const minutesA = getMinutesFromTime(a.start_time);
     const minutesB = getMinutesFromTime(b.start_time);
     const diff = Math.abs(minutesA - minutesB);
-    
     return diff === 60;
   }
 
@@ -67,10 +61,7 @@ export default function SlotPicker({
     return slot.reserved > 0 || slot.isBlocked === true;
   }
 
-  /* --------------------------
-     Cargar slots
-  -------------------------- */
-
+  // Cargar slots
   const loadSlots = useCallback(async () => {
     if (!date) return;
 
@@ -80,9 +71,7 @@ export default function SlotPicker({
     try {
       const res = await fetch(`/api/getSlotsByDate?date=${date}`);
       
-      if (!res.ok) {
-        throw new Error("Error loading slots");
-      }
+      if (!res.ok) throw new Error("Error loading slots");
       
       const data = await res.json();
       
@@ -90,15 +79,26 @@ export default function SlotPicker({
         throw new Error("Invalid slots data");
       }
       
-      // Filtrar slots con horas válidas
       const validSlots = data.slots.filter(slot => {
         return slot.start_time && 
                slot.start_time.length >= 5 && 
                !slot.start_time.includes('undefined');
       });
       
-      console.log("Slots cargados:", validSlots.map(s => s.start_time));
       setSlots(validSlots);
+      
+      // Verificar si los slots seleccionados siguen disponibles
+      if (selectedSlots.length > 0) {
+        const stillValid = selectedSlots.every(selectedSlot => {
+          const currentSlot = validSlots.find(s => s.id === selectedSlot.id);
+          return currentSlot && currentSlot.isAvailable && !currentSlot.isBlocked;
+        });
+        
+        if (!stillValid) {
+          setSelectedSlots([]);
+          if (onSelectSlots) onSelectSlots([]);
+        }
+      }
     } catch (err) {
       console.error("Error loading slots", err);
       setError("Error al cargar los horarios");
@@ -106,23 +106,39 @@ export default function SlotPicker({
     }
 
     setLoading(false);
-  }, [date]);
+  }, [date, selectedSlots, onSelectSlots]);
 
-  /* --------------------------
-     Realtime updates
-  -------------------------- */
-
+  // Cargar al cambiar fecha
   useEffect(() => {
     if (date) loadSlots();
   }, [date, loadSlots]);
 
+  // ✅ Realtime con manejo de cambios inmediatos
   useEffect(() => {
     if (!date) return;
 
+    const handleRealtimeChange = () => {
+      console.log("🔄 Cambio detectado, recargando slots...");
+      // Limpiar timeout anterior
+      if (refreshTimeout.current) clearTimeout(refreshTimeout.current);
+      // Recargar después de un pequeño delay para evitar múltiples llamadas
+      refreshTimeout.current = setTimeout(() => {
+        loadSlots();
+      }, 100);
+    };
+
     const channel = supabase
       .channel("slots-realtime")
-      .on("postgres_changes", { event: "*", schema: "public", table: "reservations" }, () => loadSlots())
-      .on("postgres_changes", { event: "*", schema: "public", table: "reservation_slots" }, () => loadSlots())
+      .on("postgres_changes", { 
+        event: "*", 
+        schema: "public", 
+        table: "reservations" 
+      }, handleRealtimeChange)
+      .on("postgres_changes", { 
+        event: "*", 
+        schema: "public", 
+        table: "reservation_slots" 
+      }, handleRealtimeChange)
       .subscribe();
 
     return () => {
@@ -131,16 +147,17 @@ export default function SlotPicker({
     };
   }, [date, loadSlots]);
 
-  /* --------------------------
-     Selección de slots
-  -------------------------- */
+  // ✅ Forzar recarga cuando la ventana recupera foco
+  useEffect(() => {
+    const handleFocus = () => {
+      loadSlots();
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [loadSlots]);
 
+  // Selección de slots
   const handleSelect = useCallback((slot) => {
-    console.log("=== SLOT PICKER - HANDLE SELECT ===");
-    console.log("Click en slot:", slot.start_time);
-    console.log("selectedSlots actual:", selectedSlots.map(s => s.start_time));
-    
-    // Verificar disponibilidad
     if (isSlotBlocked(slot)) {
       alert("Este horario ya está reservado");
       return;
@@ -155,53 +172,32 @@ export default function SlotPicker({
     let newSelection = [];
     
     if (selectedSlots.length === 0) {
-      // Primer slot
-      console.log("Caso: Sin slots seleccionados");
       newSelection = [slot];
     } 
     else if (selectedSlots.length === 1) {
       const first = selectedSlots[0];
-      console.log("Caso: 1 slot seleccionado - actual:", first.start_time);
       
       if (first.id === slot.id) {
-        // Deseleccionar
-        console.log("Subcaso: Mismo slot - deseleccionando");
         newSelection = [];
       }
       else if (areConsecutive(first, slot)) {
-        // Seleccionar ambos
-        console.log("Subcaso: Slots consecutivos - seleccionando ambos");
         newSelection = [first, slot].sort((a, b) => 
           a.start_time.localeCompare(b.start_time)
         );
       } 
       else {
-        // Reemplazar
-        console.log("Subcaso: No consecutivo - reemplazando");
         newSelection = [slot];
       }
     } 
     else {
-      // Ya hay 2 slots, reiniciar
-      console.log("Caso: Ya hay 2 slots - reiniciando");
       newSelection = [slot];
     }
     
-    console.log("Nueva selección:", newSelection.map(s => s.start_time));
-    
-    // Actualizar estado local
     setSelectedSlots(newSelection);
-    
-    // Notificar al padre
-    if (onSelectSlots) {
-      onSelectSlots(newSelection);
-    }
+    if (onSelectSlots) onSelectSlots(newSelection);
   }, [selectedSlots, people, onSelectSlots]);
 
-  /* --------------------------
-     UI logic
-  -------------------------- */
-
+  // UI logic
   function isSelected(slot) {
     return selectedSlots.some(s => s.id === slot.id);
   }
@@ -217,7 +213,6 @@ export default function SlotPicker({
       const first = selectedSlots[0];
       const isSame = slot.id === first.id;
       const isConsecutive = areConsecutive(first, slot);
-      
       return !(isSame || isConsecutive);
     }
     
@@ -257,10 +252,6 @@ export default function SlotPicker({
     if (remaining < people) return `⚠️ ${remaining} plazas`;
     return `✅ ${remaining} plazas`;
   }
-
-  /* --------------------------
-     Render
-  -------------------------- */
 
   return (
     <div className="mt-8">
@@ -319,7 +310,6 @@ export default function SlotPicker({
         ))}
       </div>
 
-      {/* Indicador de selección actual */}
       {selectedSlots.length > 0 && (
         <div className="mt-4 p-3 bg-gray-50 rounded-lg text-sm">
           <span className="font-medium">Horario seleccionado: </span>
