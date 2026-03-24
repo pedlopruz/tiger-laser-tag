@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Phone, Mail, MapPin, Facebook, Instagram, Twitter, Youtube, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import logo from '../assets/logo.png';
+
 
 const Footer = () => {
   const { t } = useTranslation();
@@ -96,7 +96,7 @@ const Footer = () => {
           {/* Business Info */}
           <div>
             <img 
-              src={logo}
+              src="/logo.png"
               alt="Tiger Laser Tag" 
               className="h-16 w-16 mb-4"
             />

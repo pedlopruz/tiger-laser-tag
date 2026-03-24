@@ -66,7 +66,7 @@ async function ContactForm(req,res){
 
 }
 
-async function sendReservationEmail(req,res){
+async function sendReservationEmail(req, res) {
   console.log("=== ENVÍO DE EMAIL ===");
   console.log("Method:", req.method);
   
@@ -128,7 +128,27 @@ async function sendReservationEmail(req,res){
     });
 
     const noElectroshock = people - personas_electroshock;
-    const logoUrl = "https://horizons-cdn.hostinger.com/a7a25aad-bbc8-4902-9e19-553c079a77c2/ea48480a66418958fadd30f1f8277b35.png";
+    
+    // ✅ Función mejorada para obtener la URL base
+    const getBaseUrl = () => {
+      // En producción, Vercel proporciona VERCEL_URL
+      if (process.env.VERCEL_URL) {
+        const url = process.env.VERCEL_URL.startsWith('https://') 
+          ? process.env.VERCEL_URL 
+          : `https://${process.env.VERCEL_URL}`;
+        console.log("Usando VERCEL_URL:", url);
+        return url;
+      }
+      
+      // En desarrollo local
+      console.log("Usando localhost");
+      return 'http://localhost:5173'; // Cambia según tu puerto de desarrollo
+    };
+
+    const baseUrl = getBaseUrl();
+    const logoUrl = `${baseUrl}/logo.png`; // ✅ Asegúrate que el archivo existe en public/logo.png
+    
+    console.log("URL del logo:", logoUrl);
 
     const emailHtml = `
       <!DOCTYPE html>
@@ -153,6 +173,7 @@ async function sendReservationEmail(req,res){
           .logo {
             max-width: 180px;
             margin: 0 auto;
+            height: auto;
           }
           .content {
             background-color: #f9f9f9;
@@ -205,11 +226,19 @@ async function sendReservationEmail(req,res){
             margin-top: 20px;
             font-size: 14px;
           }
+          .footer {
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+          }
         </style>
       </head>
       <body>
         <div class="header">
-          <img src="${logoUrl}" alt="Tiger Laser Tag" class="logo" style="max-width: 180px; height: auto;">
+          <img src="${logoUrl}" alt="Tiger Laser Tag" class="logo">
         </div>
         <div class="content">
           <h2>Hola ${name},</h2>
@@ -280,7 +309,7 @@ async function sendReservationEmail(req,res){
 
           <p><strong>¿Necesitas modificar tu reserva?</strong></p>
           <p>Puedes gestionar tu reserva a través del siguiente enlace:</p>
-          <p><a href="${process.env.NEXT_PUBLIC_APP_URL}/mis-reservas?code=${reservation_code}">Gestionar mi reserva</a></p>
+          <p><a href="${baseUrl}/mis-reservas?code=${reservation_code}">Gestionar mi reserva</a></p>
         </div>
         <div class="footer">
           <p>Tiger Laser Tag - La mejor experiencia de Laser Tag</p>
@@ -316,14 +345,20 @@ async function sendReservationEmail(req,res){
         await resend.emails.send({
           from: "Tiger Laser Tag <noreply@tigerlasertag.es>",
           to: process.env.ADMIN_EMAIL,
-          subject: `Nueva reserva: ${reservation_code} - ${name}`,
+          subject: `Nueva reserva pendiente: ${reservation_code} - ${name}`,
           html: `
-            <h2>Nueva reserva creada</h2>
+            <h2>Nueva reserva creada (PENDIENTE)</h2>
             <p><strong>Código:</strong> ${reservation_code}</p>
             <p><strong>Cliente:</strong> ${name}</p>
             <p><strong>Email:</strong> ${email}</p>
             <p><strong>Teléfono:</strong> ${phone || 'No proporcionado'}</p>
+            <p><strong>Fecha:</strong> ${formattedDate}</p>
+            <p><strong>Horario:</strong> ${time_range || 'No especificado'}</p>
+            <p><strong>Plan:</strong> ${plan_name || 'No especificado'}</p>
+            <p><strong>Personas:</strong> ${people}</p>
             <p><strong>Total:</strong> €${total_price}</p>
+            <hr>
+            <p><a href="${baseUrl}/admin">Revisar reservas pendientes en el panel</a></p>
           `
         });
         console.log("✅ Email al admin enviado");

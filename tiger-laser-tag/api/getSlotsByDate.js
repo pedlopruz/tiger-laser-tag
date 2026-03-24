@@ -62,7 +62,7 @@ export default async function handler(req, res) {
         )
       `)
       .in("slot_id", slotIds)
-      .eq("reservations.status", "confirmed");
+      .in("reservations.status", ["confirmed", "pending"]);
 
     if (resError) {
       console.error("Error fetching reservations:", resError);
