@@ -128,8 +128,28 @@ async function sendReservationEmail(req,res){
     });
 
     const noElectroshock = people - personas_electroshock;
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
-                    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+    const getBaseUrl = () => {
+      // Si hay NEXT_PUBLIC_APP_URL configurada, usarla
+      if (process.env.NEXT_PUBLIC_APP_URL) {
+        return process.env.NEXT_PUBLIC_APP_URL;
+      }
+      
+      // Si hay VERCEL_URL
+      if (process.env.VERCEL_URL) {
+        // Si ya incluye https://, usarlo directamente
+        if (process.env.VERCEL_URL.startsWith('https://')) {
+          return process.env.VERCEL_URL;
+        }
+        // Si no, agregar https://
+        return `https://${process.env.VERCEL_URL}`;
+      }
+      
+      // Fallback local
+      return 'http://localhost:3000';
+    };
+
+    const baseUrl = getBaseUrl();
+
     const logoUrl = `${baseUrl}/logo.png`;
 
     const emailHtml = `
