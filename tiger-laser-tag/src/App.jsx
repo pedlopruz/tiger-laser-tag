@@ -18,7 +18,10 @@ import ContactoPage from '@/pages/ContactoPage';
 import ReservaPage from '@/pages/ReservaPage';
 import ConfirmadaPage from '@/pages/ConfirmadaPage';
 import MisReservas from '@/pages/MisReservasPages';
+import AdminLogin from '@/components/admin/AdminLogin'; 
+import Admin from '@/pages/Admin';
 import { Toaster } from '@/components/ui/toaster';
+
 
 function App() {
   return (
@@ -41,6 +44,7 @@ function App() {
                 <Route path="/reserva" element={<ReservaPage />} />
                 <Route path="/reserva-confirmada" element={<ConfirmadaPage />} />
                 <Route path="/mis-reservas" element={<MisReservas />} />
+                <Route path="/admin" element={<Admin />} />
               </Routes>
             </AnimatePresence>
           </main>
