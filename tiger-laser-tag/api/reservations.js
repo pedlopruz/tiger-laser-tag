@@ -40,17 +40,34 @@ export default async function handler(req, res) {
 }
 
 // ============================================
-// ACCEDER A RESERVA (solo pendientes)
+// ACCEDER A RESERVA
 // ============================================
 async function accessReservation(req, res, { code, email }) {
-  if (!code || code.length !== 12) {
-    return res.status(400).json({ error: "Código de reserva inválido" });
+  console.log("=== ACCESS RESERVATION FUNCTION ===");
+  console.log("Código recibido:", code);
+  console.log("Email recibido:", email);
+  console.log("Longitud del código:", code?.length);
+
+  // Validaciones
+  if (!code) {
+    console.log("❌ Código no proporcionado");
+    return res.status(400).json({ error: "Código de reserva requerido" });
   }
+  
+  if (code.length !== 12) {
+    console.log(`❌ Longitud de código incorrecta: ${code.length} (debe ser 12)`);
+    return res.status(400).json({ error: "Código de reserva inválido (debe tener 12 caracteres)" });
+  }
+  
   if (!email) {
+    console.log("❌ Email no proporcionado");
     return res.status(400).json({ error: "Email requerido" });
   }
 
   try {
+    console.log("📡 Consultando Supabase...");
+    console.log("Parámetros:", { code, email, status: "pending" });
+    
     const { data: reservation, error } = await supabaseAdmin
       .from("reservations")
       .select(`
@@ -63,15 +80,35 @@ async function accessReservation(req, res, { code, email }) {
       .eq("status", "pending")
       .single();
 
-    if (error || !reservation) {
-      console.log("Reserva no encontrada:", { code, email, error });
+    console.log("Resultado de la consulta:");
+    console.log("- Error:", error);
+    console.log("- Reserva encontrada:", !!reservation);
+    
+    if (error) {
+      console.log("❌ Error de Supabase:", error.message);
+      console.log("Código de error:", error.code);
+      return res.status(404).json({ error: "Reserva no encontrada" });
+    }
+    
+    if (!reservation) {
+      console.log("❌ No se encontró ninguna reserva con esos datos");
       return res.status(404).json({ error: "Reserva no encontrada" });
     }
 
+    console.log("✅ Reserva encontrada:", {
+      id: reservation.id,
+      reservation_code: reservation.reservation_code,
+      name: reservation.name,
+      status: reservation.status,
+      people: reservation.people
+    });
+
     return res.status(200).json({ reservation });
+
   } catch (error) {
-    console.error("Error fetching reservation:", error);
-    return res.status(500).json({ error: "Error al buscar la reserva" });
+    console.error("❌ Error en accessReservation:", error);
+    console.error("Stack trace:", error.stack);
+    return res.status(500).json({ error: "Error al buscar la reserva", details: error.message });
   }
 }
 
