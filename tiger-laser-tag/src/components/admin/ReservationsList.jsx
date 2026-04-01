@@ -118,10 +118,11 @@ export default function ReservationsList() {
     if (!confirm(`¿Estás seguro de cancelar la reserva ${reservationCode}?`)) return;
 
     try {
-      const { error } = await supabase
-        .from('reservations')
-        .update({ status: 'cancelled' })
-        .eq('id', id);
+      // Llamar a una función RPC que maneje la cancelación completa
+      const { data, error } = await supabase
+        .rpc('cancel_reservation', {
+          p_reservation_id: id
+        });
 
       if (error) throw error;
       alert('Reserva cancelada correctamente');
