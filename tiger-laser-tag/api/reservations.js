@@ -77,7 +77,7 @@ async function accessReservation(req, res) {
       `)
       .eq("reservation_code", code)
       .eq("email", email)
-      .eq("status", "confirmed")
+      .eq("status", "pending")
       .single();
 
     if (error || !reservation) {
