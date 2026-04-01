@@ -48,17 +48,16 @@ async function accessReservation(req, res, { code, email }) {
   console.log("Email recibido:", email);
   console.log("Longitud del código:", code?.length);
 
-  // Validaciones
   if (!code) {
     console.log("❌ Código no proporcionado");
     return res.status(400).json({ error: "Código de reserva requerido" });
   }
-  
+
   if (code.length !== 12) {
     console.log(`❌ Longitud de código incorrecta: ${code.length} (debe ser 12)`);
     return res.status(400).json({ error: "Código de reserva inválido (debe tener 12 caracteres)" });
   }
-  
+
   if (!email) {
     console.log("❌ Email no proporcionado");
     return res.status(400).json({ error: "Email requerido" });
@@ -67,12 +66,14 @@ async function accessReservation(req, res, { code, email }) {
   try {
     console.log("📡 Consultando Supabase...");
     console.log("Parámetros:", { code, email, status: "pending" });
-    
+
     const { data: reservation, error } = await supabaseAdmin
       .from("reservations")
       .select(`
         *,
-        time_slots(date, start_time, end_time),
+        reservation_slots(
+          time_slots(date, start_time, end_time)
+        ),
         plans(name, price, duration_minutes)
       `)
       .eq("reservation_code", code)
@@ -83,24 +84,29 @@ async function accessReservation(req, res, { code, email }) {
     console.log("Resultado de la consulta:");
     console.log("- Error:", error);
     console.log("- Reserva encontrada:", !!reservation);
-    
+
     if (error) {
       console.log("❌ Error de Supabase:", error.message);
       console.log("Código de error:", error.code);
       return res.status(404).json({ error: "Reserva no encontrada" });
     }
-    
+
     if (!reservation) {
       console.log("❌ No se encontró ninguna reserva con esos datos");
       return res.status(404).json({ error: "Reserva no encontrada" });
     }
+
+    // Aplanar time_slots para no modificar el frontend
+    reservation.time_slots = reservation.reservation_slots?.[0]?.time_slots || null;
+    delete reservation.reservation_slots;
 
     console.log("✅ Reserva encontrada:", {
       id: reservation.id,
       reservation_code: reservation.reservation_code,
       name: reservation.name,
       status: reservation.status,
-      people: reservation.people
+      people: reservation.people,
+      time_slots: reservation.time_slots
     });
 
     return res.status(200).json({ reservation });
