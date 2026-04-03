@@ -90,6 +90,26 @@ export default function MisReservas() {
         setShowPayment(true);
       }
 
+      await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "change_players",
+          name: reservation.name,
+          email: reservation.email,
+          reservation_code: reservation.reservation_code,
+          date: reservation.time_slots?.date,
+          time_range: reservation.time_slots
+            ? `${reservation.time_slots.start_time?.slice(0, 5)} - ${reservation.time_slots.end_time?.slice(0, 5)}`
+            : null,
+          plan_name: reservation.plans?.name,
+          original_people: reservation.people,      // antes de actualizar
+          new_people: Number(people),               // el nuevo valor
+          new_total: data.new_total,
+          extra_payment: data.extra_payment || 0
+        })
+      });
+
       // Actualizar el estado local de la reserva sin recargar
       setReservation(prev => ({
         ...prev,

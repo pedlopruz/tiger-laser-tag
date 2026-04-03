@@ -24,6 +24,11 @@ export default async function handler(req, res) {
         console.log("=== CANCELLATION ACTION RECIBIDA ===");
         console.log("Body completo:", req.body);
         return sendCancellationEmail(req, res);
+
+      case "change_players":
+        console.log("=== CHANGE_PLAYERS ACTION RECIBIDA ===");
+        console.log("Body completo:", req.body);
+        return sendChangePlayersEmail(req, res);
     
 
       default:
@@ -467,7 +472,7 @@ async function sendCancellationEmail(req, res) {
             <div class="detail-row"><span class="detail-label">Total:</span><span>€${total_price}</span></div>
           </div>
           <div class="code">🎯 Código: ${reservation_code}</div>
-          <p>Si esta cancelación ha sido un error o deseas hacer una nueva reserva, puedes hacerlo desde nuestra web:</p>
+          <p>Si deseas hacer una nueva reserva, puedes hacerlo desde nuestra web:</p>
           <div class="new-booking">
             <a href="${baseUrl}/reservar">👉 Hacer una nueva reserva</a>
           </div>
@@ -520,6 +525,149 @@ async function sendCancellationEmail(req, res) {
     }
 
     return res.status(200).json({ success: true, message: "Email de cancelación enviado", data });
+
+  } catch (error) {
+    console.error("❌ Error general:", error);
+    return res.status(500).json({ error: "Error sending email", details: error.message });
+  }
+}
+
+async function sendChangePlayersEmail(req, res) {
+  console.log("=== ENVÍO DE EMAIL CAMBIO DE JUGADORES ===");
+
+  const {
+    name,
+    email,
+    reservation_code,
+    date,
+    time_range,
+    plan_name,
+    original_people,
+    new_people,
+    new_total,
+    extra_payment
+  } = req.body;
+
+  if (!name || !email || !reservation_code) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  if (!process.env.RESEND_API_KEY) {
+    return res.status(500).json({ error: "Email service not configured" });
+  }
+
+  try {
+    const formattedDate = date ? new Date(date).toLocaleDateString("es-ES", {
+      weekday: "long", day: "numeric", month: "long", year: "numeric"
+    }) : "No especificada";
+
+    const getBaseUrl = () => {
+      if (process.env.VERCEL_URL) {
+        return process.env.VERCEL_URL.startsWith("https://")
+          ? process.env.VERCEL_URL
+          : `https://${process.env.VERCEL_URL}`;
+      }
+      return "http://localhost:5173";
+    };
+
+    const baseUrl = getBaseUrl();
+    const logoUrl = "https://i.imgur.com/CKWBWRc.png";
+
+    const emailHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #1a4d3e; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }
+          .logo { max-width: 180px; margin: 0 auto; height: auto; }
+          .content { background-color: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+          .reservation-details { background-color: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 20px; margin: 20px 0; }
+          .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+          .detail-label { font-weight: bold; color: #1a4d3e; }
+          .updated-badge { font-size: 16px; font-weight: bold; text-align: center; background-color: #1a4d3e; color: #d4af37; padding: 12px; border-radius: 5px; margin: 20px 0; }
+          .players-change { display: flex; align-items: center; justify-content: center; gap: 16px; background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin: 20px 0; }
+          .players-old { font-size: 20px; color: #999; text-decoration: line-through; }
+          .players-arrow { font-size: 20px; color: #1a4d3e; }
+          .players-new { font-size: 24px; font-weight: bold; color: #1a4d3e; }
+          .total { font-size: 18px; font-weight: bold; color: #d4af37; background-color: #1a4d3e; padding: 10px; border-radius: 5px; text-align: center; margin-top: 20px; }
+          .extra-payment { background-color: #fff3cd; border: 1px solid #ffc107; color: #856404; padding: 12px; border-radius: 5px; margin-top: 16px; font-size: 14px; text-align: center; }
+          .footer { text-align: center; font-size: 12px; color: #666; margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <img src="${logoUrl}" alt="Tiger Laser Tag" class="logo">
+        </div>
+        <div class="content">
+          <h2>Hola ${name},</h2>
+          <p>El número de jugadores de tu reserva ha sido <strong>actualizado correctamente</strong>.</p>
+
+          <div class="updated-badge">✅ JUGADORES ACTUALIZADOS</div>
+
+          <div class="reservation-details">
+            <h3>Detalles de la reserva</h3>
+            <div class="detail-row">
+              <span class="detail-label">Código de reserva:</span>
+              <span>${reservation_code}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Fecha:</span>
+              <span>${formattedDate}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Horario:</span>
+              <span>${time_range || "No especificado"}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Plan:</span>
+              <span>${plan_name || "No especificado"}</span>
+            </div>
+          </div>
+
+          <h3 style="text-align: center; color: #1a4d3e;">Cambio de jugadores</h3>
+          <div class="players-change">
+            <span class="players-old">${original_people} jugadores</span>
+            <span class="players-arrow">→</span>
+            <span class="players-new">${new_people} jugadores</span>
+          </div>
+
+          <div class="total">NUEVO TOTAL: €${new_total}</div>
+
+          ${extra_payment > 0 ? `
+          <div class="extra-payment">
+            💳 Se ha generado un pago adicional de <strong>€${extra_payment}</strong> por el incremento de jugadores.
+          </div>
+          ` : ""}
+
+          <p style="margin-top: 24px;">
+            Puedes gestionar tu reserva en cualquier momento desde el siguiente enlace:
+          </p>
+          <p><a href="${baseUrl}/mis-reservas">Gestionar mi reserva</a></p>
+        </div>
+        <div class="footer">
+          <p>Tiger Laser Tag - La mejor experiencia de Laser Tag</p>
+          <p>© ${new Date().getFullYear()} Tiger Laser Tag. Todos los derechos reservados.</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const { data, error } = await resend.emails.send({
+      from: "Tiger Laser Tag <noreply@tigerlasertag.es>",
+      to: email,
+      subject: `Jugadores actualizados - Tiger Laser Tag - Código: ${reservation_code}`,
+      html: emailHtml
+    });
+
+    if (error) {
+      console.error("❌ Error de Resend:", error);
+      return res.status(500).json({ error: "Error sending email", details: error });
+    }
+
+    console.log("✅ Email de cambio de jugadores enviado a:", email);
+    return res.status(200).json({ success: true, message: "Email enviado", data });
 
   } catch (error) {
     console.error("❌ Error general:", error);
