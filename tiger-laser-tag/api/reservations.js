@@ -132,7 +132,7 @@ async function changeReservation(req, res, { code, email, people, newSlotId }) {
       .from("reservations")
       .select(`
         id,
-        people as original_people,
+        people,
         plan_id,
         plans(price),
         reservation_slots(slot_id)
@@ -147,15 +147,19 @@ async function changeReservation(req, res, { code, email, people, newSlotId }) {
     }
 
     // Caso: Cambiar número de jugadores
-    if (people && people !== reservation.original_people) {
+    if (people && people !== reservation.people) {
       const pricePerPerson = reservation.plans.price;
-      const originalTotal = pricePerPerson * reservation.original_people;
+      const originalTotal = pricePerPerson * reservation.people;
       const newTotal = pricePerPerson * people;
       const extraPayment = Math.max(newTotal - originalTotal, 0);
 
+      // Actualizar jugadores en la base de datos
       const { error: updateError } = await supabaseAdmin
         .from("reservations")
-        .update({ people: people })
+        .update({ 
+          people: people,
+          precio_total: newTotal  // ✅ Actualizar también el precio total
+        })
         .eq("id", reservation.id);
 
       if (updateError) throw updateError;
@@ -163,20 +167,20 @@ async function changeReservation(req, res, { code, email, people, newSlotId }) {
       return res.status(200).json({
         success: true,
         extra_payment: extraPayment,
+        new_total: newTotal,
         message: extraPayment > 0 ? "Se requiere pago adicional" : "Reserva actualizada"
       });
     }
 
     // Caso: Cambiar horario
     if (newSlotId) {
-      // Verificar disponibilidad del nuevo slot
       const { data: newSlot, error: slotError } = await supabaseAdmin
         .from("time_slots")
         .select("status, max_capacity")
         .eq("id", newSlotId)
         .single();
 
-      if (slotError || !newSlot || newSlot.status !== 'active') {
+      if (slotError || !newSlot || newSlot.status !== "active") {
         return res.status(400).json({ error: "El horario seleccionado no está disponible" });
       }
 
@@ -272,7 +276,9 @@ async function cancelReservation(req, res, { code, email }) {
       .from("reservations")
       .select(`
         *,
-        time_slots(date, start_time, end_time),
+        reservation_slots(
+          time_slots(date, start_time, end_time)
+        ),
         plans(name, price, duration_minutes)
       `)
       .eq("id", reservation.id)
