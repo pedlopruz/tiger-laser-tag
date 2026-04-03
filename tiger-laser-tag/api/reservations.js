@@ -233,7 +233,6 @@ async function cancelReservation(req, res, { code, email }) {
   }
 
   try {
-    // Obtener la reserva
     const { data: reservation, error: fetchError } = await supabaseAdmin
       .from("reservations")
       .select(`
@@ -250,10 +249,8 @@ async function cancelReservation(req, res, { code, email }) {
       return res.status(404).json({ error: "Reserva no encontrada" });
     }
 
-    // Obtener los slot_ids
     const slotIds = reservation.reservation_slots.map(rs => rs.slot_id);
 
-    // Cambiar estado de la reserva a cancelled
     const { error: updateError } = await supabaseAdmin
       .from("reservations")
       .update({ status: "cancelled" })
@@ -261,7 +258,6 @@ async function cancelReservation(req, res, { code, email }) {
 
     if (updateError) throw updateError;
 
-    // Liberar los slots
     if (slotIds.length > 0) {
       const { error: slotError } = await supabaseAdmin
         .from("time_slots")
@@ -271,7 +267,6 @@ async function cancelReservation(req, res, { code, email }) {
       if (slotError) throw slotError;
     }
 
-    // Obtener la reserva actualizada para devolver
     const { data: updatedReservation } = await supabaseAdmin
       .from("reservations")
       .select(`
@@ -283,6 +278,28 @@ async function cancelReservation(req, res, { code, email }) {
       `)
       .eq("id", reservation.id)
       .single();
+
+    // Aplanar time_slots igual que en accessReservation
+    const timeSlots = updatedReservation.reservation_slots?.[0]?.time_slots || null;
+
+    // Enviar email
+    await fetch(`${getBaseUrl()}/api/contact`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "cancellation",
+        name: updatedReservation.name,
+        email: updatedReservation.email,
+        reservation_code: updatedReservation.reservation_code,
+        date: timeSlots?.date,
+        time_range: timeSlots
+          ? `${timeSlots.start_time?.slice(0, 5)} - ${timeSlots.end_time?.slice(0, 5)}`
+          : null,
+        plan_name: updatedReservation.plans?.name,
+        people: updatedReservation.people,
+        total_price: updatedReservation.precio_total
+      })
+    }).catch(err => console.error("Error enviando email de cancelación:", err));
 
     return res.status(200).json({
       success: true,
