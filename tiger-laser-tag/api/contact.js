@@ -385,12 +385,27 @@ async function sendReservationEmail(req, res) {
   }
 }
 
-async function sendCancellationEmail(req, res, { name, email, reservation_code, date, time_range, plan_name, people, total_price }) {
+async function sendCancellationEmail(req, res) {
   console.log("=== ENVÍO DE EMAIL CANCELACIÓN ===");
+
+  const {
+    name,
+    email,
+    reservation_code,
+    date,
+    time_range,
+    plan_name,
+    people,
+    total_price
+  } = req.body;  // ← leer de req.body, no del tercer parámetro
+
+  if (!name || !email || !reservation_code) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
 
   if (!process.env.RESEND_API_KEY) {
     console.error("❌ RESEND_API_KEY no está configurada");
-    return;
+    return res.status(500).json({ error: "Email service not configured" });
   }
 
   try {
@@ -416,90 +431,18 @@ async function sendCancellationEmail(req, res, { name, email, reservation_code, 
       <head>
         <meta charset="UTF-8">
         <style>
-          body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-          }
-          .header {
-            background-color: #1a4d3e;
-            padding: 20px;
-            text-align: center;
-            border-radius: 10px 10px 0 0;
-          }
-          .logo {
-            max-width: 180px;
-            margin: 0 auto;
-            height: auto;
-          }
-          .content {
-            background-color: #f9f9f9;
-            padding: 30px;
-            border-radius: 0 0 10px 10px;
-          }
-          .reservation-details {
-            background-color: #fff;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 20px 0;
-          }
-          .detail-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #eee;
-          }
-          .detail-label {
-            font-weight: bold;
-            color: #1a4d3e;
-          }
-          .cancelled-badge {
-            font-size: 16px;
-            font-weight: bold;
-            text-align: center;
-            background-color: #dc2626;
-            color: #fff;
-            padding: 12px;
-            border-radius: 5px;
-            margin: 20px 0;
-          }
-          .code {
-            font-size: 20px;
-            font-weight: bold;
-            text-align: center;
-            background-color: #f0f0f0;
-            padding: 10px;
-            border-radius: 5px;
-            letter-spacing: 2px;
-            margin: 20px 0;
-            color: #999;
-            text-decoration: line-through;
-          }
-          .new-booking {
-            background-color: #1a4d3e;
-            color: #d4af37;
-            text-align: center;
-            padding: 12px;
-            border-radius: 5px;
-            margin-top: 20px;
-          }
-          .new-booking a {
-            color: #d4af37;
-            font-weight: bold;
-            text-decoration: none;
-          }
-          .footer {
-            text-align: center;
-            font-size: 12px;
-            color: #666;
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #eee;
-          }
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #1a4d3e; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }
+          .logo { max-width: 180px; margin: 0 auto; height: auto; }
+          .content { background-color: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+          .reservation-details { background-color: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 20px; margin: 20px 0; }
+          .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+          .detail-label { font-weight: bold; color: #1a4d3e; }
+          .cancelled-badge { font-size: 16px; font-weight: bold; text-align: center; background-color: #dc2626; color: #fff; padding: 12px; border-radius: 5px; margin: 20px 0; }
+          .code { font-size: 20px; font-weight: bold; text-align: center; background-color: #f0f0f0; padding: 10px; border-radius: 5px; letter-spacing: 2px; margin: 20px 0; color: #999; text-decoration: line-through; }
+          .new-booking { background-color: #1a4d3e; color: #d4af37; text-align: center; padding: 12px; border-radius: 5px; margin-top: 20px; }
+          .new-booking a { color: #d4af37; font-weight: bold; text-decoration: none; }
+          .footer { text-align: center; font-size: 12px; color: #666; margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; }
         </style>
       </head>
       <body>
@@ -509,49 +452,21 @@ async function sendCancellationEmail(req, res, { name, email, reservation_code, 
         <div class="content">
           <h2>Hola ${name},</h2>
           <p>Tu reserva ha sido <strong>cancelada correctamente</strong>. A continuación encontrarás un resumen:</p>
-
-          <div class="cancelled-badge">
-            ❌ RESERVA CANCELADA
-          </div>
-
+          <div class="cancelled-badge">❌ RESERVA CANCELADA</div>
           <div class="reservation-details">
             <h3>Detalles de la reserva cancelada</h3>
-            <div class="detail-row">
-              <span class="detail-label">Código de reserva:</span>
-              <span>${reservation_code}</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Fecha:</span>
-              <span>${formattedDate}</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Horario:</span>
-              <span>${time_range || "No especificado"}</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Plan:</span>
-              <span>${plan_name || "No especificado"}</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Jugadores:</span>
-              <span>${people} persona(s)</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Total:</span>
-              <span>€${total_price}</span>
-            </div>
+            <div class="detail-row"><span class="detail-label">Código de reserva:</span><span>${reservation_code}</span></div>
+            <div class="detail-row"><span class="detail-label">Fecha:</span><span>${formattedDate}</span></div>
+            <div class="detail-row"><span class="detail-label">Horario:</span><span>${time_range || "No especificado"}</span></div>
+            <div class="detail-row"><span class="detail-label">Plan:</span><span>${plan_name || "No especificado"}</span></div>
+            <div class="detail-row"><span class="detail-label">Jugadores:</span><span>${people} persona(s)</span></div>
+            <div class="detail-row"><span class="detail-label">Total:</span><span>€${total_price}</span></div>
           </div>
-
-          <div class="code">
-            🎯 Código: ${reservation_code}
-          </div>
-
+          <div class="code">🎯 Código: ${reservation_code}</div>
           <p>Si esta cancelación ha sido un error o deseas hacer una nueva reserva, puedes hacerlo desde nuestra web:</p>
-
           <div class="new-booking">
             <a href="${baseUrl}/reservar">👉 Hacer una nueva reserva</a>
           </div>
-
           <p style="margin-top: 20px; font-size: 14px; color: #666;">
             Si no has solicitado esta cancelación o tienes alguna duda, contacta con nosotros lo antes posible.
           </p>
@@ -564,16 +479,20 @@ async function sendCancellationEmail(req, res, { name, email, reservation_code, 
       </html>
     `;
 
-    await resend.emails.send({
+    const { data, error } = await resend.emails.send({
       from: "Tiger Laser Tag <noreply@tigerlasertag.es>",
       to: email,
       subject: `Reserva cancelada - Tiger Laser Tag - Código: ${reservation_code}`,
       html: emailHtml
     });
 
+    if (error) {
+      console.error("❌ Error de Resend:", error);
+      return res.status(500).json({ error: "Error sending email", details: error });
+    }
+
     console.log("✅ Email de cancelación enviado a:", email);
 
-    // Notificar al admin
     if (process.env.ADMIN_EMAIL) {
       await resend.emails.send({
         from: "Tiger Laser Tag <noreply@tigerlasertag.es>",
@@ -596,7 +515,10 @@ async function sendCancellationEmail(req, res, { name, email, reservation_code, 
       console.log("✅ Email de cancelación al admin enviado");
     }
 
+    return res.status(200).json({ success: true, message: "Email de cancelación enviado", data });
+
   } catch (error) {
-    console.error("❌ Error enviando email de cancelación:", error);
+    console.error("❌ Error general:", error);
+    return res.status(500).json({ error: "Error sending email", details: error.message });
   }
 }
