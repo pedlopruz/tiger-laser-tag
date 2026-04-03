@@ -21,7 +21,10 @@ export default async function handler(req, res) {
         return sendReservationEmail(req,res);
 
       case "cancellation":
-        return sendCancellationEmail(req,res);
+        console.log("=== CANCELLATION ACTION RECIBIDA ===");
+        console.log("Body completo:", req.body);
+        return sendCancellationEmail(req, res);
+    
 
       default:
         return res.status(400).json({
@@ -386,7 +389,8 @@ async function sendReservationEmail(req, res) {
 }
 
 async function sendCancellationEmail(req, res) {
-  console.log("=== ENVÍO DE EMAIL CANCELACIÓN ===");
+  console.log("=== DENTRO DE sendCancellationEmail ===");
+  console.log("req.body:", req.body);
 
   const {
     name,
