@@ -151,8 +151,31 @@ export default function MisReservas() {
         return;
       }
 
+      // Enviar email de cancelación desde el frontend
+      const r = data.reservation;
+      const timeSlots = r.reservation_slots?.[0]?.time_slots || r.time_slots || null;
+
+      await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "cancellation",
+          name: r.name,
+          email: r.email,
+          reservation_code: r.reservation_code,
+          date: timeSlots?.date,
+          time_range: timeSlots
+            ? `${timeSlots.start_time?.slice(0, 5)} - ${timeSlots.end_time?.slice(0, 5)}`
+            : null,
+          plan_name: r.plans?.name,
+          people: r.people,
+          total_price: r.precio_total
+        })
+      });
+
       setCancelled(true);
       setReservation(null);
+
     } catch (err) {
       console.error(err);
       setMessage("Error cancelando reserva");

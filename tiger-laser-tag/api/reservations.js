@@ -288,50 +288,6 @@ async function cancelReservation(req, res, { code, email }) {
       .eq("id", reservation.id)
       .single();
 
-    const timeSlots = updatedReservation.reservation_slots?.[0]?.time_slots || null;
-
-    // Enviar email con logs detallados
-    try {
-      const baseUrl = getBaseUrl();
-      console.log("📧 Enviando email de cancelación a:", updatedReservation.email);
-      console.log("📧 URL destino:", `${baseUrl}/api/contact`);
-
-      const emailPayload = {
-        action: "cancellation",
-        name: updatedReservation.name,
-        email: updatedReservation.email,
-        reservation_code: updatedReservation.reservation_code,
-        date: timeSlots?.date,
-        time_range: timeSlots
-          ? `${timeSlots.start_time?.slice(0, 5)} - ${timeSlots.end_time?.slice(0, 5)}`
-          : null,
-        plan_name: updatedReservation.plans?.name,
-        people: updatedReservation.people,
-        total_price: updatedReservation.precio_total
-      };
-
-      console.log("📧 Payload:", JSON.stringify(emailPayload));
-
-      const emailRes = await fetch(`${baseUrl}/api/contact`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(emailPayload)
-      });
-
-      const emailData = await emailRes.json();
-      console.log("📧 Respuesta status:", emailRes.status);
-      console.log("📧 Respuesta body:", JSON.stringify(emailData));
-
-      if (!emailRes.ok) {
-        console.error("❌ Email de cancelación fallido:", emailData);
-      } else {
-        console.log("✅ Email de cancelación enviado correctamente");
-      }
-
-    } catch (emailErr) {
-      console.error("❌ Error en fetch a /api/contact:", emailErr.message);
-      console.error("Stack:", emailErr.stack);
-    }
 
     return res.status(200).json({
       success: true,
