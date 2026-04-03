@@ -20,8 +20,8 @@ export default async function handler(req, res) {
       case "reservation":
         return sendReservationEmail(req,res);
 
-      case "cancelation":
-        return sendCancelationEmail(req,res);
+      case "cancellation":
+        return sendCancellationEmail(req,res);
 
       default:
         return res.status(400).json({
