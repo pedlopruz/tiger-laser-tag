@@ -20,13 +20,14 @@ export default function MisReservas() {
   const [loading, setLoading] = useState(false);
   const [updateLoading, setUpdateLoading] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
+  const [cancelled, setCancelled] = useState(false);
 
-  // Buscar reserva
   async function handleSearch(e) {
     e.preventDefault();
     setError("");
     setMessage("");
     setReservation(null);
+    setCancelled(false);
     setLoading(true);
 
     try {
@@ -53,28 +54,27 @@ export default function MisReservas() {
     setLoading(false);
   }
 
-  // Calcular precios
   const pricePerPerson = reservation?.plans?.price || 0;
   const originalPeople = reservation?.people || 0;
-  const originalTotal = pricePerPerson * originalPeople;
-  const newTotal = pricePerPerson * (people || 0);
-  const extra = Math.max(newTotal - originalTotal, 0);
+  // Solo hay coste extra si los nuevos jugadores superan 10 (mínimo facturado)
+  const MINIMUM_BILLED = 10;
+  const billablePeople = (n) => Math.max(n, MINIMUM_BILLED);
+  const extra = Math.max(
+    pricePerPerson * billablePeople(people || 0) - pricePerPerson * billablePeople(originalPeople),
+    0
+  );
+  const showExtraWarning = people > MINIMUM_BILLED && people > originalPeople;
 
-  // Actualizar jugadores
   async function updatePlayers() {
     if (!people) return;
     setUpdateLoading(true);
+    setMessage("");
 
     try {
       const res = await fetch("/api/reservations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "change",
-          code,
-          email,
-          people: Number(people)
-        })
+        body: JSON.stringify({ action: "change", code, email, people: Number(people) })
       });
 
       const data = await res.json();
@@ -88,9 +88,16 @@ export default function MisReservas() {
       if (data.extra_payment > 0) {
         setExtraPayment(data.extra_payment);
         setShowPayment(true);
-      } else {
-        window.location.reload();
       }
+
+      // Actualizar el estado local de la reserva sin recargar
+      setReservation(prev => ({
+        ...prev,
+        people: Number(people),
+        precio_total: data.new_total ?? prev.precio_total
+      }));
+      setMessage("✅ Jugadores actualizados correctamente");
+
     } catch (err) {
       console.error(err);
       setMessage("Error actualizando jugadores");
@@ -98,7 +105,6 @@ export default function MisReservas() {
     setUpdateLoading(false);
   }
 
-  // Cambiar slot
   async function updateSlot() {
     if (!selectedSlot) return;
     setUpdateLoading(true);
@@ -107,12 +113,7 @@ export default function MisReservas() {
       const res = await fetch("/api/reservations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "change",
-          code,
-          email,
-          newSlotId: selectedSlot.id
-        })
+        body: JSON.stringify({ action: "change", code, email, newSlotId: selectedSlot.id })
       });
 
       const data = await res.json();
@@ -131,7 +132,6 @@ export default function MisReservas() {
     setUpdateLoading(false);
   }
 
-  // Cancelar reserva
   async function cancelReservation() {
     if (!confirm("¿Estás seguro de que quieres cancelar la reserva? Esta acción no se puede deshacer.")) return;
     setCancelLoading(true);
@@ -151,8 +151,8 @@ export default function MisReservas() {
         return;
       }
 
-      setReservation(data.reservation);
-      setMessage("Reserva cancelada correctamente");
+      setCancelled(true);
+      setReservation(null);
     } catch (err) {
       console.error(err);
       setMessage("Error cancelando reserva");
@@ -160,14 +160,10 @@ export default function MisReservas() {
     setCancelLoading(false);
   }
 
-  // Formateadores
   function formatDate(date) {
     if (!date) return "-";
     return new Date(date).toLocaleDateString("es-ES", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-      year: "numeric"
+      weekday: "long", day: "numeric", month: "long", year: "numeric"
     });
   }
 
@@ -198,7 +194,6 @@ export default function MisReservas() {
         <meta name="description" content="Consulta, modifica o cancela tu reserva de Laser Tag en Marbella." />
       </Helmet>
 
-      {/* Hero Section */}
       <section className="bg-gradient-to-b from-tiger-green to-tiger-green-dark py-20">
         <div className="container mx-auto px-4 text-center">
           <motion.h1
@@ -220,84 +215,115 @@ export default function MisReservas() {
         </div>
       </section>
 
-      {/* Main Content */}
       <section className="py-20 bg-tiger-cream min-h-screen">
         <div className="container mx-auto px-4 max-w-3xl">
-          {/* Buscador */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <form onSubmit={handleSearch} className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-              <div className="text-center mb-8">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-tiger-golden/20 rounded-full mb-4">
-                  <Search className="text-tiger-golden" size={28} />
-                </div>
-                <h2 className="text-2xl font-bold text-tiger-green">Consultar reserva</h2>
-                <p className="text-gray-500 mt-2">Ingresa el código y el email con el que reservaste</p>
-              </div>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Código de reserva</label>
-                  <input
-                    type="text"
-                    value={code}
-                    onChange={(e) => setCode(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-tiger-orange focus:border-tiger-orange transition-all"
-                    placeholder="Ej: ABC123XYZ"
-                    required
-                  />
+          {/* Pantalla de cancelación exitosa */}
+          <AnimatePresence>
+            {cancelled && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0 }}
+                className="bg-white rounded-2xl shadow-xl p-10 text-center"
+              >
+                <div className="inline-flex items-center justify-center w-20 h-20 bg-red-100 rounded-full mb-6">
+                  <XCircle className="text-red-500" size={40} />
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-tiger-orange focus:border-tiger-orange transition-all"
-                    placeholder="tu@email.com"
-                    required
-                  />
-                </div>
-
+                <h2 className="text-2xl font-bold text-gray-800 mb-2">Reserva cancelada</h2>
+                <p className="text-gray-500 mb-6">
+                  Tu reserva ha sido cancelada correctamente. Si tienes alguna duda, contacta con nosotros.
+                </p>
                 <Button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-tiger-orange hover:bg-tiger-orange/90 text-white py-3 text-base font-bold rounded-lg transition-all duration-300"
+                  onClick={() => {
+                    setCancelled(false);
+                    setCode("");
+                    setEmail("");
+                  }}
+                  className="bg-tiger-green hover:bg-tiger-green/90 text-white"
                 >
-                  {loading ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <span className="animate-spin">⏳</span>
-                      Buscando...
-                    </span>
-                  ) : (
-                    <span className="flex items-center justify-center gap-2">
-                      Consultar reserva
-                      <ArrowRight size={18} />
-                    </span>
-                  )}
+                  Consultar otra reserva
                 </Button>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-                {error && (
-                  <motion.div
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="bg-red-50 border border-red-200 text-red-600 text-sm p-3 rounded-lg flex items-center gap-2"
+          {/* Buscador — se oculta si hay cancelación */}
+          {!cancelled && (
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+            >
+              <form onSubmit={handleSearch} className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+                <div className="text-center mb-8">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-tiger-golden/20 rounded-full mb-4">
+                    <Search className="text-tiger-golden" size={28} />
+                  </div>
+                  <h2 className="text-2xl font-bold text-tiger-green">Consultar reserva</h2>
+                  <p className="text-gray-500 mt-2">Ingresa el código y el email con el que reservaste</p>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Código de reserva</label>
+                    <input
+                      type="text"
+                      value={code}
+                      onChange={(e) => setCode(e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-tiger-orange focus:border-tiger-orange transition-all"
+                      placeholder="Ej: ABC123XYZ"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-tiger-orange focus:border-tiger-orange transition-all"
+                      placeholder="tu@email.com"
+                      required
+                    />
+                  </div>
+
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-tiger-orange hover:bg-tiger-orange/90 text-white py-3 text-base font-bold rounded-lg transition-all duration-300"
                   >
-                    <AlertCircle size={16} />
-                    {error}
-                  </motion.div>
-                )}
-              </div>
-            </form>
-          </motion.div>
+                    {loading ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <span className="animate-spin">⏳</span>
+                        Buscando...
+                      </span>
+                    ) : (
+                      <span className="flex items-center justify-center gap-2">
+                        Consultar reserva
+                        <ArrowRight size={18} />
+                      </span>
+                    )}
+                  </Button>
+
+                  {error && (
+                    <motion.div
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="bg-red-50 border border-red-200 text-red-600 text-sm p-3 rounded-lg flex items-center gap-2"
+                    >
+                      <AlertCircle size={16} />
+                      {error}
+                    </motion.div>
+                  )}
+                </div>
+              </form>
+            </motion.div>
+          )}
 
           {/* Detalle de la reserva */}
           <AnimatePresence>
-            {reservation && (
+            {reservation && !cancelled && (
               <motion.div
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -306,7 +332,6 @@ export default function MisReservas() {
                 className="mt-10"
               >
                 <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-                  {/* Header con estado */}
                   <div className="bg-gradient-to-r from-tiger-green to-tiger-green-dark px-6 py-4">
                     <div className="flex justify-between items-center flex-wrap gap-3">
                       <div>
@@ -317,9 +342,7 @@ export default function MisReservas() {
                     </div>
                   </div>
 
-                  {/* Contenido */}
                   <div className="p-6 space-y-6">
-                    {/* Datos principales */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                         <Calendar className="text-tiger-green" size={20} />
@@ -375,13 +398,36 @@ export default function MisReservas() {
                           </Button>
                         </div>
 
-                        {extra > 0 && (
-                          <div className="mt-4 p-4 bg-amber-50 rounded-lg">
-                            <p className="text-sm text-amber-800">
-                              💡 Al aumentar el número de jugadores, se generará un pago adicional de <strong>€{extra}</strong>
-                            </p>
-                          </div>
-                        )}
+                        {/* Aviso de pago extra: solo si superan los 10 */}
+                        <AnimatePresence>
+                          {showExtraWarning && (
+                            <motion.div
+                              initial={{ opacity: 0, y: -6 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -6 }}
+                              className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg"
+                            >
+                              <p className="text-sm text-amber-800">
+                                💡 Al superar los 10 jugadores se generará un pago adicional de <strong>€{extra}</strong>
+                              </p>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+
+                        {/* Mensaje de éxito al actualizar */}
+                        <AnimatePresence>
+                          {message && message.includes("Jugadores") && (
+                            <motion.div
+                              initial={{ opacity: 0, y: 6 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0 }}
+                              className="mt-4 p-3 bg-green-50 border border-green-200 text-green-700 text-sm rounded-lg flex items-center gap-2"
+                            >
+                              <CheckCircle size={16} />
+                              {message}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
                     )}
 
@@ -396,7 +442,6 @@ export default function MisReservas() {
                             setSelectedSlot(null);
                           }}
                         />
-
                         {selectedDate && (
                           <div className="mt-4">
                             <SlotPicker
@@ -407,7 +452,6 @@ export default function MisReservas() {
                             />
                           </div>
                         )}
-
                         {selectedSlot && (
                           <Button
                             onClick={updateSlot}
@@ -428,7 +472,12 @@ export default function MisReservas() {
                           variant="destructive"
                           className="w-full bg-red-600 hover:bg-red-700 text-white"
                         >
-                          {cancelLoading ? "Cancelando..." : "Cancelar reserva"}
+                          {cancelLoading ? (
+                            <span className="flex items-center justify-center gap-2">
+                              <span className="animate-spin">⏳</span>
+                              Cancelando...
+                            </span>
+                          ) : "Cancelar reserva"}
                         </Button>
                         <p className="text-xs text-gray-500 text-center mt-3">
                           ⚠️ Esta acción no se puede deshacer
@@ -436,23 +485,19 @@ export default function MisReservas() {
                       </div>
                     )}
 
-                    {/* Mensajes */}
-                    {message && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className={`p-4 rounded-lg text-center ${
-                          message.includes("cancelada") 
-                            ? "bg-green-50 text-green-800 border border-green-200" 
-                            : "bg-blue-50 text-blue-800 border border-blue-200"
-                        }`}
-                      >
-                        {message.includes("cancelada") ? (
-                          <CheckCircle className="inline mr-2" size={18} />
-                        ) : null}
-                        {message}
-                      </motion.div>
-                    )}
+                    {/* Mensajes generales (errores, cambio de horario, etc.) */}
+                    <AnimatePresence>
+                      {message && !message.includes("Jugadores") && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0 }}
+                          className="p-4 rounded-lg text-center bg-blue-50 text-blue-800 border border-blue-200"
+                        >
+                          {message}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 </div>
               </motion.div>
