@@ -158,16 +158,19 @@ async function changeReservation(req, res, { code, email, people, newSlotId }) {
     // Caso: Cambiar número de jugadores
     if (people && people !== reservation.people) {
       const pricePerPerson = reservation.plans.price;
-      const originalTotal = pricePerPerson * reservation.people;
-      const newTotal = pricePerPerson * people;
+      const MINIMUM_BILLED = 10;
+
+      const billable = (n) => Math.max(n, MINIMUM_BILLED);
+
+      const originalTotal = pricePerPerson * billable(reservation.people);
+      const newTotal = pricePerPerson * billable(people);
       const extraPayment = Math.max(newTotal - originalTotal, 0);
 
-      // Actualizar jugadores en la base de datos
       const { error: updateError } = await supabaseAdmin
         .from("reservations")
-        .update({ 
+        .update({
           people: people,
-          precio_total: newTotal  // ✅ Actualizar también el precio total
+          precio_total: newTotal
         })
         .eq("id", reservation.id);
 
