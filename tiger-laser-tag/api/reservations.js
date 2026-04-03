@@ -39,6 +39,15 @@ export default async function handler(req, res) {
   }
 }
 
+const getBaseUrl = () => {
+  if (process.env.VERCEL_URL) {
+    return process.env.VERCEL_URL.startsWith("https://")
+      ? process.env.VERCEL_URL
+      : `https://${process.env.VERCEL_URL}`;
+  }
+  return "http://localhost:5173";
+};
+
 // ============================================
 // ACCEDER A RESERVA
 // ============================================
