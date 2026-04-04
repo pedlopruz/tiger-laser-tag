@@ -17,6 +17,8 @@ export default function SlotPickerEdit({
   const refreshTimeout = useRef(null);
   const selectedSlotsRef = useRef(selectedSlots);
 
+  console.log("=== RENDER SlotPickerEdit === selectedSlots:", selectedSlots.map(s => s.start_time));
+
   useEffect(() => {
     selectedSlotsRef.current = selectedSlots;
   }, [selectedSlots]);
@@ -99,7 +101,6 @@ export default function SlotPickerEdit({
     if (date) loadSlots();
   }, [date, loadSlots]);
 
-  // Realtime con delay alto para no interferir con la selección
   useEffect(() => {
     if (!date) return;
 
@@ -130,8 +131,6 @@ export default function SlotPickerEdit({
     };
   }, [date, loadSlots]);
 
-  // Sin listener de foco — evita resetear la selección al hacer click
-
   const handleSelect = useCallback((slot) => {
     const currentSelected = selectedSlotsRef.current;
 
@@ -153,7 +152,6 @@ export default function SlotPickerEdit({
     }
     else if (currentSelected.length === 1) {
       const first = currentSelected[0];
-
       if (first.id === slot.id) {
         newSelection = [];
       }
@@ -170,6 +168,7 @@ export default function SlotPickerEdit({
       newSelection = [slot];
     }
 
+    console.log("handleSelect — newSelection:", newSelection.map(s => s.start_time));
     setSelectedSlots(newSelection);
     if (onSelectSlots) onSelectSlots(newSelection);
   }, [people, onSelectSlots, maxSlots]);
@@ -252,22 +251,27 @@ export default function SlotPickerEdit({
       )}
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        {slots.map((slot) => (
-          <button
-            key={slot.id}
-            onClick={() => handleSelect(slot)}
-            disabled={isDisabled(slot)}
-            className={`
-              p-4 rounded-xl border text-sm transition-all
-              flex flex-col items-center justify-center
-              ${getSlotStyle(slot)}
-            `}
-            title={getSlotStatusText(slot)}
-          >
-            <span className="font-semibold text-base">{formatTime(slot.start_time)}</span>
-            <span className="text-xs mt-1">{getSlotStatusText(slot)}</span>
-          </button>
-        ))}
+        {slots.map((slot) => {
+          const selected = isSelected(slot);
+          const disabled = isDisabled(slot);
+          console.log(slot.start_time, "| selected:", selected, "| disabled:", disabled, "| selectedSlots.length:", selectedSlots.length);
+          return (
+            <button
+              key={slot.id}
+              onClick={() => handleSelect(slot)}
+              disabled={disabled}
+              className={`
+                p-4 rounded-xl border text-sm transition-all
+                flex flex-col items-center justify-center
+                ${getSlotStyle(slot)}
+              `}
+              title={getSlotStatusText(slot)}
+            >
+              <span className="font-semibold text-base">{formatTime(slot.start_time)}</span>
+              <span className="text-xs mt-1">{getSlotStatusText(slot)}</span>
+            </button>
+          );
+        })}
       </div>
 
       {selectedSlots.length > 0 && (
