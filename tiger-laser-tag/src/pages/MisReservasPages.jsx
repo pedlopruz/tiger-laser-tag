@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Helmet } from "react-helmet";
 import { Search, Calendar, Clock, Users, CreditCard, AlertCircle, CheckCircle, XCircle, ArrowRight } from "lucide-react";
 import CalendarPicker from "../components/Booking/CalendarPicker";
-import SlotPicker from "../components/Booking/SlotPicker";
+import SlotPickerEdit from "../components/Booking/SlotPickerEdit";
 import { Button } from "@/components/ui/button";
 
 export default function MisReservas() {
@@ -495,7 +495,7 @@ export default function MisReservas() {
                                 ? "⚠️ Tu reserva original era de 2 horas, selecciona 2 horas consecutivas"
                                 : "Selecciona 1 hora disponible"}
                             </p>
-                            <SlotPicker
+                            <SlotPickerEdit
                               key={selectedDate}
                               date={selectedDate}
                               people={people}
