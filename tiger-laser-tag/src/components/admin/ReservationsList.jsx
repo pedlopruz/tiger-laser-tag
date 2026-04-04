@@ -388,7 +388,7 @@ export default function ReservationsList() {
                   <p>Hora: {getSlotTime(selectedReservation)}</p>
                   <p>Jugadores: {selectedReservation.people}</p>
                   <p>Participan en Electroshock: {selectedReservation.personas_electroshock}</p>
-                  <p>Plan: {selectedReservation.plan_name || 'N/A'}</p>
+                  <p>Plan: {selectedReservation.plan_id || 'N/A'}</p>
                 </div>
                 
                 <div>

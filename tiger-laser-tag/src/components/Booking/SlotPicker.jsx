@@ -198,6 +198,7 @@ export default function SlotPicker({
     }
     
     setSelectedSlots(newSelection);
+    console.log("newSelection:", newSelection);
     if (onSelectSlots) onSelectSlots(newSelection);
   }, [selectedSlots, people, onSelectSlots, maxSlots]);
 

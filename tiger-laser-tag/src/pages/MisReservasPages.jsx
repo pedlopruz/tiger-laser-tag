@@ -125,6 +125,7 @@ export default function MisReservas() {
   }
 
   async function updateSlot() {
+    console.log("selectedSlots al confirmar:", selectedSlots); // ← añade esto
     if (selectedSlots.length === 0) return;
     setUpdateLoading(true);
 
@@ -495,6 +496,7 @@ export default function MisReservas() {
                                 : "Selecciona 1 hora disponible"}
                             </p>
                             <SlotPicker
+                              key={selectedDate}
                               date={selectedDate}
                               people={people}
                               maxSlots={requiredSlots}
