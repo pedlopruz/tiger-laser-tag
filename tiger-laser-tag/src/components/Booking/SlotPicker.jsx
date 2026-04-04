@@ -171,6 +171,21 @@ export default function SlotPicker({
       alert(`Solo quedan ${remaining} plazas`);
       return;
     }
+
+    console.log("=== handleSelect ===");
+    console.log("maxSlots:", maxSlots);
+    console.log("selectedSlots.length:", selectedSlots.length);
+    console.log("slot clickado:", slot.start_time, slot.id);
+    
+    if (selectedSlots.length === 1) {
+      const first = selectedSlots[0];
+      console.log("first slot:", first.start_time, first.id);
+      console.log("areConsecutive result:", areConsecutive(first, slot));
+      
+      const mA = getMinutesFromTime(first.start_time);
+      const mB = getMinutesFromTime(slot.start_time);
+      console.log("minutosA:", mA, "minutosB:", mB, "diff:", Math.abs(mA - mB));
+    }
     
     let newSelection = [];
     
@@ -184,7 +199,6 @@ export default function SlotPicker({
         newSelection = [];
       }
       else if (maxSlots > 1 && areConsecutive(first, slot)) {
-        // ✅ Solo permite 2 slots si maxSlots lo permite
         newSelection = [first, slot].sort((a, b) => 
           a.start_time.localeCompare(b.start_time)
         );
@@ -197,8 +211,8 @@ export default function SlotPicker({
       newSelection = [slot];
     }
     
+    console.log("newSelection final:", newSelection.map(s => s.start_time));
     setSelectedSlots(newSelection);
-    console.log("newSelection:", newSelection);
     if (onSelectSlots) onSelectSlots(newSelection);
   }, [selectedSlots, people, onSelectSlots, maxSlots]);
 
