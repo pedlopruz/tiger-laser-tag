@@ -81,24 +81,26 @@ export default function SlotPicker({
       
       const validSlots = data.slots.filter(slot => {
         return slot.start_time && 
-               slot.start_time.length >= 5 && 
-               !slot.start_time.includes('undefined');
+              slot.start_time.length >= 5 && 
+              !slot.start_time.includes('undefined');
       });
       
       setSlots(validSlots);
-      
-      // Verificar si los slots seleccionados siguen disponibles
-      if (selectedSlots.length > 0) {
-        const stillValid = selectedSlots.every(selectedSlot => {
+
+      // ✅ Usar ref en vez de selectedSlots en las deps
+      setSelectedSlots(prev => {
+        if (prev.length === 0) return prev;
+        const stillValid = prev.every(selectedSlot => {
           const currentSlot = validSlots.find(s => s.id === selectedSlot.id);
           return currentSlot && currentSlot.isAvailable && !currentSlot.isBlocked;
         });
-        
         if (!stillValid) {
-          setSelectedSlots([]);
           if (onSelectSlots) onSelectSlots([]);
+          return [];
         }
-      }
+        return prev;
+      });
+
     } catch (err) {
       console.error("Error loading slots", err);
       setError("Error al cargar los horarios");
@@ -106,7 +108,7 @@ export default function SlotPicker({
     }
 
     setLoading(false);
-  }, [date, selectedSlots, onSelectSlots]);
+  }, [date, onSelectSlots]); // ✅ selectedSlots eliminado de las deps
 
   // Cargar al cambiar fecha
   useEffect(() => {
