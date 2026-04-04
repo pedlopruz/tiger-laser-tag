@@ -475,37 +475,35 @@ export default function MisReservas() {
                     )}
 
                     {/* Cambiar horario */}
-                    {reservation.status !== 'cancelled' && (
-                      <div className="border-t pt-6">
-                        <h3 className="font-semibold text-tiger-green mb-4">Cambiar fecha y horario</h3>
-                        <CalendarPicker
-                          initialDate={reservation?.time_slots?.date}
-                          onSelectDate={(date) => {
-                            setSelectedDate(date);
-                            setSelectedSlot(null);
-                          }}
-                        />
-                        {selectedDate && (
-                          <div className="mt-4">
-                            <SlotPicker
-                              date={selectedDate}
-                              people={people}
-                              reservedSlot={{ id: reservation?.slot_id }}
-                              onSelectSlot={(slot) => setSelectedSlot(slot)}
-                            />
-                          </div>
-                        )}
-                        {selectedSlot && (
-                          <Button
-                            onClick={updateSlot}
-                            className="w-full mt-4 bg-tiger-orange hover:bg-tiger-orange/90 text-white"
-                          >
-                            {updateLoading ? "Cambiando..." : "Confirmar cambio de horario"}
-                          </Button>
-                        )}
-                      </div>
-                    )}
-
+                      {reservation.status !== 'cancelled' && (
+                        <div className="border-t pt-6">
+                          <h3 className="font-semibold text-tiger-green mb-4">Cambiar fecha y horario</h3>
+                          <CalendarPicker
+                            initialDate={reservation?.time_slots?.date}
+                            onSelectDate={(date) => {
+                              setSelectedDate(date);
+                              setSelectedSlot(null);
+                            }}
+                          />
+                          {selectedDate && (
+                            <div className="mt-4">
+                              <SlotPicker
+                                date={selectedDate}
+                                people={people}
+                                onSelectSlots={(slots) => setSelectedSlot(slots[0] || null)}
+                              />
+                            </div>
+                          )}
+                          {selectedSlot && (
+                            <Button
+                              onClick={updateSlot}
+                              className="w-full mt-4 bg-tiger-orange hover:bg-tiger-orange/90 text-white"
+                            >
+                              {updateLoading ? "Cambiando..." : "Confirmar cambio de horario"}
+                            </Button>
+                          )}
+                        </div>
+                      )}
                     {/* Cancelar reserva */}
                     {reservation.status !== 'cancelled' && (
                       <div className="border-t pt-6">
