@@ -15,6 +15,12 @@ export default function SlotPicker({
   const [error, setError] = useState(null);
 
   const refreshTimeout = useRef(null);
+  const selectedSlotsRef = useRef(selectedSlots);
+
+  // Mantener ref actualizada
+  useEffect(() => {
+    selectedSlotsRef.current = selectedSlots;
+  }, [selectedSlots]);
 
   // Sincronizar con initialSlots
   useEffect(() => {
@@ -88,7 +94,6 @@ export default function SlotPicker({
       
       setSlots(validSlots);
 
-      // ✅ Usar ref en vez de selectedSlots en las deps
       setSelectedSlots(prev => {
         if (prev.length === 0) return prev;
         const stillValid = prev.every(selectedSlot => {
@@ -109,22 +114,19 @@ export default function SlotPicker({
     }
 
     setLoading(false);
-  }, [date, onSelectSlots]); // ✅ selectedSlots eliminado de las deps
+  }, [date, onSelectSlots]);
 
   // Cargar al cambiar fecha
   useEffect(() => {
     if (date) loadSlots();
   }, [date, loadSlots]);
 
-  // ✅ Realtime con manejo de cambios inmediatos
+  // Realtime
   useEffect(() => {
     if (!date) return;
 
     const handleRealtimeChange = () => {
-      console.log("🔄 Cambio detectado, recargando slots...");
-      // Limpiar timeout anterior
       if (refreshTimeout.current) clearTimeout(refreshTimeout.current);
-      // Recargar después de un pequeño delay para evitar múltiples llamadas
       refreshTimeout.current = setTimeout(() => {
         loadSlots();
       }, 100);
@@ -150,17 +152,17 @@ export default function SlotPicker({
     };
   }, [date, loadSlots]);
 
-  // ✅ Forzar recarga cuando la ventana recupera foco
+  // Forzar recarga cuando la ventana recupera foco
   useEffect(() => {
-    const handleFocus = () => {
-      loadSlots();
-    };
+    const handleFocus = () => loadSlots();
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
   }, [loadSlots]);
 
-  // Selección de slots
+  // Selección de slots — usa ref para evitar closure stale
   const handleSelect = useCallback((slot) => {
+    const currentSelected = selectedSlotsRef.current;
+
     if (isSlotBlocked(slot)) {
       alert("Este horario ya está reservado");
       return;
@@ -172,28 +174,13 @@ export default function SlotPicker({
       return;
     }
 
-    console.log("=== handleSelect ===");
-    console.log("maxSlots:", maxSlots);
-    console.log("selectedSlots.length:", selectedSlots.length);
-    console.log("slot clickado:", slot.start_time, slot.id);
-    
-    if (selectedSlots.length === 1) {
-      const first = selectedSlots[0];
-      console.log("first slot:", first.start_time, first.id);
-      console.log("areConsecutive result:", areConsecutive(first, slot));
-      
-      const mA = getMinutesFromTime(first.start_time);
-      const mB = getMinutesFromTime(slot.start_time);
-      console.log("minutosA:", mA, "minutosB:", mB, "diff:", Math.abs(mA - mB));
-    }
-    
     let newSelection = [];
     
-    if (selectedSlots.length === 0) {
+    if (currentSelected.length === 0) {
       newSelection = [slot];
     } 
-    else if (selectedSlots.length === 1) {
-      const first = selectedSlots[0];
+    else if (currentSelected.length === 1) {
+      const first = currentSelected[0];
       
       if (first.id === slot.id) {
         newSelection = [];
@@ -210,13 +197,12 @@ export default function SlotPicker({
     else {
       newSelection = [slot];
     }
-    
-    console.log("newSelection final:", newSelection.map(s => s.start_time));
+
     setSelectedSlots(newSelection);
     if (onSelectSlots) onSelectSlots(newSelection);
-  }, [selectedSlots, people, onSelectSlots, maxSlots]);
+  }, [people, onSelectSlots, maxSlots]); // selectedSlots fuera — usamos el ref
 
-  // UI logic
+  // UI logic — estas usan selectedSlots del estado para el render
   function isSelected(slot) {
     return selectedSlots.some(s => s.id === slot.id);
   }
@@ -232,7 +218,6 @@ export default function SlotPicker({
       const first = selectedSlots[0];
       const isSame = slot.id === first.id;
       const isConsecutive = areConsecutive(first, slot);
-      // ✅ Si maxSlots es 1, solo permite deseleccionar el mismo slot
       return !(isSame || (maxSlots > 1 && isConsecutive));
     }
     
@@ -339,7 +324,7 @@ export default function SlotPicker({
               {idx < selectedSlots.length - 1 ? " - " : ""}
             </span>
           ))}
-          {selectedSlots.length === 1 && (
+          {selectedSlots.length === 1 && maxSlots > 1 && (
             <span className="text-gray-500 ml-2">
               (Haz clic en una hora consecutiva para reservar 2 horas)
             </span>
