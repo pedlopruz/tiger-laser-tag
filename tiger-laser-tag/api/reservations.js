@@ -12,7 +12,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { action, code, email, people, newSlotId, ...rest } = req.body;
+  const { action, code, email, people, newSlotIds, ...rest } = req.body;
 
   try {
     // Acceder a reserva existente
@@ -22,7 +22,7 @@ export default async function handler(req, res) {
 
     // Modificar reserva (cambiar jugadores o horario)
     if (action === "change") {
-      return changeReservation(req, res, { code, email, people, newSlotId });
+      return changeReservation(req, res, { code, email, people, newSlotIds });
     }
 
     // Cancelar reserva
@@ -127,16 +127,12 @@ async function accessReservation(req, res, { code, email }) {
   }
 }
 
-// ============================================
-// MODIFICAR RESERVA (jugadores o horario)
-// ============================================
-async function changeReservation(req, res, { code, email, people, newSlotId }) {
+async function changeReservation(req, res, { code, email, people, newSlotIds }) {
   if (!code || !email) {
     return res.status(400).json({ error: "Campos requeridos faltantes" });
   }
 
   try {
-    // Obtener la reserva
     const { data: reservation, error: fetchError } = await supabaseAdmin
       .from("reservations")
       .select(`
@@ -159,7 +155,6 @@ async function changeReservation(req, res, { code, email, people, newSlotId }) {
     if (people && people !== reservation.people) {
       const pricePerPerson = reservation.plans.price;
       const MINIMUM_BILLED = 10;
-
       const billable = (n) => Math.max(n, MINIMUM_BILLED);
 
       const originalTotal = pricePerPerson * billable(reservation.people);
@@ -168,10 +163,7 @@ async function changeReservation(req, res, { code, email, people, newSlotId }) {
 
       const { error: updateError } = await supabaseAdmin
         .from("reservations")
-        .update({
-          people: people,
-          precio_total: newTotal
-        })
+        .update({ people, precio_total: newTotal })
         .eq("id", reservation.id);
 
       if (updateError) throw updateError;
@@ -184,16 +176,22 @@ async function changeReservation(req, res, { code, email, people, newSlotId }) {
       });
     }
 
-    // Caso: Cambiar horario
-    if (newSlotId) {
-      const { data: newSlot, error: slotError } = await supabaseAdmin
-        .from("time_slots")
-        .select("status, max_capacity")
-        .eq("id", newSlotId)
-        .single();
+    // Caso: Cambiar horario (array de slots)
+    if (newSlotIds && newSlotIds.length > 0) {
 
-      if (slotError || !newSlot || newSlot.status !== "active") {
-        return res.status(400).json({ error: "El horario seleccionado no está disponible" });
+      // Verificar disponibilidad de todos los slots nuevos
+      const { data: newSlots, error: slotError } = await supabaseAdmin
+        .from("time_slots")
+        .select("id, status")
+        .in("id", newSlotIds);
+
+      if (slotError || !newSlots || newSlots.length !== newSlotIds.length) {
+        return res.status(400).json({ error: "Uno o más horarios no existen" });
+      }
+
+      const unavailable = newSlots.find(s => s.status !== "active");
+      if (unavailable) {
+        return res.status(400).json({ error: "Uno de los horarios seleccionados no está disponible" });
       }
 
       // Liberar slots antiguos
@@ -211,16 +209,19 @@ async function changeReservation(req, res, { code, email, people, newSlotId }) {
         .delete()
         .eq("reservation_id", reservation.id);
 
-      // Crear nueva relación
+      // Crear nuevas relaciones
       await supabaseAdmin
         .from("reservation_slots")
-        .insert({ reservation_id: reservation.id, slot_id: newSlotId });
+        .insert(newSlotIds.map(slotId => ({
+          reservation_id: reservation.id,
+          slot_id: slotId
+        })));
 
-      // Bloquear el nuevo slot
+      // Bloquear los nuevos slots
       await supabaseAdmin
         .from("time_slots")
         .update({ status: "blocked" })
-        .eq("id", newSlotId);
+        .in("id", newSlotIds);
 
       return res.status(200).json({
         success: true,

@@ -5,7 +5,8 @@ export default function SlotPicker({
   date,
   people = 1,
   onSelectSlots,
-  initialSlots = []
+  initialSlots = [],
+  maxSlots = 2
 }) {
 
   const [slots, setSlots] = useState([]);
@@ -182,7 +183,8 @@ export default function SlotPicker({
       if (first.id === slot.id) {
         newSelection = [];
       }
-      else if (areConsecutive(first, slot)) {
+      else if (maxSlots > 1 && areConsecutive(first, slot)) {
+        // ✅ Solo permite 2 slots si maxSlots lo permite
         newSelection = [first, slot].sort((a, b) => 
           a.start_time.localeCompare(b.start_time)
         );
@@ -197,7 +199,7 @@ export default function SlotPicker({
     
     setSelectedSlots(newSelection);
     if (onSelectSlots) onSelectSlots(newSelection);
-  }, [selectedSlots, people, onSelectSlots]);
+  }, [selectedSlots, people, onSelectSlots, maxSlots]);
 
   // UI logic
   function isSelected(slot) {
@@ -215,7 +217,8 @@ export default function SlotPicker({
       const first = selectedSlots[0];
       const isSame = slot.id === first.id;
       const isConsecutive = areConsecutive(first, slot);
-      return !(isSame || isConsecutive);
+      // ✅ Si maxSlots es 1, solo permite deseleccionar el mismo slot
+      return !(isSame || (maxSlots > 1 && isConsecutive));
     }
     
     if (selectedSlots.length === 2) {
@@ -258,8 +261,8 @@ export default function SlotPicker({
   return (
     <div className="mt-8">
       <h3 className="font-semibold mb-4">
-        Selecciona 1 o 2 horas consecutivas
-        {selectedSlots.length === 1 && (
+        {maxSlots === 1 ? "Selecciona 1 hora" : "Selecciona 1 o 2 horas consecutivas"}
+        {selectedSlots.length === 1 && maxSlots > 1 && (
           <span className="text-sm text-gray-500 ml-2">
             (Selecciona otra hora consecutiva)
           </span>
