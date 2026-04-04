@@ -5,31 +5,20 @@ export default function SlotPickerEdit({
   date,
   people = 1,
   onSelectSlots,
-  initialSlots = [],
   maxSlots = 2
 }) {
 
   const [slots, setSlots] = useState([]);
-  const [selectedSlots, setSelectedSlots] = useState(initialSlots);
+  const [selectedSlots, setSelectedSlots] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   const refreshTimeout = useRef(null);
-  const selectedSlotsRef = useRef(selectedSlots);
-
-  console.log("=== RENDER SlotPickerEdit === selectedSlots:", selectedSlots.map(s => s.start_time));
+  const selectedSlotsRef = useRef([]);
 
   useEffect(() => {
     selectedSlotsRef.current = selectedSlots;
   }, [selectedSlots]);
-
-  useEffect(() => {
-    if (initialSlots && initialSlots.length > 0) {
-      setSelectedSlots(initialSlots);
-    } else if (initialSlots && initialSlots.length === 0) {
-      setSelectedSlots([]);
-    }
-  }, [initialSlots]);
 
   function formatTime(time) {
     if (!time) return "--:--";
@@ -76,10 +65,10 @@ export default function SlotPickerEdit({
     try {
       const res = await fetch(`/api/getSlotsByDate?date=${date}`);
       if (!res.ok) throw new Error("Error loading slots");
-      
+
       const data = await res.json();
       if (!data.slots || !Array.isArray(data.slots)) throw new Error("Invalid slots data");
-      
+
       const validSlots = data.slots.filter(slot =>
         slot.start_time &&
         slot.start_time.length >= 5 &&
@@ -168,7 +157,6 @@ export default function SlotPickerEdit({
       newSelection = [slot];
     }
 
-    console.log("handleSelect — newSelection:", newSelection.map(s => s.start_time));
     setSelectedSlots(newSelection);
     if (onSelectSlots) onSelectSlots(newSelection);
   }, [people, onSelectSlots, maxSlots]);
@@ -251,27 +239,22 @@ export default function SlotPickerEdit({
       )}
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        {slots.map((slot) => {
-          const selected = isSelected(slot);
-          const disabled = isDisabled(slot);
-          console.log(slot.start_time, "| selected:", selected, "| disabled:", disabled, "| selectedSlots.length:", selectedSlots.length);
-          return (
-            <button
-              key={slot.id}
-              onClick={() => handleSelect(slot)}
-              disabled={disabled}
-              className={`
-                p-4 rounded-xl border text-sm transition-all
-                flex flex-col items-center justify-center
-                ${getSlotStyle(slot)}
-              `}
-              title={getSlotStatusText(slot)}
-            >
-              <span className="font-semibold text-base">{formatTime(slot.start_time)}</span>
-              <span className="text-xs mt-1">{getSlotStatusText(slot)}</span>
-            </button>
-          );
-        })}
+        {slots.map((slot) => (
+          <button
+            key={slot.id}
+            onClick={() => handleSelect(slot)}
+            disabled={isDisabled(slot)}
+            className={`
+              p-4 rounded-xl border text-sm transition-all
+              flex flex-col items-center justify-center
+              ${getSlotStyle(slot)}
+            `}
+            title={getSlotStatusText(slot)}
+          >
+            <span className="font-semibold text-base">{formatTime(slot.start_time)}</span>
+            <span className="text-xs mt-1">{getSlotStatusText(slot)}</span>
+          </button>
+        ))}
       </div>
 
       {selectedSlots.length > 0 && (
