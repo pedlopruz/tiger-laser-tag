@@ -20,7 +20,6 @@ export default function ReservationsList() {
   const loadReservations = async () => {
     setLoading(true);
     try {
-      // ✅ Traer todas las reservas sin filtrar por fecha en la query
       let query = supabase
         .from('reservations')
         .select(`
@@ -31,6 +30,12 @@ export default function ReservationsList() {
               start_time, 
               date
             )
+          ),
+          plans (  // ✅ Añadir esta relación
+            id,
+            name,
+            price,
+            duration_minutes
           )
         `)
         .order('created_at', { ascending: false });
@@ -42,20 +47,14 @@ export default function ReservationsList() {
       const { data, error } = await query;
       if (error) throw error;
       
-      // ✅ Filtrar por fecha después de obtener los datos
-      let filteredData = data || [];
+      // Procesar datos para asegurar que plan_name esté disponible
+      const processedData = (data || []).map(reservation => ({
+        ...reservation,
+        plan_name: reservation.plans?.name || 'N/A',
+        plan_price: reservation.plans?.price || 0
+      }));
       
-      if (dateFilter) {
-        filteredData = filteredData.filter(reservation => {
-          // Verificar si la reserva tiene slots con la fecha filtrada
-          return reservation.reservation_slots?.some(slot => {
-            const slotDate = slot.time_slots?.date;
-            return slotDate === dateFilter;
-          });
-        });
-      }
-      
-      setReservations(filteredData);
+      setReservations(processedData);
     } catch (error) {
       console.error('Error loading reservations:', error);
     } finally {
@@ -388,7 +387,7 @@ export default function ReservationsList() {
                   <p>Hora: {getSlotTime(selectedReservation)}</p>
                   <p>Jugadores: {selectedReservation.people}</p>
                   <p>Participan en Electroshock: {selectedReservation.personas_electroshock}</p>
-                  <p>Plan: {selectedReservation.plan_id.name || 'N/A'}</p>
+                  <p>Plan: {selectedReservation.plans.name || 'N/A'}</p>
                 </div>
                 
                 <div>

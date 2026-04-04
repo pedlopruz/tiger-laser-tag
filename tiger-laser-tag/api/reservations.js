@@ -105,8 +105,9 @@ async function accessReservation(req, res, { code, email }) {
       return res.status(404).json({ error: "Reserva no encontrada" });
     }
 
-    // Aplanar time_slots para no modificar el frontend
+   // Aplanar time_slots para no modificar el frontend
     reservation.time_slots = reservation.reservation_slots?.[0]?.time_slots || null;
+    reservation.num_slots = reservation.reservation_slots?.length || 1; // ← añade esta línea
     delete reservation.reservation_slots;
 
     console.log("✅ Reserva encontrada:", {
