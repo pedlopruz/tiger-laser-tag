@@ -92,20 +92,7 @@ export default function SlotPicker({
               !slot.start_time.includes('undefined');
       });
       
-      setSlots(validSlots);
-
-      setSelectedSlots(prev => {
-        if (prev.length === 0) return prev;
-        const stillValid = prev.every(selectedSlot => {
-          const currentSlot = validSlots.find(s => s.id === selectedSlot.id);
-          return currentSlot && currentSlot.isAvailable && !currentSlot.isBlocked;
-        });
-        if (!stillValid) {
-          if (onSelectSlots) onSelectSlots([]);
-          return [];
-        }
-        return prev;
-      });
+      setSlots(validSlots); // ← solo actualiza los slots disponibles, no toca la selección
 
     } catch (err) {
       console.error("Error loading slots", err);
@@ -114,7 +101,7 @@ export default function SlotPicker({
     }
 
     setLoading(false);
-  }, [date, onSelectSlots]);
+  }, [date]); // ← onSelectSlots también fuera de deps
 
   // Cargar al cambiar fecha
   useEffect(() => {
