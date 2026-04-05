@@ -5,7 +5,8 @@ export default function SlotPickerEdit({
   date,
   people = 1,
   onSelectSlots,
-  maxSlots = 2
+  maxSlots = 2,
+  minSlots = 1
 }) {
 
   const [slots, setSlots] = useState([]);
@@ -211,10 +212,19 @@ export default function SlotPickerEdit({
   return (
     <div className="mt-4">
       <h3 className="font-semibold mb-4">
-        {maxSlots === 1 ? "Selecciona 1 hora" : "Selecciona 1 o 2 horas consecutivas"}
-        {selectedSlots.length === 1 && maxSlots > 1 && (
+        {maxSlots === 1
+          ? "Selecciona 1 hora"
+          : minSlots === 2
+            ? "Selecciona 2 horas consecutivas"
+            : "Selecciona 1 o 2 horas consecutivas"}
+        {selectedSlots.length === 1 && maxSlots > 1 && minSlots === 2 && (
+          <span className="text-sm text-amber-600 ml-2">
+            (Selecciona una hora consecutiva)
+          </span>
+        )}
+        {selectedSlots.length === 1 && maxSlots > 1 && minSlots === 1 && (
           <span className="text-sm text-gray-500 ml-2">
-            (Selecciona otra hora consecutiva)
+            (Puedes seleccionar otra hora consecutiva)
           </span>
         )}
         {selectedSlots.length === 2 && (
@@ -266,10 +276,10 @@ export default function SlotPickerEdit({
               {idx < selectedSlots.length - 1 ? " - " : ""}
             </span>
           ))}
-          {selectedSlots.length === 1 && maxSlots > 1 && (
-            <span className="text-gray-500 ml-2">
-              (Haz clic en una hora consecutiva para reservar 2 horas)
-            </span>
+          {selectedSlots.length < minSlots && (
+            <p className="text-amber-600 mt-2">
+              ⚠️ Debes seleccionar {minSlots} horas consecutivas para continuar
+            </p>
           )}
         </div>
       )}

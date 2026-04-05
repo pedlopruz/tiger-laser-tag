@@ -148,6 +148,28 @@ export default function MisReservas() {
         setUpdateLoading(false);
         return;
       }
+      // Enviar email de cambio de fecha
+      await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "change_date",
+          name: reservation.name,
+          email: reservation.email,
+          reservation_code: reservation.reservation_code,
+          old_date: reservation.time_slots?.date,
+          old_time_range: reservation.time_slots
+            ? `${reservation.time_slots.start_time?.slice(0, 5)} - ${reservation.time_slots.end_time?.slice(0, 5)}`
+            : null,
+          new_date: selectedSlots[0]?.date ?? selectedDate,
+          new_time_range: selectedSlots.length === 2
+            ? `${selectedSlots[0].start_time?.slice(0, 5)} - ${selectedSlots[1].end_time?.slice(0, 5)}`
+            : `${selectedSlots[0].start_time?.slice(0, 5)} - ${selectedSlots[0].end_time?.slice(0, 5)}`,
+          plan_name: reservation.plans?.name,
+          people: reservation.people,
+          total_price: reservation.precio_total
+        })
+      });
 
       window.location.reload();
     } catch (err) {
@@ -402,7 +424,7 @@ export default function MisReservas() {
                         <Clock className="text-tiger-green" size={20} />
                         <div>
                           <p className="text-xs text-gray-500">Hora</p>
-                          <p className="font-medium">{formatTime(reservation.time_slots?.start_time)}</p>
+                          <p className="font-medium">{formatTime(reservation.time_slots?.start_time)+" - "+formatTime(reservation.time_slots?.end_time)}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
@@ -500,6 +522,7 @@ export default function MisReservas() {
                               date={selectedDate}
                               people={people}
                               maxSlots={requiredSlots}
+                              minSlots={requiredSlots}
                               onSelectSlots={(slots) => setSelectedSlots(slots)}
                             />
                           </>

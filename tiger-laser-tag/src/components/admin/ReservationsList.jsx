@@ -25,6 +25,7 @@ export default function ReservationsList() {
         .from('reservations')
         .select(`
           *,
+          plans(name, price)
           reservation_slots (
             slot_id,
             time_slots (
@@ -388,7 +389,7 @@ export default function ReservationsList() {
                   <p>Hora: {getSlotTime(selectedReservation)}</p>
                   <p>Jugadores: {selectedReservation.people}</p>
                   <p>Participan en Electroshock: {selectedReservation.personas_electroshock}</p>
-                  <p>Plan: {selectedReservation.plan_id.name || 'N/A'}</p>
+                  <p>Plan: {selectedReservation.plans?.name || 'N/A'}</p>
                 </div>
                 
                 <div>
