@@ -323,9 +323,9 @@ async function sendReservationEmail(req, res) {
           </div>
           ` : ''}
 
-          <p><strong>¿Necesitas modificar tu reserva?</strong></p>
-          <p>Puedes gestionar tu reserva a través del siguiente enlace:</p>
-          <p><a href="${baseUrl}/mis-reservas?code=${reservation_code}">Gestionar mi reserva</a></p>
+          <div class="manage-btn">
+            <a href="${baseUrl}/mis-reservas">👉 Gestionar mi reserva</a>
+          </div>
         </div>
         <div class="footer">
           <p>Tiger Laser Tag - La mejor experiencia de Laser Tag</p>
@@ -646,10 +646,9 @@ async function sendChangePlayersEmail(req, res) {
           </div>
           ` : ""}
 
-          <p style="margin-top: 24px;">
-            Puedes gestionar tu reserva en cualquier momento desde el siguiente enlace:
-          </p>
-          <p><a href="${baseUrl}/mis-reservas">Gestionar mi reserva</a></p>
+          <div class="manage-btn">
+            <a href="${baseUrl}/mis-reservas">👉 Gestionar mi reserva</a>
+          </div>
         </div>
         <div class="footer">
           <p>Tiger Laser Tag - La mejor experiencia de Laser Tag</p>

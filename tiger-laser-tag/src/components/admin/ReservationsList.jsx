@@ -25,7 +25,7 @@ export default function ReservationsList() {
         .from('reservations')
         .select(`
           *,
-          plans(name, price)
+          plans(name, price),
           reservation_slots (
             slot_id,
             time_slots (
@@ -75,6 +75,7 @@ export default function ReservationsList() {
             .from('reservations')
             .select(`
               *,
+              plans(name, price),
               reservation_slots (
                 slot_id,
                 time_slots (
