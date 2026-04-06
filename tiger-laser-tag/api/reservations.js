@@ -1,195 +1,298 @@
+// /api/reservations.js
 import { supabaseAdmin } from "./supabaseAdmin.js";
 import { nanoid } from "nanoid";
 
-export default async function handler(req,res){
+export default async function handler(req, res) {
+  console.log("=== API RESERVATIONS CALLED ===");
+  console.log("Method:", req.method);
+  console.log("Body:", req.body);
 
-  if(req.method !== "POST"){
-    return res.status(405).json({error:"Method not allowed"});
+  // Solo permitir POST
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { action } = req.body;
+  const { action, code, email, people, newSlotIds, ...rest } = req.body;
 
-  try{
-
-    switch(action){
-
-      case "access":
-        return accessReservation(req,res);
-
-      case "create":
-        return createReservation(req,res);
-
-      case "cancel":
-        return cancelReservation(req,res);
-
-      case "change":
-        return changeReservation(req,res);
-
-      default:
-        return res.status(400).json({
-          error:"Invalid action"
-        });
-
+  try {
+    // Acceder a reserva existente
+    if (action === "access") {
+      return accessReservation(req, res, { code, email });
     }
 
-  }catch(err){
+    // Modificar reserva (cambiar jugadores o horario)
+    if (action === "change") {
+      return changeReservation(req, res, { code, email, people, newSlotIds });
+    }
 
-    console.error(err);
+    // Cancelar reserva
+    if (action === "cancel") {
+      return cancelReservation(req, res, { code, email });
+    }
 
-    return res.status(500).json({
-      error:"Internal server error"
-    });
+    // Crear nueva reserva (acción por defecto)
+    return createReservation(req, res, rest);
 
+  } catch (error) {
+    console.error("Error in reservations handler:", error);
+    return res.status(500).json({ error: "Internal server error" });
   }
-
 }
 
-async function accessReservation(req, res) {
+const getBaseUrl = () => {
+  if (process.env.VERCEL_URL) {
+    return process.env.VERCEL_URL.startsWith("https://")
+      ? process.env.VERCEL_URL
+      : `https://${process.env.VERCEL_URL}`;
+  }
+  return "http://localhost:5173";
+};
 
-  if (req.method !== "POST") {
-    return res.status(405).json({
-      error: "Method not allowed"
-    });
+// ============================================
+// ACCEDER A RESERVA
+// ============================================
+async function accessReservation(req, res, { code, email }) {
+  console.log("=== ACCESS RESERVATION FUNCTION ===");
+  console.log("Código recibido:", code);
+  console.log("Email recibido:", email);
+  console.log("Longitud del código:", code?.length);
+
+  if (!code) {
+    console.log("❌ Código no proporcionado");
+    return res.status(400).json({ error: "Código de reserva requerido" });
   }
 
-  const { code, email } = req.body;
-
-  if (!code || code.length !== 12) {
-    return res.status(400).json({
-      error: "Invalid reservation code"
-    });
+  if (code.length !== 12) {
+    console.log(`❌ Longitud de código incorrecta: ${code.length} (debe ser 12)`);
+    return res.status(400).json({ error: "Código de reserva inválido (debe tener 12 caracteres)" });
   }
 
   if (!email) {
-    return res.status(400).json({
-      error: "Email required"
-    });
+    console.log("❌ Email no proporcionado");
+    return res.status(400).json({ error: "Email requerido" });
   }
 
   try {
+    console.log("📡 Consultando Supabase...");
+    console.log("Parámetros:", { code, email, status: "pending" });
 
     const { data: reservation, error } = await supabaseAdmin
       .from("reservations")
       .select(`
         *,
-        time_slots(date,start_time,end_time),
-        plans(name,price,duration_minutes)
+        reservation_slots(
+          time_slots(date, start_time, end_time)
+        ),
+        plans(name, price, duration_minutes)
       `)
       .eq("reservation_code", code)
       .eq("email", email)
-      .eq("status", "confirmed")
+      .eq("status", "pending")
       .single();
 
-    if (error || !reservation) {
-      return res.status(404).json({
-        error: "Reserva no encontrada"
-      });
+    console.log("Resultado de la consulta:");
+    console.log("- Error:", error);
+    console.log("- Reserva encontrada:", !!reservation);
+
+    if (error) {
+      console.log("❌ Error de Supabase:", error.message);
+      console.log("Código de error:", error.code);
+      return res.status(404).json({ error: "Reserva no encontrada" });
     }
 
-    return res.json({
-      reservation
+    if (!reservation) {
+      console.log("❌ No se encontró ninguna reserva con esos datos");
+      return res.status(404).json({ error: "Reserva no encontrada" });
+    }
+
+   // Aplanar time_slots para no modificar el frontend
+    reservation.time_slots = reservation.reservation_slots?.[0]?.time_slots || null;
+    reservation.num_slots = reservation.reservation_slots?.length || 1; // ← añade esta línea
+    delete reservation.reservation_slots;
+
+    console.log("✅ Reserva encontrada:", {
+      id: reservation.id,
+      reservation_code: reservation.reservation_code,
+      name: reservation.name,
+      status: reservation.status,
+      people: reservation.people,
+      time_slots: reservation.time_slots
     });
+
+    return res.status(200).json({ reservation });
 
   } catch (error) {
-
-    console.error(error);
-
-    return res.status(500).json({
-      error: "Error fetching reservation"
-    });
-
+    console.error("❌ Error en accessReservation:", error);
+    console.error("Stack trace:", error.stack);
+    return res.status(500).json({ error: "Error al buscar la reserva", details: error.message });
   }
-
 }
-async function cancelReservation(req, res) {
 
-  if (req.method !== "POST") {
-    return res.status(405).json({
-      error: "Method not allowed"
-    });
-  }
-
-  const { code, email } = req.body;
-
+async function changeReservation(req, res, { code, email, people, newSlotIds }) {
   if (!code || !email) {
-    return res.status(400).json({
-      error: "Missing required fields"
-    });
+    return res.status(400).json({ error: "Campos requeridos faltantes" });
   }
 
   try {
-
-    /* --------------------------
-       1️⃣ Buscar reserva
-    -------------------------- */
-
-    const { data: reservation, error } = await supabaseAdmin
+    const { data: reservation, error: fetchError } = await supabaseAdmin
       .from("reservations")
       .select(`
-        *,
-        time_slots(date,start_time)
+        id,
+        people,
+        plan_id,
+        plans(price),
+        reservation_slots(slot_id)
       `)
       .eq("reservation_code", code)
       .eq("email", email)
+      .eq("status", "pending")
       .single();
 
-    if (error || !reservation) {
-      return res.status(404).json({
-        error: "Reserva no encontrada"
-      });
+    if (fetchError || !reservation) {
+      return res.status(404).json({ error: "Reserva no encontrada" });
     }
 
-    /* --------------------------
-       2️⃣ Validar estado
-    -------------------------- */
+    // Caso: Cambiar número de jugadores
+    if (people && people !== reservation.people) {
+      const pricePerPerson = reservation.plans.price;
+      const MINIMUM_BILLED = 10;
+      const billable = (n) => Math.max(n, MINIMUM_BILLED);
 
-    if (reservation.status === "cancelled") {
-      return res.status(400).json({
-        error: "La reserva ya está cancelada"
-      });
-    }
+      const originalTotal = pricePerPerson * billable(reservation.people);
+      const newTotal = pricePerPerson * billable(people);
+      const extraPayment = Math.max(newTotal - originalTotal, 0);
 
-    /* --------------------------
-       3️⃣ Regla 48h
-    -------------------------- */
-
-    const now = new Date();
-
-    const slotDateTime = new Date(
-      `${reservation.time_slots.date}T${reservation.time_slots.start_time}`
-    );
-
-    const diff = slotDateTime - now;
-
-    if (diff < 48 * 60 * 60 * 1000) {
-      return res.status(403).json({
-        error: "Las reservas solo se pueden cancelar con 48h de antelación"
-      });
-    }
-
-    /* --------------------------
-       4️⃣ Cancelar reserva
-    -------------------------- */
-
-    const { data: updatedReservation, error: updateError } =
-      await supabaseAdmin
+      const { error: updateError } = await supabaseAdmin
         .from("reservations")
-        .update({
-          status: "cancelled"
-        })
-        .eq("id", reservation.id)
-        .select()
-        .single();
+        .update({ people, precio_total: newTotal })
+        .eq("id", reservation.id);
 
-    if (updateError) {
-      return res.status(500).json({
-        error: updateError.message
+      if (updateError) throw updateError;
+
+      return res.status(200).json({
+        success: true,
+        extra_payment: extraPayment,
+        new_total: newTotal,
+        message: extraPayment > 0 ? "Se requiere pago adicional" : "Reserva actualizada"
       });
     }
 
-    /* --------------------------
-       5️⃣ Respuesta
-    -------------------------- */
+    // Caso: Cambiar horario (array de slots)
+    if (newSlotIds && newSlotIds.length > 0) {
+
+      // Verificar disponibilidad de todos los slots nuevos
+      const { data: newSlots, error: slotError } = await supabaseAdmin
+        .from("time_slots")
+        .select("id, status")
+        .in("id", newSlotIds);
+
+      if (slotError || !newSlots || newSlots.length !== newSlotIds.length) {
+        return res.status(400).json({ error: "Uno o más horarios no existen" });
+      }
+
+      const unavailable = newSlots.find(s => s.status !== "active");
+      if (unavailable) {
+        return res.status(400).json({ error: "Uno de los horarios seleccionados no está disponible" });
+      }
+
+      // Liberar slots antiguos
+      const oldSlotIds = reservation.reservation_slots.map(rs => rs.slot_id);
+      if (oldSlotIds.length > 0) {
+        await supabaseAdmin
+          .from("time_slots")
+          .update({ status: "active" })
+          .in("id", oldSlotIds);
+      }
+
+      // Eliminar relaciones antiguas
+      await supabaseAdmin
+        .from("reservation_slots")
+        .delete()
+        .eq("reservation_id", reservation.id);
+
+      // Crear nuevas relaciones
+      await supabaseAdmin
+        .from("reservation_slots")
+        .insert(newSlotIds.map(slotId => ({
+          reservation_id: reservation.id,
+          slot_id: slotId
+        })));
+
+      // Bloquear los nuevos slots
+      await supabaseAdmin
+        .from("time_slots")
+        .update({ status: "blocked" })
+        .in("id", newSlotIds);
+
+      return res.status(200).json({
+        success: true,
+        message: "Horario actualizado correctamente"
+      });
+    }
+
+    return res.status(400).json({ error: "No se especificó qué modificar" });
+
+  } catch (error) {
+    console.error("Error changing reservation:", error);
+    return res.status(500).json({ error: "Error modificando la reserva" });
+  }
+}
+
+// ============================================
+// CANCELAR RESERVA (solo pendientes)
+// ============================================
+async function cancelReservation(req, res, { code, email }) {
+  if (!code || !email) {
+    return res.status(400).json({ error: "Campos requeridos faltantes" });
+  }
+
+  try {
+    const { data: reservation, error: fetchError } = await supabaseAdmin
+      .from("reservations")
+      .select(`
+        id,
+        people,
+        reservation_slots(slot_id)
+      `)
+      .eq("reservation_code", code)
+      .eq("email", email)
+      .eq("status", "pending")
+      .single();
+
+    if (fetchError || !reservation) {
+      return res.status(404).json({ error: "Reserva no encontrada" });
+    }
+
+    const slotIds = reservation.reservation_slots.map(rs => rs.slot_id);
+
+    const { error: updateError } = await supabaseAdmin
+      .from("reservations")
+      .update({ status: "cancelled" })
+      .eq("id", reservation.id);
+
+    if (updateError) throw updateError;
+
+    if (slotIds.length > 0) {
+      const { error: slotError } = await supabaseAdmin
+        .from("time_slots")
+        .update({ status: "active" })
+        .in("id", slotIds);
+
+      if (slotError) throw slotError;
+    }
+
+    const { data: updatedReservation } = await supabaseAdmin
+      .from("reservations")
+      .select(`
+        *,
+        reservation_slots(
+          time_slots(date, start_time, end_time)
+        ),
+        plans(name, price, duration_minutes)
+      `)
+      .eq("id", reservation.id)
+      .single();
+
 
     return res.status(200).json({
       success: true,
@@ -198,187 +301,9 @@ async function cancelReservation(req, res) {
     });
 
   } catch (error) {
-
-    console.error(error);
-
-    return res.status(500).json({
-      error: "Error cancelando la reserva"
-    });
-
+    console.error("Error cancelling reservation:", error);
+    return res.status(500).json({ error: "Error cancelando la reserva" });
   }
-
-}
-
-async function changeReservation(req, res) {
-
-  if (req.method !== "POST") {
-    return res.status(405).json({
-      error: "Method not allowed"
-    });
-  }
-
-  const { code, email, newSlotId, people } = req.body;
-
-  if (!code || !email) {
-    return res.status(400).json({
-      error: "Missing required fields"
-    });
-  }
-
-  try {
-
-    /* --------------------------
-       1️⃣ Buscar reserva
-    -------------------------- */
-
-    const { data: reservation, error } = await supabaseAdmin
-      .from("reservations")
-      .select(`
-        id,
-        people,
-        plan_id,
-        status,
-        plans(price, max_players),
-        time_slots(date, start_time)
-      `)
-      .eq("reservation_code", code)
-      .eq("email", email)
-      .single();
-
-    if (error || !reservation) {
-      return res.status(404).json({
-        error: "Reserva no encontrada"
-      });
-    }
-
-    if (reservation.status === "cancelled") {
-      return res.status(400).json({
-        error: "No puedes modificar una reserva cancelada"
-      });
-    }
-
-    /* --------------------------
-       2️⃣ Validar regla 48h
-    -------------------------- */
-
-    const now = new Date();
-
-    const slotDateTime = new Date(
-      `${reservation.time_slots.date}T${reservation.time_slots.start_time}`
-    );
-
-    const diff = slotDateTime - now;
-
-    if (diff < 48 * 60 * 60 * 1000) {
-      return res.status(403).json({
-        error: "Las reservas solo se pueden modificar con 48h de antelación"
-      });
-    }
-
-    let extraPayment = 0;
-
-    /* --------------------------
-       3️⃣ Cambiar jugadores (solo)
-    -------------------------- */
-
-    if (people && !newSlotId) {
-
-      const newPeople = Number(people);
-
-      if (newPeople <= reservation.people) {
-        return res.status(400).json({
-          error: "Solo puedes añadir jugadores"
-        });
-      }
-
-      if (newPeople > reservation.plans.max_players) {
-        return res.status(409).json({
-          error: `Máximo ${reservation.plans.max_players} jugadores`
-        });
-      }
-
-      const addedPlayers = newPeople - reservation.people;
-      extraPayment = addedPlayers * reservation.plans.price;
-
-      const { error: updateError } = await supabaseAdmin
-        .from("reservations")
-        .update({ people: newPeople })
-        .eq("id", reservation.id);
-
-      if (updateError) {
-        return res.status(500).json({
-          error: updateError.message
-        });
-      }
-
-    }
-
-    /* --------------------------
-       4️⃣ Cambiar slot (usar SQL seguro)
-    -------------------------- */
-
-    if (newSlotId && !people) {
-
-      const { error: rpcError } = await supabaseAdmin.rpc(
-        "change_reservation_safe",
-        {
-          p_reservation_id: reservation.id,
-          p_new_slot_id: newSlotId
-        }
-      );
-
-      if (rpcError) {
-        return res.status(400).json({
-          error: rpcError.message
-        });
-      }
-
-    }
-
-    /* --------------------------
-       ❌ No permitir ambos
-    -------------------------- */
-
-    if (people && newSlotId) {
-      return res.status(400).json({
-        error: "No puedes cambiar jugadores y horario al mismo tiempo"
-      });
-    }
-
-    /* --------------------------
-       5️⃣ Obtener reserva actualizada
-    -------------------------- */
-
-    const { data: updatedReservation } = await supabaseAdmin
-      .from("reservations")
-      .select(`
-        *,
-        plans(price),
-        time_slots(date, start_time)
-      `)
-      .eq("id", reservation.id)
-      .single();
-
-    /* --------------------------
-       6️⃣ Respuesta final
-    -------------------------- */
-
-    return res.status(200).json({
-      success: true,
-      reservation: updatedReservation,
-      extra_payment: extraPayment
-    });
-
-  } catch (error) {
-
-    console.error(error);
-
-    return res.status(500).json({
-      error: "Error cambiando la reserva"
-    });
-
-  }
-
 }
 
 

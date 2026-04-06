@@ -25,6 +25,7 @@ export default function ReservationsList() {
         .from('reservations')
         .select(`
           *,
+          plans(name, price),
           reservation_slots (
             slot_id,
             time_slots (
@@ -74,6 +75,7 @@ export default function ReservationsList() {
             .from('reservations')
             .select(`
               *,
+              plans(name, price),
               reservation_slots (
                 slot_id,
                 time_slots (
@@ -118,10 +120,11 @@ export default function ReservationsList() {
     if (!confirm(`¿Estás seguro de cancelar la reserva ${reservationCode}?`)) return;
 
     try {
-      const { error } = await supabase
-        .from('reservations')
-        .update({ status: 'cancelled' })
-        .eq('id', id);
+      // Llamar a una función RPC que maneje la cancelación completa
+      const { data, error } = await supabase
+        .rpc('cancel_reservation', {
+          p_reservation_id: id
+        });
 
       if (error) throw error;
       alert('Reserva cancelada correctamente');
@@ -387,7 +390,7 @@ export default function ReservationsList() {
                   <p>Hora: {getSlotTime(selectedReservation)}</p>
                   <p>Jugadores: {selectedReservation.people}</p>
                   <p>Participan en Electroshock: {selectedReservation.personas_electroshock}</p>
-                  <p>Plan: {selectedReservation.plan_name || 'N/A'}</p>
+                  <p>Plan: {selectedReservation.plans?.name || 'N/A'}</p>
                 </div>
                 
                 <div>
