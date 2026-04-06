@@ -1,42 +1,31 @@
 import { generateSlotsForRange } from "./generateSlotsLogic.js";
 
 export default async function handler(req, res) {
-
-  if (req.method !== "GET") {
-    return res.status(405).json({
-      error: "Method not allowed"
-    });
+  if (req.method !== "POST") {  
+    return res.status(405).json({ error: "Method not allowed" });
   }
 
   try {
+    const { startDate, endDate } = req.body;
 
-    const today = new Date();
-    const year = today.getFullYear() + 1;
-
-    let startDate = today;
-    let endDate = new Date(year, 11, 31); // 31 diciembre
-
-    // 👉 si estamos en enero → generar TODO el año
-    if (today.getMonth() === 0) {
-      startDate = new Date(year, 0, 1);
+    if (!startDate || !endDate) {
+      return res.status(400).json({ error: "startDate y endDate son requeridos" });
     }
 
-    await generateSlotsForRange(startDate, endDate);
+    const result = await generateSlotsForRange(
+      new Date(startDate),
+      new Date(endDate)
+    );
 
     return res.status(200).json({
       message: "Slots generated",
+      inserted: result.inserted,
       from: startDate,
       to: endDate
     });
 
   } catch (error) {
-
     console.error(error);
-
-    return res.status(500).json({
-      error: "Error generating slots"
-    });
-
+    return res.status(500).json({ error: "Error generating slots" });
   }
-
 }

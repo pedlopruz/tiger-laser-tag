@@ -1,7 +1,7 @@
 // src/components/admin/SettingsPanel.jsx
 import { useState, useEffect } from 'react';
-import { Save, RefreshCw, AlertCircle } from 'lucide-react';
-import { supabase } from '../../lib/supabaseClient'; // ✅ Cambiar a supabase
+import { Save, RefreshCw, AlertCircle, Calendar, Zap, CheckCircle } from 'lucide-react';
+import { supabase } from '../../lib/supabaseClient';
 import { Button } from '@/components/ui/button';
 
 export default function SettingsPanel() {
@@ -16,6 +16,14 @@ export default function SettingsPanel() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
+
+  // Estado para generación de slots
+  const [slotRange, setSlotRange] = useState({
+    startDate: new Date().toISOString().split('T')[0],
+    endDate: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().split('T')[0]
+  });
+  const [generating, setGenerating] = useState(false);
+  const [generateMessage, setGenerateMessage] = useState(null);
 
   useEffect(() => {
     loadSettings();
@@ -67,6 +75,48 @@ export default function SettingsPanel() {
     }
   };
 
+  const generateSlots = async () => {
+    if (!slotRange.startDate || !slotRange.endDate) {
+      setGenerateMessage({ type: 'error', text: 'Selecciona un rango de fechas válido' });
+      return;
+    }
+
+    if (slotRange.startDate > slotRange.endDate) {
+      setGenerateMessage({ type: 'error', text: 'La fecha de inicio debe ser anterior a la fecha de fin' });
+      return;
+    }
+
+    if (!confirm(`¿Generar slots del ${slotRange.startDate} al ${slotRange.endDate}? Los slots ya existentes en ese rango no se duplicarán.`)) return;
+
+    setGenerating(true);
+    setGenerateMessage(null);
+
+    try {
+      const res = await fetch('/api/generateSlots', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          startDate: slotRange.startDate,
+          endDate: slotRange.endDate
+        })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || 'Error generando slots');
+
+      setGenerateMessage({
+        type: 'success',
+        text: `✅ Slots generados correctamente. Se insertaron ${data.inserted ?? '—'} nuevos slots.`
+      });
+    } catch (error) {
+      console.error('Error generating slots:', error);
+      setGenerateMessage({ type: 'error', text: `Error al generar slots: ${error.message}` });
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   const handleChange = (field, value) => {
     setSettings(prev => ({ ...prev, [field]: value }));
   };
@@ -83,6 +133,7 @@ export default function SettingsPanel() {
 
   return (
     <div className="space-y-6">
+      {/* ── Configuración general ── */}
       <div className="bg-white rounded-xl shadow-sm p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -110,7 +161,9 @@ export default function SettingsPanel() {
 
         {message && (
           <div className={`mb-4 p-3 rounded-lg flex items-center gap-2 ${
-            message.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'
+            message.type === 'success'
+              ? 'bg-green-50 text-green-800 border border-green-200'
+              : 'bg-red-50 text-red-800 border border-red-200'
           }`}>
             <AlertCircle size={16} />
             {message.text}
@@ -118,7 +171,6 @@ export default function SettingsPanel() {
         )}
 
         <div className="space-y-6">
-          {/* Duración de slots */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -152,7 +204,6 @@ export default function SettingsPanel() {
             </div>
           </div>
 
-          {/* Horarios días laborables */}
           <div className="border-t pt-6">
             <h3 className="text-lg font-semibold text-tiger-green mb-4">Horarios Laborables (Lunes a Viernes)</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -177,7 +228,6 @@ export default function SettingsPanel() {
             </div>
           </div>
 
-          {/* Horarios fines de semana */}
           <div className="border-t pt-6">
             <h3 className="text-lg font-semibold text-tiger-green mb-4">Horarios Fines de Semana (Sábado y Domingo)</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -202,13 +252,99 @@ export default function SettingsPanel() {
             </div>
           </div>
 
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mt-4">
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
             <p className="text-sm text-amber-800">
               ⚠️ Los cambios en la configuración afectarán a la generación de nuevos slots.
               Los slots ya existentes no se modificarán automáticamente.
             </p>
           </div>
         </div>
+      </div>
+
+      {/* ── Generación de slots ── */}
+      <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="mb-6">
+          <h2 className="text-xl font-bold text-tiger-green flex items-center gap-2">
+            <Zap size={20} />
+            Generar Slots
+          </h2>
+          <p className="text-sm text-gray-500 mt-1">
+            Genera los slots de reserva para el rango de fechas seleccionado usando la configuración actual.
+            Los slots ya existentes en ese rango no se duplicarán.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <Calendar size={14} className="inline mr-1" />
+              Fecha de inicio
+            </label>
+            <input
+              type="date"
+              value={slotRange.startDate}
+              min={new Date().toISOString().split('T')[0]}
+              onChange={(e) => setSlotRange(prev => ({ ...prev, startDate: e.target.value }))}
+              className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-tiger-orange"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <Calendar size={14} className="inline mr-1" />
+              Fecha de fin
+            </label>
+            <input
+              type="date"
+              value={slotRange.endDate}
+              min={slotRange.startDate}
+              onChange={(e) => setSlotRange(prev => ({ ...prev, endDate: e.target.value }))}
+              className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-tiger-orange"
+            />
+          </div>
+        </div>
+
+        {/* Resumen de configuración que se usará */}
+        <div className="bg-gray-50 rounded-lg p-4 mb-6 text-sm text-gray-600">
+          <p className="font-medium text-gray-700 mb-2">Se usará la siguiente configuración:</p>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+            <span>⏱ Duración: <strong>{settings.slot_duration} min</strong></span>
+            <span>👥 Capacidad: <strong>{settings.max_capacity} personas</strong></span>
+            <span>📅 L-V: <strong>{settings.weekday_start} – {settings.weekday_end}</strong></span>
+            <span>📅 S-D: <strong>{settings.weekend_start} – {settings.weekend_end}</strong></span>
+          </div>
+          <p className="text-xs text-amber-700 mt-2">
+            💡 Si has modificado la configuración arriba, guárdala antes de generar slots.
+          </p>
+        </div>
+
+        {generateMessage && (
+          <div className={`mb-4 p-3 rounded-lg flex items-center gap-2 ${
+            generateMessage.type === 'success'
+              ? 'bg-green-50 text-green-800 border border-green-200'
+              : 'bg-red-50 text-red-800 border border-red-200'
+          }`}>
+            {generateMessage.type === 'success' ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
+            {generateMessage.text}
+          </div>
+        )}
+
+        <Button
+          onClick={generateSlots}
+          disabled={generating || !slotRange.startDate || !slotRange.endDate}
+          className="w-full bg-tiger-orange hover:bg-tiger-orange/90 text-white font-bold py-3"
+        >
+          {generating ? (
+            <span className="flex items-center justify-center gap-2">
+              <RefreshCw size={16} className="animate-spin" />
+              Generando slots...
+            </span>
+          ) : (
+            <span className="flex items-center justify-center gap-2">
+              <Zap size={16} />
+              Generar slots del {slotRange.startDate} al {slotRange.endDate}
+            </span>
+          )}
+        </Button>
       </div>
     </div>
   );
