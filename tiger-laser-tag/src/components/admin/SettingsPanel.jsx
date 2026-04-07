@@ -65,7 +65,7 @@ export default function SettingsPanel() {
     }
   };
 
-  // ✅ CORREGIDO: Cargar slots bloqueados (solo los que están en estado 'blocked' y no tienen reservas)
+  // Cargar slots bloqueados (solo los que están en estado 'blocked' y no tienen reservas)
   const loadBlockedSlots = async () => {
     setLoadingBlocks(true);
     try {
@@ -106,7 +106,7 @@ export default function SettingsPanel() {
     try {
       const { data, error } = await supabase
         .from('time_slots')
-        .select('id, date, start_time, end_time, status')
+        .select('id, date, start_time, end_time, status, reserved_spots')
         .eq('date', date)
         .order('start_time');
 
@@ -117,8 +117,8 @@ export default function SettingsPanel() {
     }
   };
 
-  // ✅ CORREGIDO: Bloquear un slot específico
-  const blockSlot = async (slotId, reason = '') => {
+  // Bloquear un slot específico (sin pedir motivo)
+  const blockSlot = async (slotId) => {
     try {
       const { error } = await supabase
         .from('time_slots')
@@ -126,17 +126,6 @@ export default function SettingsPanel() {
         .eq('id', slotId);
 
       if (error) throw error;
-
-      // Registrar el bloqueo en la tabla de bloqueos
-      if (reason) {
-        await supabase
-          .from('slot_blocks')
-          .insert([{
-            slot_id: slotId,
-            reason: reason,
-            created_at: new Date().toISOString()
-          }]);
-      }
 
       await loadBlockedSlots();
       await loadSlotsForDate(selectedDate);
@@ -149,7 +138,7 @@ export default function SettingsPanel() {
     }
   };
 
-  // ✅ CORREGIDO: Desbloquear un slot específico
+  // Desbloquear un slot específico
   const unblockSlot = async (slotId) => {
     try {
       console.log('Desbloqueando slot:', slotId);
@@ -161,7 +150,7 @@ export default function SettingsPanel() {
 
       if (error) throw error;
 
-      // Eliminar el registro de bloqueo
+      // Eliminar el registro de bloqueo si existe
       await supabase
         .from('slot_blocks')
         .delete()
@@ -178,8 +167,8 @@ export default function SettingsPanel() {
     }
   };
 
-  // Bloquear un día entero
-  const blockFullDay = async (date, reason = '') => {
+  // Bloquear un día entero (sin pedir motivo)
+  const blockFullDay = async (date) => {
     try {
       // Obtener todos los slots activos de ese día
       const { data: slots, error: fetchError } = await supabase
@@ -206,7 +195,7 @@ export default function SettingsPanel() {
         .from('slot_blocks')
         .insert([{
           date: date,
-          reason: reason || 'Día completo bloqueado',
+          reason: 'Bloqueado manualmente',
           created_at: new Date().toISOString()
         }]);
 
@@ -232,8 +221,7 @@ export default function SettingsPanel() {
         .from('time_slots')
         .select('id')
         .eq('date', date)
-        .eq('status', 'blocked')
-
+        .eq('status', 'blocked');
 
       if (fetchError) throw fetchError;
 
@@ -628,10 +616,7 @@ export default function SettingsPanel() {
                   </Button>
                 ) : (
                   <Button
-                    onClick={() => {
-                      const reason = prompt('Motivo del bloqueo (opcional):');
-                      blockFullDay(selectedDate, reason || 'Bloqueado manualmente');
-                    }}
+                    onClick={() => blockFullDay(selectedDate)}
                     className="bg-red-600 hover:bg-red-700 text-white"
                   >
                     <Lock size={16} className="mr-2" />
@@ -646,7 +631,7 @@ export default function SettingsPanel() {
                   <p className="text-gray-500 text-center py-8">No hay slots para este día</p>
                 ) : (
                   slotsForDate.map(slot => {
-                    const isBlockedByReservation = slot.reserved > 0;
+                    const isBlockedByReservation = (slot.reserved_spots || 0) > 0;
                     const isBlockedByAdmin = slot.status === 'blocked' && !isBlockedByReservation;
                     
                     return (
@@ -676,10 +661,7 @@ export default function SettingsPanel() {
                             </button>
                           ) : !isBlockedByReservation && (
                             <button
-                              onClick={() => {
-                                const reason = prompt('Motivo del bloqueo (opcional):');
-                                blockSlot(slot.id, reason || 'Bloqueado manualmente');
-                              }}
+                              onClick={() => blockSlot(slot.id)}
                               className="text-red-600 hover:text-red-800"
                               title="Bloquear"
                             >
