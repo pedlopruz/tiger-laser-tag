@@ -29,6 +29,10 @@ export default async function handler(req, res) {
     if (action === "cancel") {
       return cancelReservation(req, res, { code, email });
     }
+    // Confirmar reserva      
+    if (action === "confirm") {
+      return confirmReservation(req, res, { code, email });
+    }
 
     // Crear nueva reserva (acción por defecto)
     return createReservation(req, res, rest);
@@ -306,6 +310,51 @@ async function cancelReservation(req, res, { code, email }) {
   }
 }
 
+// ============================================
+// CONFIRMAR RESERVA (solo pendientes)
+// ============================================
+async function confirmReservation(req, res, { code, email }) {
+  if (!code || !email) {
+    return res.status(400).json({ error: "Campos requeridos faltantes" });
+  }
+
+  try {
+    const { data: reservation, error: fetchError } = await supabaseAdmin
+      .from("reservations")
+      .select(`
+        id,
+        people,
+        reservation_slots(slot_id)
+      `)
+      .eq("reservation_code", code)
+      .eq("email", email)
+      .eq("status", "pending")
+      .single();
+
+    if (fetchError || !reservation) {
+      return res.status(404).json({ error: "Reserva no encontrada" });
+    }
+
+    const { data: updatedReservation, error: updateError } = await supabaseAdmin
+      .from("reservations")
+      .update({ status: "confirmed" })
+      .eq("id", reservation.id)
+      .select()
+      .single();
+
+    if (updateError) throw updateError;
+
+    return res.status(200).json({
+      success: true,
+      message: "Reserva confirmada correctamente", // ✅ corregido: confirmada, no cancelada
+      reservation: updatedReservation
+    });
+
+  } catch (error) {
+    console.error("Error confirming reservation:", error);
+    return res.status(500).json({ error: "Error confirmando la reserva" });
+  }
+}
 
 async function createReservation(req, res) {
 
