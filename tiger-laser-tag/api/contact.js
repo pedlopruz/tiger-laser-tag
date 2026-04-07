@@ -1185,7 +1185,7 @@ async function confirmReservationEmail(req, res) {
         </div>
         <div class="content">
           <div class="confirmation-badge">
-            <h2>✅ ¡RESERVA CONFIRMADA!</h2>
+            <h2>¡RESERVA CONFIRMADA!</h2>
             <p>Tu reserva ha sido confirmada exitosamente</p>
           </div>
 
@@ -1194,18 +1194,7 @@ async function confirmReservationEmail(req, res) {
           <div class="success-box">
             <strong>🎉 ¡Todo listo!</strong><br>
             Tu reserva ya está confirmada. No es necesario que hagas nada más.
-            Presenta el siguiente código QR o el código numérico en recepción el día de tu visita.
-          </div>
-
-          <div class="qr-container">
-            <img src="${qrCodeUrl}" alt="Código QR de reserva">
-            <p style="margin-top: 10px; font-size: 12px; color: #666;">
-              Escanea este código QR en recepción
-            </p>
-          </div>
-
-          <div class="code">
-            🎯 Código: ${reservation_code}
+            Presenta el código numérico en recepción el día de tu visita.
           </div>
 
           <div class="reservation-details">
@@ -1258,7 +1247,6 @@ async function confirmReservationEmail(req, res) {
             <li>👟 <strong>Vestimenta:</strong> Usa ropa y calzado cómodo (zapatillas deportivas).</li>
             <li>🔞 <strong>Menores:</strong> Los menores de 15 años deben venir acompañados de un adulto responsable.</li>
             <li>⏱️ <strong>Puntualidad:</strong> El tiempo de juego comienza puntualmente. Los retrasos no se recuperan.</li>
-            <li>❌ <strong>Cancelaciones:</strong> Si no puedes asistir, contacta con nosotros con al menos 24h de antelación.</li>
           </ul>
 
           ${menor_edad ? `
@@ -1277,8 +1265,7 @@ async function confirmReservationEmail(req, res) {
           <div class="success-box">
             <strong>📍 Dirección:</strong><br>
             Tiger Laser Tag<br>
-            [Tu dirección aquí]<br>
-            <a href="https://maps.google.com/?q=[TU_DIRECCION]" style="color: #1a4d3e;">Ver en Google Maps →</a>
+            <a href="https://www.google.com/maps?q=C.+Andrés+Segovia+1A+29604+Marbella,+Málaga&output=embed" style="color: #1a4d3e;">Ver en Google Maps →</a>
           </div>
         </div>
         <div class="footer">
