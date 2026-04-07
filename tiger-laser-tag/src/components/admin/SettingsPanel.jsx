@@ -1,6 +1,6 @@
 // src/components/admin/SettingsPanel.jsx
 import { useState, useEffect } from 'react';
-import { Save, RefreshCw, AlertCircle, Calendar, Zap, CheckCircle, Lock, Unlock, X, Search } from 'lucide-react';
+import { Save, RefreshCw, AlertCircle, Calendar, Zap, CheckCircle, Lock, Unlock, X, Clock } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { Button } from '@/components/ui/button';
 
@@ -74,8 +74,10 @@ export default function SettingsPanel() {
     try {
       const { data, error } = await supabase
         .from('time_slots')
-        .select('id, date, start_time, end_time, status')
-        .eq('status', 'blocked');
+        .select('id, date, start_time, end_time, status, reserved')
+        .eq('status', 'blocked')
+        .order('date', { ascending: true })
+        .order('start_time', { ascending: true });
 
       if (error) throw error;
       setBlockedSlots(data || []);
@@ -91,7 +93,8 @@ export default function SettingsPanel() {
     try {
       const { data, error } = await supabase
         .from('slot_blocks')
-        .select('date, reason, created_at');
+        .select('date, reason, created_at')
+        .order('date', { ascending: true });
 
       if (error) throw error;
       setBlockedDates(data || []);
@@ -105,7 +108,7 @@ export default function SettingsPanel() {
     try {
       const { data, error } = await supabase
         .from('time_slots')
-        .select('id, date, start_time, end_time, status')
+        .select('id, date, start_time, end_time, status, reserved')
         .eq('date', date)
         .order('start_time');
 
@@ -126,7 +129,7 @@ export default function SettingsPanel() {
 
       if (error) throw error;
 
-      // Registrar el bloqueo en la tabla de bloqueos (opcional)
+      // Registrar el bloqueo en la tabla de bloqueos
       if (reason) {
         await supabase
           .from('slot_blocks')
@@ -160,6 +163,12 @@ export default function SettingsPanel() {
         .eq('id', slotId);
 
       if (error) throw error;
+
+      // Eliminar el registro de bloqueo
+      await supabase
+        .from('slot_blocks')
+        .delete()
+        .eq('slot_id', slotId);
 
       await loadBlockedSlots();
       await loadSlotsForDate(selectedDate);
@@ -221,12 +230,13 @@ export default function SettingsPanel() {
   // Desbloquear un día entero
   const unblockFullDay = async (date) => {
     try {
-      // Obtener todos los slots bloqueados de ese día
+      // Obtener todos los slots bloqueados de ese día (que no tengan reservas)
       const { data: slots, error: fetchError } = await supabase
         .from('time_slots')
         .select('id')
         .eq('date', date)
-        .eq('status', 'blocked');
+        .eq('status', 'blocked')
+        .eq('reserved', 0);
 
       if (fetchError) throw fetchError;
 
@@ -270,12 +280,26 @@ export default function SettingsPanel() {
     setSaving(true);
     setMessage(null);
     try {
-      const { error } = await supabase
+      const { data: existing } = await supabase
         .from('business_settings')
-        .update(settings)
-        .eq('id', (await supabase.from('business_settings').select('id').single()).data?.id);
+        .select('id')
+        .single();
 
-      if (error) throw error;
+      if (existing?.id) {
+        const { error } = await supabase
+          .from('business_settings')
+          .update(settings)
+          .eq('id', existing.id);
+        
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('business_settings')
+          .insert(settings);
+        
+        if (error) throw error;
+      }
+      
       setMessage({ type: 'success', text: 'Configuración guardada correctamente' });
       setTimeout(() => setMessage(null), 3000);
     } catch (error) {
@@ -512,30 +536,66 @@ export default function SettingsPanel() {
             </Button>
           </div>
 
-          {/* Resumen de días bloqueados */}
+          {/* Resumen de días bloqueados y slots bloqueados */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Días bloqueados
-            </label>
-            <div className="border rounded-lg p-3 max-h-40 overflow-y-auto">
-              {blockedDates.length === 0 ? (
-                <p className="text-gray-500 text-sm text-center">No hay días bloqueados</p>
-              ) : (
-                <div className="space-y-2">
-                  {blockedDates.map(block => (
-                    <div key={block.date} className="flex justify-between items-center text-sm bg-red-50 p-2 rounded">
-                      <span className="text-red-700">{block.date}</span>
-                      <button
-                        onClick={() => unblockFullDay(block.date)}
-                        className="text-green-600 hover:text-green-800"
-                        title="Desbloquear día"
-                      >
-                        <Unlock size={16} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
+            {/* Días bloqueados */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                <Calendar size={16} />
+                Días bloqueados
+              </label>
+              <div className="border rounded-lg p-3 max-h-32 overflow-y-auto">
+                {blockedDates.length === 0 ? (
+                  <p className="text-gray-500 text-sm text-center">No hay días bloqueados</p>
+                ) : (
+                  <div className="space-y-2">
+                    {blockedDates.map(block => (
+                      <div key={block.date} className="flex justify-between items-center text-sm bg-red-50 p-2 rounded">
+                        <span className="text-red-700">{block.date}</span>
+                        <button
+                          onClick={() => unblockFullDay(block.date)}
+                          className="text-green-600 hover:text-green-800"
+                          title="Desbloquear día"
+                        >
+                          <Unlock size={16} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Slots bloqueados individuales */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                <Clock size={16} />
+                Slots bloqueados (individuales)
+              </label>
+              <div className="border rounded-lg p-3 max-h-48 overflow-y-auto">
+                {blockedSlots.filter(slot => slot.reserved === 0).length === 0 ? (
+                  <p className="text-gray-500 text-sm text-center">No hay slots bloqueados</p>
+                ) : (
+                  <div className="space-y-2">
+                    {blockedSlots.filter(slot => slot.reserved === 0).map(slot => (
+                      <div key={slot.id} className="flex justify-between items-center text-sm bg-orange-50 p-2 rounded">
+                        <div>
+                          <span className="font-medium">{slot.date}</span>
+                          <span className="text-gray-500 mx-2">•</span>
+                          <span>{slot.start_time?.slice(0,5)} - {slot.end_time?.slice(0,5)}</span>
+                        </div>
+                        <button
+                          onClick={() => unblockSlot(slot.id)}
+                          className="text-green-600 hover:text-green-800"
+                          title="Desbloquear slot"
+                        >
+                          <Unlock size={16} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -588,44 +648,53 @@ export default function SettingsPanel() {
                 {slotsForDate.length === 0 ? (
                   <p className="text-gray-500 text-center py-8">No hay slots para este día</p>
                 ) : (
-                  slotsForDate.map(slot => (
-                    <div key={slot.id} className="flex justify-between items-center p-3 border rounded-lg">
-                      <div>
-                        <span className="font-medium">
-                          {slot.start_time?.slice(0,5)} - {slot.end_time?.slice(0,5)}
-                        </span>
-                        <span className={`ml-3 text-xs px-2 py-1 rounded ${
-                          slot.status === 'blocked' 
-                            ? 'bg-red-100 text-red-800' 
-                            : 'bg-green-100 text-green-800'
-                        }`}>
-                          {slot.status === 'blocked' ? 'Bloqueado' : 'Activo'}
-                        </span>
+                  slotsForDate.map(slot => {
+                    const isBlockedByReservation = slot.reserved > 0;
+                    const isBlockedByAdmin = slot.status === 'blocked' && !isBlockedByReservation;
+                    
+                    return (
+                      <div key={slot.id} className="flex justify-between items-center p-3 border rounded-lg">
+                        <div>
+                          <span className="font-medium">
+                            {slot.start_time?.slice(0,5)} - {slot.end_time?.slice(0,5)}
+                          </span>
+                          <span className={`ml-3 text-xs px-2 py-1 rounded ${
+                            isBlockedByReservation 
+                              ? 'bg-purple-100 text-purple-800' 
+                              : isBlockedByAdmin
+                                ? 'bg-red-100 text-red-800'
+                                : 'bg-green-100 text-green-800'
+                          }`}>
+                            {isBlockedByReservation ? 'Reservado' : isBlockedByAdmin ? 'Bloqueado' : 'Activo'}
+                          </span>
+                        </div>
+                        <div>
+                          {slot.status === 'blocked' ? (
+                            <button
+                              onClick={() => unblockSlot(slot.id)}
+                              className="text-green-600 hover:text-green-800"
+                              title="Desbloquear"
+                              disabled={isBlockedByReservation}
+                            >
+                              <Unlock size={18} />
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                const reason = prompt('Motivo del bloqueo (opcional):');
+                                blockSlot(slot.id, reason || 'Bloqueado manualmente');
+                              }}
+                              className="text-red-600 hover:text-red-800"
+                              title="Bloquear"
+                              disabled={isBlockedByReservation}
+                            >
+                              <Lock size={18} />
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      <div>
-                        {slot.status === 'blocked' ? (
-                          <button
-                            onClick={() => unblockSlot(slot.id)}
-                            className="text-green-600 hover:text-green-800"
-                            title="Desbloquear"
-                          >
-                            <Unlock size={18} />
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => {
-                              const reason = prompt('Motivo del bloqueo (opcional):');
-                              blockSlot(slot.id, reason || 'Bloqueado manualmente');
-                            }}
-                            className="text-red-600 hover:text-red-800"
-                            title="Bloquear"
-                          >
-                            <Lock size={18} />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>

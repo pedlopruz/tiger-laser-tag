@@ -110,7 +110,7 @@ export default async function handler(req, res) {
         reserved: reservedCount,
         remaining: isAvailable ? capacity : 0,
         isAvailable: isAvailable,
-        isBlocked: reservedCount > 0,
+        isBlocked: reservedCount > 0 || slot.status === 'blocked',
         isPast: isPast,
         status: slot.status,
         statusMessage: reservedCount > 0 ? "Reservado" : (isAvailable ? "Disponible" : "No disponible")
