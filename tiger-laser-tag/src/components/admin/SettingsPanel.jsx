@@ -32,9 +32,6 @@ export default function SettingsPanel() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [slotsForDate, setSlotsForDate] = useState([]);
   const [blockModalOpen, setBlockModalOpen] = useState(false);
-  const [blockReason, setBlockReason] = useState('');
-  const [blockingSlot, setBlockingSlot] = useState(null);
-  const [blockingDate, setBlockingDate] = useState(null);
 
   useEffect(() => {
     loadSettings();
@@ -68,7 +65,7 @@ export default function SettingsPanel() {
     }
   };
 
-  // Cargar slots bloqueados
+  // ✅ CORREGIDO: Cargar slots bloqueados (solo los que están en estado 'blocked' y no tienen reservas)
   const loadBlockedSlots = async () => {
     setLoadingBlocks(true);
     try {
@@ -76,10 +73,12 @@ export default function SettingsPanel() {
         .from('time_slots')
         .select('id, date, start_time, end_time, status, reserved')
         .eq('status', 'blocked')
+        .eq('reserved', 0)  // ✅ Solo slots sin reservas
         .order('date', { ascending: true })
         .order('start_time', { ascending: true });
 
       if (error) throw error;
+      console.log('Slots bloqueados cargados:', data);
       setBlockedSlots(data || []);
     } catch (error) {
       console.error('Error loading blocked slots:', error);
@@ -119,7 +118,7 @@ export default function SettingsPanel() {
     }
   };
 
-  // Bloquear un slot específico
+  // ✅ CORREGIDO: Bloquear un slot específico
   const blockSlot = async (slotId, reason = '') => {
     try {
       const { error } = await supabase
@@ -142,21 +141,20 @@ export default function SettingsPanel() {
 
       await loadBlockedSlots();
       await loadSlotsForDate(selectedDate);
-      setBlockModalOpen(false);
-      setBlockReason('');
-      setBlockingSlot(null);
       
       setMessage({ type: 'success', text: 'Slot bloqueado correctamente' });
       setTimeout(() => setMessage(null), 3000);
     } catch (error) {
       console.error('Error blocking slot:', error);
-      setMessage({ type: 'error', text: 'Error al bloquear el slot' });
+      setMessage({ type: 'error', text: 'Error al bloquear el slot: ' + error.message });
     }
   };
 
-  // Desbloquear un slot específico
+  // ✅ CORREGIDO: Desbloquear un slot específico
   const unblockSlot = async (slotId) => {
     try {
+      console.log('Desbloqueando slot:', slotId);
+      
       const { error } = await supabase
         .from('time_slots')
         .update({ status: 'active' })
@@ -177,7 +175,7 @@ export default function SettingsPanel() {
       setTimeout(() => setMessage(null), 3000);
     } catch (error) {
       console.error('Error unblocking slot:', error);
-      setMessage({ type: 'error', text: 'Error al desbloquear el slot' });
+      setMessage({ type: 'error', text: 'Error al desbloquear el slot: ' + error.message });
     }
   };
 
@@ -223,7 +221,7 @@ export default function SettingsPanel() {
       setTimeout(() => setMessage(null), 3000);
     } catch (error) {
       console.error('Error blocking full day:', error);
-      setMessage({ type: 'error', text: 'Error al bloquear el día' });
+      setMessage({ type: 'error', text: 'Error al bloquear el día: ' + error.message });
     }
   };
 
@@ -267,7 +265,7 @@ export default function SettingsPanel() {
       setTimeout(() => setMessage(null), 3000);
     } catch (error) {
       console.error('Error unblocking full day:', error);
-      setMessage({ type: 'error', text: 'Error al desbloquear el día' });
+      setMessage({ type: 'error', text: 'Error al desbloquear el día: ' + error.message });
     }
   };
 
@@ -573,11 +571,11 @@ export default function SettingsPanel() {
                 Slots bloqueados (individuales)
               </label>
               <div className="border rounded-lg p-3 max-h-48 overflow-y-auto">
-                {blockedSlots.filter(slot => slot.reserved === 0).length === 0 ? (
+                {blockedSlots.length === 0 ? (
                   <p className="text-gray-500 text-sm text-center">No hay slots bloqueados</p>
                 ) : (
                   <div className="space-y-2">
-                    {blockedSlots.filter(slot => slot.reserved === 0).map(slot => (
+                    {blockedSlots.map(slot => (
                       <div key={slot.id} className="flex justify-between items-center text-sm bg-orange-50 p-2 rounded">
                         <div>
                           <span className="font-medium">{slot.date}</span>
@@ -669,16 +667,15 @@ export default function SettingsPanel() {
                           </span>
                         </div>
                         <div>
-                          {slot.status === 'blocked' ? (
+                          {slot.status === 'blocked' && !isBlockedByReservation ? (
                             <button
                               onClick={() => unblockSlot(slot.id)}
                               className="text-green-600 hover:text-green-800"
                               title="Desbloquear"
-                              disabled={isBlockedByReservation}
                             >
                               <Unlock size={18} />
                             </button>
-                          ) : (
+                          ) : !isBlockedByReservation && (
                             <button
                               onClick={() => {
                                 const reason = prompt('Motivo del bloqueo (opcional):');
@@ -686,7 +683,6 @@ export default function SettingsPanel() {
                               }}
                               className="text-red-600 hover:text-red-800"
                               title="Bloquear"
-                              disabled={isBlockedByReservation}
                             >
                               <Lock size={18} />
                             </button>
