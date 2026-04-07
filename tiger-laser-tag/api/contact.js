@@ -408,9 +408,6 @@ async function sendReservationEmail(req, res) {
             </div>
             
             <div class="button-container">
-              <a href="${confirmUrl}" class="btn btn-primary">
-                ✅ CONFIRMAR RESERVA
-              </a>
               <a href="${manageUrl}" class="btn btn-outline">
                 ✏️ EDITAR RESERVA
               </a>
@@ -719,6 +716,8 @@ async function sendChangePlayersEmail(req, res) {
           .players-new { font-size: 24px; font-weight: bold; color: #1a4d3e; }
           .total { font-size: 18px; font-weight: bold; color: #d4af37; background-color: #1a4d3e; padding: 10px; border-radius: 5px; text-align: center; margin-top: 20px; }
           .extra-payment { background-color: #fff3cd; border: 1px solid #ffc107; color: #856404; padding: 12px; border-radius: 5px; margin-top: 16px; font-size: 14px; text-align: center; }
+          .manage-btn { background-color: #1a4d3e; color: #d4af37; text-align: center; padding: 12px; border-radius: 5px; margin-top: 20px; }
+          .manage-btn a { color: #d4af37; font-weight: bold; text-decoration: none; }
           .footer { text-align: center; font-size: 12px; color: #666; margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; }
         </style>
       </head>
@@ -1255,12 +1254,6 @@ async function confirmReservationEmail(req, res) {
             El adulto responsable deberá firmar un consentimiento en el recinto.
           </div>
           ` : ''}
-
-          <div style="margin: 30px 0;">
-            <a href="${manageUrl}" class="btn">
-              📋 VER MIS RESERVAS
-            </a>
-          </div>
 
           <div class="success-box">
             <strong>📍 Dirección:</strong><br>
