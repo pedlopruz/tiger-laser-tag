@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Helmet } from "react-helmet";
-import { Search, Calendar, Clock, Users, CreditCard, AlertCircle, CheckCircle, XCircle, ArrowRight } from "lucide-react";
+import { Search, Calendar, Clock, Users, CreditCard, AlertCircle, CheckCircle, XCircle, ArrowRight, CheckSquare } from "lucide-react";
 import CalendarPicker from "../components/Booking/CalendarPicker";
 import SlotPickerEdit from "../components/Booking/SlotPickerEdit";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ export default function MisReservas() {
   const [loading, setLoading] = useState(false);
   const [updateLoading, setUpdateLoading] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
+  const [confirmLoading, setConfirmLoading] = useState(false);
   const [cancelled, setCancelled] = useState(false);
 
   async function handleSearch(e) {
@@ -52,6 +53,77 @@ export default function MisReservas() {
       setError("Error de conexión");
     }
     setLoading(false);
+  }
+
+  // Función para confirmar la reserva
+  async function confirmReservation() {
+    if (!confirm("¿Confirmar esta reserva? Una vez confirmada no podrás modificarla.")) return;
+    
+    setConfirmLoading(true);
+    setMessage("");
+
+    try {
+      // 1. Confirmar la reserva en la base de datos
+      const res = await fetch("/api/reservations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          action: "confirm", 
+          code, 
+          email 
+        })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setMessage(data.error || "Error al confirmar la reserva");
+        setConfirmLoading(false);
+        return;
+      }
+
+      // 2. Enviar email de confirmación final
+      const timeSlots = reservation.reservation_slots?.[0]?.time_slots || reservation.time_slots;
+      
+      await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "confirm_reservation",
+          name: reservation.name,
+          email: reservation.email,
+          phone: reservation.phone,
+          reservation_code: reservation.reservation_code,
+          date: timeSlots?.date,
+          time_range: timeSlots 
+            ? `${timeSlots.start_time?.slice(0, 5)} - ${timeSlots.end_time?.slice(0, 5)}`
+            : null,
+          duration: reservation.num_slots || 1,
+          plan_name: reservation.plans?.name,
+          plan_price: reservation.plans?.price,
+          people: reservation.people,
+          personas_electroshock: reservation.personas_electroshock || 0,
+          total_price: reservation.precio_total,
+          menor_edad: reservation.menor_edad || false
+        })
+      });
+
+      // 3. Actualizar el estado local
+      setReservation(prev => ({
+        ...prev,
+        status: "confirmed"
+      }));
+
+      setMessage("✅ ¡Reserva confirmada correctamente! Se ha enviado un email de confirmación.");
+      
+      // Limpiar el mensaje después de 5 segundos
+      setTimeout(() => setMessage(""), 5000);
+
+    } catch (err) {
+      console.error(err);
+      setMessage("Error confirmando la reserva");
+    }
+    setConfirmLoading(false);
   }
 
   const pricePerPerson = reservation?.plans?.price || 0;
@@ -125,7 +197,7 @@ export default function MisReservas() {
   }
 
   async function updateSlot() {
-    console.log("selectedSlots al confirmar:", selectedSlots); // ← añade esto
+    console.log("selectedSlots al confirmar:", selectedSlots);
     if (selectedSlots.length === 0) return;
     setUpdateLoading(true);
 
@@ -148,7 +220,7 @@ export default function MisReservas() {
         setUpdateLoading(false);
         return;
       }
-      // Enviar email de cambio de fecha
+      
       await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -242,7 +314,7 @@ export default function MisReservas() {
 
   function getStatusBadge(status) {
     const statusConfig = {
-      pending: { text: "Pendiente", color: "bg-yellow-100 text-yellow-800", icon: AlertCircle },
+      pending: { text: "Pendiente de confirmar", color: "bg-yellow-100 text-yellow-800", icon: AlertCircle },
       confirmed: { text: "Confirmada", color: "bg-green-100 text-green-800", icon: CheckCircle },
       cancelled: { text: "Cancelada", color: "bg-red-100 text-red-800", icon: XCircle }
     };
@@ -318,7 +390,7 @@ export default function MisReservas() {
           </AnimatePresence>
 
           {/* Buscador */}
-          {!cancelled && (
+          {!cancelled && !reservation && (
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
@@ -443,8 +515,40 @@ export default function MisReservas() {
                       </div>
                     </div>
 
-                    {/* Modificar jugadores */}
-                    {reservation.status !== 'cancelled' && (
+                    {/* Botón de CONFIRMAR RESERVA - Solo para reservas pendientes */}
+                    {reservation.status === 'pending' && (
+                      <div className="border-t pt-6">
+                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+                          <p className="text-amber-800 text-sm flex items-start gap-2">
+                            <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
+                            <span>
+                              Tu reserva está pendiente de confirmación. Una vez confirmada, no podrás modificar los datos.
+                              Te recomendamos confirmarla lo antes posible para asegurar tu plaza.
+                            </span>
+                          </p>
+                        </div>
+                        <Button
+                          onClick={confirmReservation}
+                          disabled={confirmLoading}
+                          className="w-full bg-green-600 hover:bg-green-700 text-white py-3 text-base font-bold"
+                        >
+                          {confirmLoading ? (
+                            <span className="flex items-center justify-center gap-2">
+                              <span className="animate-spin">⏳</span>
+                              Confirmando...
+                            </span>
+                          ) : (
+                            <span className="flex items-center justify-center gap-2">
+                              <CheckSquare size={18} />
+                              ✅ Confirmar reserva
+                            </span>
+                          )}
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Modificar jugadores - Solo para reservas pendientes */}
+                    {reservation.status === 'pending' && (
                       <div className="border-t pt-6">
                         <h3 className="font-semibold text-tiger-green mb-4">Modificar número de jugadores</h3>
                         <div className="flex items-center justify-between flex-wrap gap-4">
@@ -498,8 +602,8 @@ export default function MisReservas() {
                       </div>
                     )}
 
-                    {/* Cambiar horario */}
-                    {reservation.status !== 'cancelled' && (
+                    {/* Cambiar horario - Solo para reservas pendientes */}
+                    {reservation.status === 'pending' && (
                       <div className="border-t pt-6">
                         <h3 className="font-semibold text-tiger-green mb-4">Cambiar fecha y horario</h3>
                         <CalendarPicker
@@ -553,8 +657,8 @@ export default function MisReservas() {
                       </div>
                     )}
 
-                    {/* Cancelar reserva */}
-                    {reservation.status !== 'cancelled' && (
+                    {/* Cancelar reserva - Solo para reservas pendientes */}
+                    {reservation.status === 'pending' && (
                       <div className="border-t pt-6">
                         <Button
                           onClick={cancelReservation}
@@ -575,6 +679,21 @@ export default function MisReservas() {
                       </div>
                     )}
 
+                    {/* Mensaje para reservas confirmadas */}
+                    {reservation.status === 'confirmed' && (
+                      <div className="border-t pt-6">
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                          <CheckCircle className="text-green-600 mx-auto mb-2" size={32} />
+                          <p className="text-green-800 font-medium">
+                            ✅ Reserva confirmada
+                          </p>
+                          <p className="text-green-600 text-sm mt-1">
+                            Tu reserva ya está confirmada. Presenta el código QR que recibiste por email el día de tu visita.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Mensajes generales */}
                     <AnimatePresence>
                       {message && !message.includes("Jugadores") && (
@@ -582,7 +701,11 @@ export default function MisReservas() {
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0 }}
-                          className="p-4 rounded-lg text-center bg-blue-50 text-blue-800 border border-blue-200"
+                          className={`p-4 rounded-lg text-center ${
+                            message.includes("✅") 
+                              ? "bg-green-50 text-green-800 border border-green-200"
+                              : "bg-blue-50 text-blue-800 border border-blue-200"
+                          }`}
                         >
                           {message}
                         </motion.div>

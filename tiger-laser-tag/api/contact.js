@@ -34,6 +34,9 @@ export default async function handler(req, res) {
         console.log("=== CHANGE_DATE ACTION RECIBIDA ===");
         console.log("Body completo:", req.body);
         return sendChangeDateEmail(req, res);
+
+      case "confirm_reservation":
+        return confirmReservationEmail(req, res);
     
 
       default:
@@ -103,7 +106,8 @@ async function sendReservationEmail(req, res) {
     people,
     personas_electroshock,
     total_price,
-    menor_edad
+    menor_edad,
+    status = "pending" // ← Añadido: estado de la reserva
   } = req.body;
 
   console.log("Datos recibidos:", {
@@ -112,7 +116,8 @@ async function sendReservationEmail(req, res) {
     reservation_code,
     plan_name,
     people,
-    total_price
+    total_price,
+    status
   });
 
   // Validar campos requeridos
@@ -158,19 +163,24 @@ async function sendReservationEmail(req, res) {
       
       // En desarrollo local
       console.log("Usando localhost");
-      return 'http://localhost:5173'; // Cambia según tu puerto de desarrollo
+      return 'http://localhost:5173';
     };
 
     const baseUrl = getBaseUrl();
-    const logoUrl = `https://i.imgur.com/CKWBWRc.png`; // ✅ Asegúrate que el archivo existe en public/logo.png
+    const logoUrl = `https://i.imgur.com/CKWBWRc.png`;
     
     console.log("URL del logo:", logoUrl);
+
+    // URL para confirmar reserva (con parámetros)
+    const confirmUrl = `${baseUrl}/confirmar-reserva?code=${reservation_code}&email=${encodeURIComponent(email)}`;
+    const manageUrl = `${baseUrl}/mis-reservas`;
 
     const emailHtml = `
       <!DOCTYPE html>
       <html>
       <head>
         <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
           body {
             font-family: Arial, sans-serif;
@@ -242,6 +252,74 @@ async function sendReservationEmail(req, res) {
             margin-top: 20px;
             font-size: 14px;
           }
+          .button-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin: 25px 0;
+          }
+          .btn {
+            display: block;
+            padding: 14px 20px;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+          }
+          .btn-primary {
+            background-color: #d4af37;
+            color: #1a4d3e;
+            border: 2px solid #d4af37;
+          }
+          .btn-primary:hover {
+            background-color: #c4a030;
+            transform: scale(1.02);
+          }
+          .btn-secondary {
+            background-color: #1a4d3e;
+            color: white;
+            border: 2px solid #1a4d3e;
+          }
+          .btn-secondary:hover {
+            background-color: #0f3529;
+            transform: scale(1.02);
+          }
+          .btn-outline {
+            background-color: transparent;
+            color: #1a4d3e;
+            border: 2px solid #1a4d3e;
+          }
+          .btn-outline:hover {
+            background-color: #1a4d3e;
+            color: white;
+          }
+          .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            text-align: center;
+            margin: 10px 0;
+          }
+          .status-pending {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffc107;
+          }
+          .status-confirmed {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #28a745;
+          }
+          .info-box {
+            background-color: #e8f4f8;
+            border-left: 4px solid #1a4d3e;
+            padding: 12px;
+            margin: 15px 0;
+            font-size: 14px;
+          }
           .footer {
             text-align: center;
             font-size: 12px;
@@ -249,6 +327,11 @@ async function sendReservationEmail(req, res) {
             margin-top: 20px;
             padding-top: 20px;
             border-top: 1px solid #eee;
+          }
+          hr {
+            margin: 20px 0;
+            border: none;
+            border-top: 1px solid #ddd;
           }
         </style>
       </head>
@@ -258,7 +341,14 @@ async function sendReservationEmail(req, res) {
         </div>
         <div class="content">
           <h2>Hola ${name},</h2>
-          <p>Tu reserva ha sido confirmada exitosamente. A continuación encontrarás los detalles:</p>
+          <p>Tu reserva ha sido <strong>creada exitosamente</strong>. A continuación encontrarás los detalles:</p>
+          
+          <!-- Badge de estado -->
+          <div style="text-align: center;">
+            <span class="status-badge status-${status === 'confirmed' ? 'confirmed' : 'pending'}">
+              ${status === 'confirmed' ? '✓ RESERVA CONFIRMADA' : '⏳ RESERVA PENDIENTE'}
+            </span>
+          </div>
           
           <div class="reservation-details">
             <h3>Detalles de la reserva</h3>
@@ -309,6 +399,34 @@ async function sendReservationEmail(req, res) {
             🎯 Código: ${reservation_code}
           </div>
 
+          <!-- SECCIÓN DE GESTIÓN Y CONFIRMACIÓN -->
+          ${status === 'pending' ? `
+            <div class="info-box">
+              <strong>⚠️ Tu reserva está pendiente de confirmación</strong><br>
+              Para asegurar tu reserva, por favor confírmala haciendo clic en el botón de abajo.
+              Una vez confirmada, no podrás modificar los datos.
+            </div>
+            
+            <div class="button-container">
+              <a href="${manageUrl}" class="btn btn-outline">
+                ✏️ EDITAR RESERVA
+              </a>
+            </div>
+          ` : `
+            <div class="info-box">
+              <strong>✓ Reserva confirmada</strong><br>
+              Tu reserva ya está confirmada. Si necesitas hacer algún cambio, por favor contacta con nosotros directamente.
+            </div>
+            
+            <div class="button-container">
+              <a href="${manageUrl}" class="btn btn-secondary">
+                📋 VER MIS RESERVAS
+              </a>
+            </div>
+          `}
+
+          <hr>
+
           <p><strong>Información importante:</strong></p>
           <ul>
             <li>Por favor, presenta este código en recepción el día de tu reserva.</li>
@@ -322,10 +440,6 @@ async function sendReservationEmail(req, res) {
             Deberá firmarse un consentimiento en el recinto.
           </div>
           ` : ''}
-
-          <div class="manage-btn">
-            <a href="${baseUrl}/mis-reservas">👉 Gestionar mi reserva</a>
-          </div>
         </div>
         <div class="footer">
           <p>Tiger Laser Tag - La mejor experiencia de Laser Tag</p>
@@ -340,7 +454,11 @@ async function sendReservationEmail(req, res) {
     const { data, error } = await resend.emails.send({
       from: "Tiger Laser Tag <noreply@tigerlasertag.es>",
       to: email,
-      subject: `Confirmación de reserva - Tiger Laser Tag - Código: ${reservation_code}`,
+      subject: `${
+        status === 'confirmed' 
+          ? '✅ Reserva confirmada' 
+          : '⏳ Pendiente de confirmación'
+      } - Tiger Laser Tag - Código: ${reservation_code}`,
       html: emailHtml
     });
 
@@ -598,6 +716,8 @@ async function sendChangePlayersEmail(req, res) {
           .players-new { font-size: 24px; font-weight: bold; color: #1a4d3e; }
           .total { font-size: 18px; font-weight: bold; color: #d4af37; background-color: #1a4d3e; padding: 10px; border-radius: 5px; text-align: center; margin-top: 20px; }
           .extra-payment { background-color: #fff3cd; border: 1px solid #ffc107; color: #856404; padding: 12px; border-radius: 5px; margin-top: 16px; font-size: 14px; text-align: center; }
+          .manage-btn { background-color: #1a4d3e; color: #d4af37; text-align: center; padding: 12px; border-radius: 5px; margin-top: 20px; }
+          .manage-btn a { color: #d4af37; font-weight: bold; text-decoration: none; }
           .footer { text-align: center; font-size: 12px; color: #666; margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; }
         </style>
       </head>
@@ -825,5 +945,365 @@ async function sendChangeDateEmail(req, res) {
   } catch (error) {
     console.error("❌ Error general:", error);
     return res.status(500).json({ error: "Error sending email", details: error.message });
+  }
+}
+
+
+async function confirmReservationEmail(req, res) {
+  console.log("=== ENVÍO DE EMAIL DE CONFIRMACIÓN FINAL ===");
+  console.log("Method:", req.method);
+  
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
+
+  const {
+    name,
+    email,
+    phone,
+    reservation_code,
+    date,
+    time_range,
+    duration,
+    plan_name,
+    plan_price,
+    people,
+    personas_electroshock,
+    total_price,
+    menor_edad
+  } = req.body;
+
+  console.log("Datos recibidos:", {
+    name,
+    email,
+    reservation_code,
+    plan_name,
+    people,
+    total_price
+  });
+
+  // Validar campos requeridos
+  if (!name || !email || !reservation_code) {
+    console.error("❌ Faltan campos requeridos");
+    return res.status(400).json({
+      error: "Missing required fields: name, email, reservation_code"
+    });
+  }
+
+  // Validar que la API key existe
+  if (!process.env.RESEND_API_KEY) {
+    console.error("❌ RESEND_API_KEY no está configurada");
+    return res.status(500).json({ 
+      error: "Email service not configured",
+      details: "API key missing"
+    });
+  }
+
+  console.log("✅ RESEND_API_KEY existe");
+
+  try {
+    // Formatear fecha
+    const formattedDate = new Date(date).toLocaleDateString("es-ES", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric"
+    });
+
+    const noElectroshock = people - personas_electroshock;
+    
+    // Obtener URL base
+    const getBaseUrl = () => {
+      if (process.env.VERCEL_URL) {
+        const url = process.env.VERCEL_URL.startsWith('https://') 
+          ? process.env.VERCEL_URL 
+          : `https://${process.env.VERCEL_URL}`;
+        return url;
+      }
+      return 'http://localhost:5173';
+    };
+
+    const baseUrl = getBaseUrl();
+    const logoUrl = `https://i.imgur.com/CKWBWRc.png`;
+    const manageUrl = `${baseUrl}/mis-reservas`;
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${reservation_code}`;
+
+    const emailHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+          }
+          .header {
+            background-color: #1a4d3e;
+            padding: 20px;
+            text-align: center;
+            border-radius: 10px 10px 0 0;
+          }
+          .logo {
+            max-width: 180px;
+            margin: 0 auto;
+            height: auto;
+          }
+          .content {
+            background-color: #f9f9f9;
+            padding: 30px;
+            border-radius: 0 0 10px 10px;
+          }
+          .confirmation-badge {
+            background-color: #28a745;
+            color: white;
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+          }
+          .confirmation-badge h2 {
+            margin: 0;
+            font-size: 24px;
+          }
+          .confirmation-badge p {
+            margin: 5px 0 0;
+            font-size: 14px;
+          }
+          .reservation-details {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+          }
+          .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+          }
+          .detail-label {
+            font-weight: bold;
+            color: #1a4d3e;
+          }
+          .total {
+            font-size: 18px;
+            font-weight: bold;
+            color: #d4af37;
+            background-color: #1a4d3e;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            margin-top: 20px;
+          }
+          .code {
+            font-size: 20px;
+            font-weight: bold;
+            text-align: center;
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+            letter-spacing: 2px;
+            margin: 20px 0;
+          }
+          .qr-container {
+            text-align: center;
+            margin: 20px 0;
+            padding: 15px;
+            background-color: white;
+            border-radius: 10px;
+          }
+          .qr-container img {
+            width: 150px;
+            height: 150px;
+          }
+          .warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffc107;
+            color: #856404;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 20px;
+            font-size: 14px;
+          }
+          .success-box {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 12px;
+            margin: 15px 0;
+            font-size: 14px;
+            color: #155724;
+          }
+          .btn {
+            display: block;
+            padding: 14px 20px;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            background-color: #1a4d3e;
+            color: white;
+            border: 2px solid #1a4d3e;
+          }
+          .btn:hover {
+            background-color: #0f3529;
+            transform: scale(1.02);
+          }
+          .footer {
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+          }
+          hr {
+            margin: 20px 0;
+            border: none;
+            border-top: 1px solid #ddd;
+          }
+          .info-list {
+            margin: 15px 0;
+            padding-left: 20px;
+          }
+          .info-list li {
+            margin: 8px 0;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <img src="${logoUrl}" alt="Tiger Laser Tag" class="logo">
+        </div>
+        <div class="content">
+          <div class="confirmation-badge">
+            <h2>¡RESERVA CONFIRMADA!</h2>
+            <p>Tu reserva ha sido confirmada exitosamente</p>
+          </div>
+
+          <p>Hola <strong>${name}</strong>,</p>
+          
+          <div class="success-box">
+            <strong>🎉 ¡Todo listo!</strong><br>
+            Tu reserva ya está confirmada. No es necesario que hagas nada más.
+            Presenta el código numérico en recepción el día de tu visita.
+          </div>
+
+          <div class="reservation-details">
+            <h3>📋 Detalles de la reserva</h3>
+            <div class="detail-row">
+              <span class="detail-label">Fecha:</span>
+              <span>${formattedDate}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Horario:</span>
+              <span>${time_range || 'No especificado'}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Duración:</span>
+              <span>${duration || 1} hora(s)</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Plan:</span>
+              <span>${plan_name || 'No especificado'}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Precio por persona:</span>
+              <span>${plan_price ? `€${plan_price}` : 'No especificado'}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Total jugadores:</span>
+              <span>${people} persona(s)</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Participan en Electroshock:</span>
+              <span>${personas_electroshock} persona(s)</span>
+            </div>
+            ${noElectroshock > 0 ? `
+            <div class="detail-row">
+              <span class="detail-label">No participan en Electroshock:</span>
+              <span>${noElectroshock} persona(s)</span>
+            </div>
+            ` : ''}
+            <div class="total">
+              TOTAL PAGADO: €${total_price}
+            </div>
+          </div>
+
+          <hr>
+
+          <p><strong>📌 Información importante para tu visita:</strong></p>
+          <ul class="info-list">
+            <li>⏰ <strong>Llegada:</strong> Por favor, llega con <strong>15 minutos de antelación</strong> a la hora reservada.</li>
+            <li>📱 <strong>QR/Código:</strong> Presenta el código QR o el código numérico en recepción.</li>
+            <li>👟 <strong>Vestimenta:</strong> Usa ropa y calzado cómodo (zapatillas deportivas).</li>
+            <li>🔞 <strong>Menores:</strong> Los menores de 15 años deben venir acompañados de un adulto responsable.</li>
+            <li>⏱️ <strong>Puntualidad:</strong> El tiempo de juego comienza puntualmente. Los retrasos no se recuperan.</li>
+          </ul>
+
+          ${menor_edad ? `
+          <div class="warning">
+            ⚠️ <strong>Importante:</strong> Algunos participantes son menores de 15 años. 
+            El adulto responsable deberá firmar un consentimiento en el recinto.
+          </div>
+          ` : ''}
+
+          <div class="success-box">
+            <strong>📍 Dirección:</strong><br>
+            Tiger Laser Tag<br>
+            <a href="https://www.google.com/maps?q=C.+Andrés+Segovia+1A+29604+Marbella,+Málaga&output=embed" style="color: #1a4d3e;">Ver en Google Maps →</a>
+          </div>
+        </div>
+        <div class="footer">
+          <p><strong>Tiger Laser Tag</strong> - La mejor experiencia de Laser Tag</p>
+          <p>📞 Teléfono: [TU_TELÉFONO] | ✉️ Email: [TU_EMAIL]</p>
+          <p>© ${new Date().getFullYear()} Tiger Laser Tag. Todos los derechos reservados.</p>
+          <p style="font-size: 11px; margin-top: 10px;">
+            Este es un email automático, por favor no responder a este mensaje.
+          </p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    console.log("Intentando enviar email de confirmación final a:", email);
+    
+    const { data, error } = await resend.emails.send({
+      from: "Tiger Laser Tag <noreply@tigerlasertag.es>",
+      to: email,
+      subject: `✅ Reserva Confirmada - Tiger Laser Tag - Código: ${reservation_code}`,
+      html: emailHtml
+    });
+
+    if (error) {
+      console.error("❌ Error de Resend:", error);
+      return res.status(500).json({ 
+        error: "Error sending email", 
+        details: error,
+        message: error.message
+      });
+    }
+
+    console.log("✅ Email de confirmación final enviado exitosamente:", data);
+    
+    return res.status(200).json({ 
+      success: true, 
+      message: "Confirmation email sent successfully",
+      data 
+    });
+
+  } catch (error) {
+    console.error("❌ Error inesperado:", error);
+    return res.status(500).json({ 
+      error: "Internal server error",
+      message: error.message 
+    });
   }
 }

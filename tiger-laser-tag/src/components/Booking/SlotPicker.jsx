@@ -44,11 +44,10 @@ export default function SlotPicker({
   }
 
   function areConsecutive(a, b) {
-    if (!a?.start_time || !b?.start_time) return false;
-    const minutesA = getMinutesFromTime(a.start_time);
-    const minutesB = getMinutesFromTime(b.start_time);
-    const diff = Math.abs(minutesA - minutesB);
-    return diff === 60;
+    if (!a?.start_time || !b?.start_time || !a?.end_time) return false;
+    // El slot B empieza exactamente donde termina el slot A
+    return a.end_time.slice(0, 5) === b.start_time.slice(0, 5) ||
+          b.end_time.slice(0, 5) === a.start_time.slice(0, 5);
   }
 
   function isFutureSlot(slot) {
@@ -64,8 +63,15 @@ export default function SlotPicker({
     return 0;
   }
 
+  // ✅ ACTUALIZADO: Verificar si el slot está bloqueado (por reserva O por admin)
   function isSlotBlocked(slot) {
-    return slot.reserved > 0 || slot.isBlocked === true;
+    // Bloqueado si tiene reservas
+    if (slot.reserved > 0) return true;
+    // Bloqueado si el status es 'blocked' (bloqueado por admin)
+    if (slot.status === 'blocked') return true;
+    // Bloqueado si la propiedad isBlocked está activa
+    if (slot.isBlocked === true) return true;
+    return false;
   }
 
   // Cargar slots
@@ -92,7 +98,7 @@ export default function SlotPicker({
               !slot.start_time.includes('undefined');
       });
       
-      setSlots(validSlots); // ← solo actualiza los slots disponibles, no toca la selección
+      setSlots(validSlots);
 
     } catch (err) {
       console.error("Error loading slots", err);
@@ -101,7 +107,7 @@ export default function SlotPicker({
     }
 
     setLoading(false);
-  }, [date]); // ← onSelectSlots también fuera de deps
+  }, [date]);
 
   // Cargar al cambiar fecha
   useEffect(() => {
@@ -131,6 +137,11 @@ export default function SlotPicker({
         schema: "public", 
         table: "reservation_slots" 
       }, handleRealtimeChange)
+      .on("postgres_changes", { 
+        event: "UPDATE", 
+        schema: "public", 
+        table: "time_slots" 
+      }, handleRealtimeChange) // ✅ Escuchar cambios en time_slots (bloqueos manuales)
       .subscribe();
 
     return () => {
@@ -146,12 +157,12 @@ export default function SlotPicker({
     return () => window.removeEventListener('focus', handleFocus);
   }, [loadSlots]);
 
-  // Selección de slots — usa ref para evitar closure stale
+  // Selección de slots
   const handleSelect = useCallback((slot) => {
     const currentSelected = selectedSlotsRef.current;
 
     if (isSlotBlocked(slot)) {
-      alert("Este horario ya está reservado");
+      alert("Este horario no está disponible");
       return;
     }
     
@@ -187,9 +198,9 @@ export default function SlotPicker({
 
     setSelectedSlots(newSelection);
     if (onSelectSlots) onSelectSlots(newSelection);
-  }, [people, onSelectSlots, maxSlots]); // selectedSlots fuera — usamos el ref
+  }, [people, onSelectSlots, maxSlots]);
 
-  // UI logic — estas usan selectedSlots del estado para el render
+  // UI logic
   function isSelected(slot) {
     return selectedSlots.some(s => s.id === slot.id);
   }
@@ -239,7 +250,13 @@ export default function SlotPicker({
 
   function getSlotStatusText(slot) {
     if (!isFutureSlot(slot)) return "⏰ Pasado";
-    if (isSlotBlocked(slot)) return "🔒 Reservado";
+    if (isSlotBlocked(slot)) {
+      // ✅ Mensaje específico para slots bloqueados por admin
+      if (slot.status === 'blocked' && slot.reserved === 0) {
+        return "🚫 No disponible";
+      }
+      return "🔒 Reservado";
+    }
     const remaining = getRemaining(slot);
     if (remaining < people) return `⚠️ ${remaining} plazas`;
     return `✅ ${remaining} plazas`;

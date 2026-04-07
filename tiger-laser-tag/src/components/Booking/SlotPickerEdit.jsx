@@ -33,11 +33,10 @@ export default function SlotPickerEdit({
   }
 
   function areConsecutive(a, b) {
-    if (!a?.start_time || !b?.start_time) return false;
-    const minutesA = getMinutesFromTime(a.start_time);
-    const minutesB = getMinutesFromTime(b.start_time);
-    const diff = Math.abs(minutesA - minutesB);
-    return diff === 60;
+    if (!a?.start_time || !b?.start_time || !a?.end_time) return false;
+    // El slot B empieza exactamente donde termina el slot A
+    return a.end_time.slice(0, 5) === b.start_time.slice(0, 5) ||
+          b.end_time.slice(0, 5) === a.start_time.slice(0, 5);
   }
 
   function isFutureSlot(slot) {
