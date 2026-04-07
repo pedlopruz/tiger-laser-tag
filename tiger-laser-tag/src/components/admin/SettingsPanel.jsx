@@ -73,7 +73,6 @@ export default function SettingsPanel() {
         .from('time_slots')
         .select('id, date, start_time, end_time, status, reserved')
         .eq('status', 'blocked')
-        .eq('reserved', 0)  // ✅ Solo slots sin reservas
         .order('date', { ascending: true })
         .order('start_time', { ascending: true });
 
@@ -107,7 +106,7 @@ export default function SettingsPanel() {
     try {
       const { data, error } = await supabase
         .from('time_slots')
-        .select('id, date, start_time, end_time, status, reserved')
+        .select('id, date, start_time, end_time, status')
         .eq('date', date)
         .order('start_time');
 
@@ -234,7 +233,7 @@ export default function SettingsPanel() {
         .select('id')
         .eq('date', date)
         .eq('status', 'blocked')
-        .eq('reserved', 0);
+
 
       if (fetchError) throw fetchError;
 
