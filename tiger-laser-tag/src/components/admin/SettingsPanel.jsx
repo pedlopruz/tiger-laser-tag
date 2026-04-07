@@ -71,7 +71,7 @@ export default function SettingsPanel() {
     try {
       const { data, error } = await supabase
         .from('time_slots')
-        .select('id, date, start_time, end_time, status, reserved')
+        .select('id, date, start_time, end_time, status')
         .eq('status', 'blocked')
         .order('date', { ascending: true })
         .order('start_time', { ascending: true });
