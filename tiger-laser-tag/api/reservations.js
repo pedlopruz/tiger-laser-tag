@@ -359,9 +359,7 @@ async function confirmReservation(req, res, { code, email }) {
 async function createReservation(req, res) {
 
   if (req.method !== "POST") {
-    return res.status(405).json({
-      error: "Method not allowed"
-    });
+    return res.status(405).json({ error: "Method not allowed" });
   }
 
   const {
@@ -372,125 +370,124 @@ async function createReservation(req, res) {
     phone,
     people,
     menor_edad,
-    personas_electroshock  // ✅ Nuevo campo
+    personas_electroshock
   } = req.body;
 
-  // ✅ Validación incluyendo personas_electroshock
   if (
     !slot_ids || !Array.isArray(slot_ids) || slot_ids.length === 0 ||
     !plan_id || !name || !email || !people ||
-    personas_electroshock === undefined  // ✅ Validar que viene
+    personas_electroshock === undefined
   ) {
-    console.error("Missing fields:", {
-      slot_ids,
-      plan_id,
-      name,
-      email,
-      people,
-      menor_edad,
-      personas_electroshock
-    });
-    return res.status(400).json({
-      error: "Missing required fields"
-    });
+    return res.status(400).json({ error: "Missing required fields" });
   }
 
   const players = parseInt(people);
   const electroshock = parseInt(personas_electroshock);
 
   if (players < 1) {
-    return res.status(400).json({
-      error: "Invalid number of players"
-    });
+    return res.status(400).json({ error: "Invalid number of players" });
   }
 
-  // ✅ Validar que electroshock no sea mayor que el total de jugadores
   if (electroshock > players) {
     return res.status(400).json({
       error: "El número de personas para electroshock no puede ser mayor que el total de jugadores"
     });
   }
 
-  // ✅ Validar que electroshock sea al menos 1
   if (electroshock < 1) {
-    return res.status(400).json({
-      error: "Debe haber al menos 1 persona para electroshock"
-    });
+    return res.status(400).json({ error: "Debe haber al menos 1 persona para electroshock" });
   }
-
-  /* --------------------------
-     🚫 Validar email y telefono
-  -------------------------- */
 
   const emailRegex = /\S+@\S+\.\S+/;
   if (!emailRegex.test(email)) {
-    return res.status(400).json({
-      error: "Invalid email"
-    });
+    return res.status(400).json({ error: "Invalid email" });
   }
 
-
-
-  /* --------------------------
-     🚫 Validar slots no pasados
-  -------------------------- */
+  // Validar slots no pasados
   const { data: slotsData, error: slotsError } = await supabaseAdmin
     .from("time_slots")
-    .select("date, start_time")
+    .select("date, start_time, shared_plan_id")  // ← añadir shared_plan_id
     .in("id", slot_ids);
 
   if (slotsError || !slotsData || slotsData.length === 0) {
-    return res.status(400).json({
-      error: "Slots inválidos"
-    });
+    return res.status(400).json({ error: "Slots inválidos" });
   }
 
   const now = new Date();
-
   for (const s of slotsData) {
     const slotDateTime = new Date(`${s.date}T${s.start_time}`);
     if (slotDateTime <= now) {
-      return res.status(409).json({
-        error: "No puedes reservar un horario pasado"
-      });
+      return res.status(409).json({ error: "No puedes reservar un horario pasado" });
     }
   }
+
+  // ✅ Detectar si es reserva compartida
+  const isShared = slotsData.some(s => s.shared_plan_id !== null);
 
   try {
     const reservation_code = nanoid(12);
 
-    const { data, error } = await supabaseAdmin.rpc(
-      "create_reservation_blocking",
-      {
-        p_slot_ids: slot_ids,
-        p_plan_id: plan_id,
-        p_name: name,
-        p_email: email,
-        p_phone: phone || null,
-        p_people: players,
-        p_personas_electroshock: electroshock,  // ✅ Enviar a la RPC
-        p_reservation_code: reservation_code,
-        p_menor_edad: menor_edad ?? false
-      }
-    );
+    if (isShared) {
+      // ── Reserva compartida ──
+      const { data, error } = await supabaseAdmin.rpc(
+        "create_shared_reservation",
+        {
+          p_slot_ids: slot_ids,
+          p_plan_id: plan_id,
+          p_name: name,
+          p_email: email,
+          p_phone: phone || null,
+          p_people: players,
+          p_personas_electroshock: electroshock,
+          p_reservation_code: reservation_code,
+          p_menor_edad: menor_edad ?? false
+        }
+      );
 
-    if (error) {
-      console.error("Error en RPC:", error);
-      return res.status(409).json({
-        error: error.message
+      if (error) {
+        console.error("Error en RPC compartida:", error);
+        return res.status(409).json({ error: error.message });
+      }
+
+      return res.status(200).json({
+        success: true,
+        reservation_id: data.reservation_id,
+        code: reservation_code,
+        is_shared: true
+      });
+
+    } else {
+      // ── Reserva normal (existente) ──
+      const { data, error } = await supabaseAdmin.rpc(
+        "create_reservation_blocking",
+        {
+          p_slot_ids: slot_ids,
+          p_plan_id: plan_id,
+          p_name: name,
+          p_email: email,
+          p_phone: phone || null,
+          p_people: players,
+          p_personas_electroshock: electroshock,
+          p_reservation_code: reservation_code,
+          p_menor_edad: menor_edad ?? false
+        }
+      );
+
+      if (error) {
+        console.error("Error en RPC normal:", error);
+        return res.status(409).json({ error: error.message });
+      }
+
+      return res.status(200).json({
+        success: true,
+        reservation_id: data.reservation_id,
+        code: reservation_code,
+        is_shared: false
       });
     }
 
-    return res.status(200).json({
-      success: true,
-      reservation_id: data.reservation_id,
-      code: reservation_code
-    });
-
   } catch (error) {
     console.error("Error creating reservation:", error);
-    return res.status(500).json({
-      error: "Error creating reservation"
-    });
+    return res.status(500).json({ error: "Error creating reservation" });
   }
 }

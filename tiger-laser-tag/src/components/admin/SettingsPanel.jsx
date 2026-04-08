@@ -1,6 +1,6 @@
 // src/components/admin/SettingsPanel.jsx
 import { useState, useEffect } from 'react';
-import { Save, RefreshCw, AlertCircle, Calendar, Zap, CheckCircle, Lock, Unlock, X, Clock } from 'lucide-react';
+import { Save, RefreshCw, AlertCircle, Calendar, Zap, CheckCircle, Lock, Unlock, X, Clock, Users } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { Button } from '@/components/ui/button';
 
@@ -16,6 +16,12 @@ export default function SettingsPanel() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
+  const [sharedDate, setSharedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [sharedSlotsForDate, setSharedSlotsForDate] = useState([]);
+  const [sharedPlan, setSharedPlan] = useState(null);
+  const [sharedModalOpen, setSharedModalOpen] = useState(false);
+  const [sharedMessage, setSharedMessage] = useState(null);
+  const [loadingShared, setLoadingShared] = useState(false);
 
   // Estado para generación de slots
   const [slotRange, setSlotRange] = useState({
@@ -37,6 +43,7 @@ export default function SettingsPanel() {
     loadSettings();
     loadBlockedSlots();
     loadBlockedDates();
+    loadSharedPlan();
   }, []);
 
   const loadSettings = async () => {
@@ -345,6 +352,75 @@ export default function SettingsPanel() {
     setSelectedDate(date);
     await loadSlotsForDate(date);
     setBlockModalOpen(true);
+  };
+
+  // Cargar el plan compartido (active: false)
+  const loadSharedPlan = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('plans')
+        .select('*')
+        .eq('active', false)
+        .single();
+      if (error) throw error;
+      setSharedPlan(data);
+    } catch (error) {
+      console.error('Error loading shared plan:', error);
+    }
+  };
+
+  // Cargar slots de una fecha para el modal compartido
+  const loadSharedSlotsForDate = async (date) => {
+    setLoadingShared(true);
+    try {
+      const { data, error } = await supabase
+        .from('time_slots')
+        .select('id, date, start_time, end_time, status, shared_plan_id, max_capacity')
+        .eq('date', date)
+        .order('start_time');
+      if (error) throw error;
+      setSharedSlotsForDate(data || []);
+    } catch (error) {
+      console.error('Error loading slots:', error);
+    } finally {
+      setLoadingShared(false);
+    }
+  };
+
+  // Asignar plan compartido a un slot
+  const assignSharedPlan = async (slotId) => {
+    if (!sharedPlan) {
+      setSharedMessage({ type: 'error', text: 'No hay ningún plan compartido configurado (active: false)' });
+      return;
+    }
+    try {
+      const { error } = await supabase
+        .from('time_slots')
+        .update({ shared_plan_id: sharedPlan.id })
+        .eq('id', slotId);
+      if (error) throw error;
+      await loadSharedSlotsForDate(sharedDate);
+      setSharedMessage({ type: 'success', text: 'Slot asignado como compartido' });
+      setTimeout(() => setSharedMessage(null), 3000);
+    } catch (error) {
+      setSharedMessage({ type: 'error', text: 'Error al asignar: ' + error.message });
+    }
+  };
+
+  // Quitar plan compartido de un slot
+  const removeSharedPlan = async (slotId) => {
+    try {
+      const { error } = await supabase
+        .from('time_slots')
+        .update({ shared_plan_id: null })
+        .eq('id', slotId);
+      if (error) throw error;
+      await loadSharedSlotsForDate(sharedDate);
+      setSharedMessage({ type: 'success', text: 'Slot convertido a reserva normal' });
+      setTimeout(() => setSharedMessage(null), 3000);
+    } catch (error) {
+      setSharedMessage({ type: 'error', text: 'Error al quitar: ' + error.message });
+    }
   };
 
   if (loading) {
@@ -678,6 +754,155 @@ export default function SettingsPanel() {
           </div>
         </div>
       )}
+
+      {/* ── Gestión de slots compartidos ── */}
+<div className="bg-white rounded-xl shadow-sm p-6">
+  <div className="mb-6">
+    <h2 className="text-xl font-bold text-tiger-green flex items-center gap-2">
+      <Users size={20} />
+      Slots Compartidos
+    </h2>
+    <p className="text-sm text-gray-500 mt-1">
+      Activa o desactiva el modo compartido en slots específicos.
+      Un slot compartido permite que varios grupos se apunten hasta completar el aforo.
+    </p>
+    {sharedPlan ? (
+      <div className="mt-2 inline-flex items-center gap-2 bg-blue-50 border border-blue-200 text-blue-700 text-xs px-3 py-1 rounded-full">
+        <Users size={12} />
+        Plan compartido activo: <strong>{sharedPlan.name}</strong> — €{sharedPlan.price}/persona
+      </div>
+    ) : (
+      <div className="mt-2 inline-flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-700 text-xs px-3 py-1 rounded-full">
+        <AlertCircle size={12} />
+        No hay ningún plan con active: false configurado
+      </div>
+    )}
+  </div>
+
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        Selecciona una fecha
+      </label>
+      <input
+        type="date"
+        value={sharedDate}
+        min={new Date().toISOString().split('T')[0]}
+        onChange={(e) => setSharedDate(e.target.value)}
+        className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-tiger-orange"
+      />
+    </div>
+    <div className="flex items-end">
+      <Button
+        onClick={async () => {
+          await loadSharedSlotsForDate(sharedDate);
+          setSharedModalOpen(true);
+        }}
+        className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+        disabled={!sharedPlan}
+      >
+        <Users size={16} className="mr-2" />
+        Ver slots del día
+      </Button>
+    </div>
+  </div>
+
+  {sharedMessage && (
+    <div className={`p-3 rounded-lg flex items-center gap-2 text-sm ${
+      sharedMessage.type === 'success'
+        ? 'bg-green-50 text-green-800 border border-green-200'
+        : 'bg-red-50 text-red-800 border border-red-200'
+    }`}>
+      {sharedMessage.type === 'success' ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
+      {sharedMessage.text}
+    </div>
+  )}
+</div>
+
+    {/* ── Modal slots compartidos ── */}
+    {sharedModalOpen && (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+          <div className="p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-tiger-green">
+                Slots del {sharedDate}
+              </h3>
+              <button onClick={() => setSharedModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
+              <strong>Plan:</strong> {sharedPlan?.name} — €{sharedPlan?.price}/persona
+            </div>
+
+            {loadingShared ? (
+              <div className="text-center py-8 text-gray-500">Cargando slots...</div>
+            ) : sharedSlotsForDate.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">No hay slots para este día</div>
+            ) : (
+              <div className="space-y-2">
+                {sharedSlotsForDate.map(slot => {
+                  const isShared = !!slot.shared_plan_id;
+                  const isBlocked = slot.status === 'blocked';
+                  const canToggle = !isBlocked;
+
+                  return (
+                    <div
+                      key={slot.id}
+                      className={`flex justify-between items-center p-3 border rounded-lg ${
+                        isShared ? 'bg-blue-50 border-blue-300' : 'bg-white border-gray-200'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="font-medium">
+                          {slot.start_time?.slice(0, 5)} - {slot.end_time?.slice(0, 5)}
+                        </span>
+                        <span className={`text-xs px-2 py-1 rounded-full ${
+                          isShared
+                            ? 'bg-blue-100 text-blue-700'
+                            : isBlocked
+                              ? 'bg-red-100 text-red-700'
+                              : 'bg-green-100 text-green-700'
+                        }`}>
+                          {isShared ? '🤝 Compartido' : isBlocked ? '🔒 Bloqueado' : '✅ Normal'}
+                        </span>
+                        <span className="text-xs text-gray-400">
+                          Aforo: {slot.max_capacity}
+                        </span>
+                      </div>
+
+                      {canToggle && (
+                        isShared ? (
+                          <button
+                            onClick={() => removeSharedPlan(slot.id)}
+                            className="text-sm text-gray-600 hover:text-red-600 border border-gray-300 hover:border-red-300 px-3 py-1 rounded-lg transition"
+                          >
+                            Quitar compartido
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => assignSharedPlan(slot.id)}
+                            className="text-sm text-blue-600 hover:text-blue-800 border border-blue-300 hover:border-blue-500 px-3 py-1 rounded-lg transition"
+                          >
+                            Activar compartido
+                          </button>
+                        )
+                      )}
+
+                      {isBlocked && (
+                        <span className="text-xs text-gray-400 italic">No disponible</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    )}
 
       {/* ── Generación de slots ── */}
       <div className="bg-white rounded-xl shadow-sm p-6">

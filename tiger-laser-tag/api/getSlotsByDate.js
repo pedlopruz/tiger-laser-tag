@@ -32,6 +32,7 @@ export default async function handler(req, res) {
         status,
         max_capacity,
         date
+        shared_plan_id
       `)
       .eq("date", date)
       .order("start_time");
@@ -97,10 +98,14 @@ export default async function handler(req, res) {
       const isPast = date < todayStr || (date === todayStr && startTime <= currentTime);
       
       // REGLA DE NEGOCIO: Disponible solo si no tiene reservas
-      const isAvailable = 
-        slot.status === "active" && 
-        !isPast && 
-        reservedCount === 0;
+      const isShared = !!slot.shared_plan_id;
+
+  // Cambiar la regla de disponibilidad para slots compartidos:
+      const isAvailable = slot.status === "active" && !isPast && (
+        isShared
+          ? reservedCount < capacity   // compartido: disponible mientras haya hueco
+          : reservedCount === 0        // normal: solo si no hay nadie
+      );
 
       return {
         id: slot.id,
@@ -108,12 +113,16 @@ export default async function handler(req, res) {
         end_time: endTime,
         capacity: capacity,
         reserved: reservedCount,
-        remaining: isAvailable ? capacity : 0,
+        remaining: isAvailable ? capacity - reservedCount : 0,
         isAvailable: isAvailable,
-        isBlocked: reservedCount > 0 || slot.status === 'blocked',
+        isShared: isShared,            
+        shared_plan_id: slot.shared_plan_id, 
+        isBlocked: slot.status === 'blocked' || (!isShared && reservedCount > 0),
         isPast: isPast,
         status: slot.status,
-        statusMessage: reservedCount > 0 ? "Reservado" : (isAvailable ? "Disponible" : "No disponible")
+        statusMessage: isShared
+          ? `${capacity - reservedCount} plazas libres`
+          : reservedCount > 0 ? "Reservado" : (isAvailable ? "Disponible" : "No disponible")
       };
     });
 

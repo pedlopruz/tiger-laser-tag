@@ -229,34 +229,22 @@ export default function SlotPicker({
   function getSlotStyle(slot) {
     const selected = isSelected(slot);
     const disabled = isDisabled(slot);
-    const isConsecutivePossible = selectedSlots.length === 1 && 
-                                  !selected && 
+    const isConsecutivePossible = selectedSlots.length === 1 &&
+                                  !selected &&
                                   areConsecutive(selectedSlots[0], slot);
-    
-    if (selected && selectedSlots.length === 2) {
-      return "bg-tiger-green text-white border-tiger-green";
-    }
-    if (selected) {
-      return "bg-tiger-orange text-white border-tiger-orange";
-    }
-    if (disabled) {
-      return "bg-gray-100 text-gray-400 cursor-not-allowed";
-    }
-    if (isConsecutivePossible) {
-      return "bg-green-50 text-green-700 border-green-300 hover:bg-green-100";
-    }
+
+    if (selected && selectedSlots.length === 2) return "bg-tiger-green text-white border-tiger-green";
+    if (selected) return "bg-tiger-orange text-white border-tiger-orange";
+    if (disabled) return "bg-gray-100 text-gray-400 cursor-not-allowed";
+    if (slot.isShared && !disabled) return "bg-blue-50 text-blue-700 border-blue-300 hover:bg-blue-100";
+    if (isConsecutivePossible) return "bg-green-50 text-green-700 border-green-300 hover:bg-green-100";
     return "bg-white hover:bg-gray-50 border-gray-200";
   }
 
   function getSlotStatusText(slot) {
     if (!isFutureSlot(slot)) return "⏰ Pasado";
-    if (isSlotBlocked(slot)) {
-      // ✅ Mensaje específico para slots bloqueados por admin
-      if (slot.status === 'blocked' && slot.reserved === 0) {
-        return "🚫 No disponible";
-      }
-      return "🔒 Reservado";
-    }
+    if (slot.status === 'blocked' && !slot.isShared) return "🔒 Reservado";
+    if (slot.isShared) return `🤝 ${slot.remaining} plazas`;
     const remaining = getRemaining(slot);
     if (remaining < people) return `⚠️ ${remaining} plazas`;
     return `✅ ${remaining} plazas`;
