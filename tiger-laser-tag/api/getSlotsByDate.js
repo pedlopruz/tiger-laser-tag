@@ -31,7 +31,7 @@ export default async function handler(req, res) {
         end_time,
         status,
         max_capacity,
-        date
+        date,
         shared_plan_id
       `)
       .eq("date", date)
