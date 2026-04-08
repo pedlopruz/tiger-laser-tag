@@ -12,6 +12,20 @@ export default function PlanPicker({ selectedSlots, onSelectPlan }) {
   const isSharedSlot = selectedSlots?.some(s => s.isShared) ?? false;
   const sharedPlanId = selectedSlots?.find(s => s.isShared)?.shared_plan_id ?? null;
 
+  // Calcular duración real de un slot a partir de start_time y end_time
+  const getSlotDurationMinutes = (slot) => {
+    if (!slot?.start_time || !slot?.end_time) return 60;
+    const [startH, startM] = slot.start_time.split(':').map(Number);
+    const [endH, endM] = slot.end_time.split(':').map(Number);
+    return (endH * 60 + endM) - (startH * 60 + startM);
+  };
+
+  const singleSlotDuration = selectedSlots?.[0]
+    ? getSlotDurationMinutes(selectedSlots[0])
+    : 60;
+
+  const requiredDuration = slotCount * singleSlotDuration;
+
   useEffect(() => {
     if (!slotCount) return;
     loadPlans();
@@ -45,24 +59,20 @@ export default function PlanPicker({ selectedSlots, onSelectPlan }) {
     setLoading(false);
   }
 
-  // Filtrar planes por duración — en slot compartido no filtramos, mostramos solo el plan compartido
   const filteredPlans = useMemo(() => {
     if (!plans.length || !slotCount) return [];
 
     if (isSharedSlot) {
-      // Solo mostrar el plan compartido, sin posibilidad de elegir otro
       return plans.filter(p => p.id === sharedPlanId);
     }
 
-    const SLOT_DURATION = 60;
-    const requiredDuration = slotCount * SLOT_DURATION;
+    // Filtrar por duración calculada dinámicamente
     return plans.filter(
       plan => plan.duration_minutes === requiredDuration && plan.active !== false
     );
-  }, [plans, slotCount, isSharedSlot, sharedPlanId]);
+  }, [plans, slotCount, isSharedSlot, sharedPlanId, requiredDuration]);
 
   function handleSelect(plan) {
-    // En slots compartidos no permitir cambiar el plan
     if (isSharedSlot) return;
     setSelectedPlan(plan);
     if (onSelectPlan) onSelectPlan(plan);
@@ -74,12 +84,11 @@ export default function PlanPicker({ selectedSlots, onSelectPlan }) {
         {isSharedSlot ? "Reserva compartida" : "Selecciona tu plan"}
         {slotCount > 0 && !isSharedSlot && (
           <span className="text-sm text-gray-500 ml-2">
-            ({slotCount} hora{slotCount > 1 ? 's' : ''})
+            ({slotCount} hora{slotCount > 1 ? 's' : ''} · {requiredDuration} min)
           </span>
         )}
       </h3>
 
-      {/* Banner informativo para slots compartidos */}
       {isSharedSlot && (
         <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-700">
           <div className="flex items-center gap-2 font-semibold mb-1">
@@ -102,7 +111,7 @@ export default function PlanPicker({ selectedSlots, onSelectPlan }) {
 
       {!loading && !error && filteredPlans.length === 0 && slotCount > 0 && (
         <div className="text-sm text-gray-500 bg-gray-50 p-4 rounded text-center">
-          <p>No hay planes disponibles para {slotCount} hora{slotCount > 1 ? 's' : ''}</p>
+          <p>No hay planes disponibles para {requiredDuration} minutos</p>
           <p className="text-xs mt-1">Por favor, selecciona otra combinación de horarios</p>
         </div>
       )}
@@ -121,7 +130,7 @@ export default function PlanPicker({ selectedSlots, onSelectPlan }) {
             <button
               key={plan.id}
               onClick={() => handleSelect(plan)}
-              disabled={isSharedSlot} // no permite cambiar en modo compartido
+              disabled={isSharedSlot}
               className={`
                 w-full text-left p-5 rounded-xl border transition-all
                 ${isSharedSlot
