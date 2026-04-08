@@ -37,6 +37,10 @@ export default async function handler(req, res) {
       .eq("date", date)
       .order("start_time");
 
+        // ← añade esto
+    console.log("Slots query error:", error);
+    console.log("Slots data length:", slots?.length);
+
     if (error) {
       console.error("Error fetching slots:", error);
       return res.status(500).json({
