@@ -66,9 +66,12 @@ export default function PlanPicker({ selectedSlots, onSelectPlan }) {
       return plans.filter(p => p.id === sharedPlanId);
     }
 
-    // Filtrar por duración calculada dinámicamente
+    // ✅ Debe coincidir tanto en número de slots como en duración total
     return plans.filter(
-      plan => plan.duration_minutes === requiredDuration && plan.active !== false
+      plan =>
+        plan.num_slots === slotCount &&
+        plan.duration_minutes === requiredDuration &&
+        plan.active !== false
     );
   }, [plans, slotCount, isSharedSlot, sharedPlanId, requiredDuration]);
 
@@ -84,7 +87,7 @@ export default function PlanPicker({ selectedSlots, onSelectPlan }) {
         {isSharedSlot ? "Reserva compartida" : "Selecciona tu plan"}
         {slotCount > 0 && !isSharedSlot && (
           <span className="text-sm text-gray-500 ml-2">
-            ({slotCount} hora{slotCount > 1 ? 's' : ''} · {requiredDuration} min)
+            ({slotCount} slot{slotCount > 1 ? 's' : ''} · {requiredDuration} min)
           </span>
         )}
       </h3>
@@ -109,9 +112,9 @@ export default function PlanPicker({ selectedSlots, onSelectPlan }) {
         <div className="text-sm text-red-500 bg-red-50 p-3 rounded">{error}</div>
       )}
 
-      {!loading && !error && filteredPlans.length === 0 && slotCount > 0 && (
+      {!loading && !error && filteredPlans.length === 0 && slotCount > 0 && !isSharedSlot && (
         <div className="text-sm text-gray-500 bg-gray-50 p-4 rounded text-center">
-          <p>No hay planes disponibles para {requiredDuration} minutos</p>
+          <p>No hay planes disponibles para {slotCount} slot{slotCount > 1 ? 's' : ''} de {singleSlotDuration} min ({requiredDuration} min en total)</p>
           <p className="text-xs mt-1">Por favor, selecciona otra combinación de horarios</p>
         </div>
       )}

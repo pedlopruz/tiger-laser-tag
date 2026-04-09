@@ -272,15 +272,11 @@ export default function SettingsPanel() {
     setSaving(true);
     setMessage(null);
     try {
-      // 1️⃣ Leer la duración anterior ANTES de guardar
       const { data: existing } = await supabase
         .from('business_settings')
-        .select('id, slot_duration')
+        .select('id')
         .single();
 
-      const previousSlotDuration = existing?.slot_duration || 60;
-
-      // 2️⃣ Guardar la nueva configuración
       if (existing?.id) {
         const { error } = await supabase
           .from('business_settings')
@@ -294,49 +290,8 @@ export default function SettingsPanel() {
         if (error) throw error;
       }
 
-      // 3️⃣ Actualizar planes solo si cambió la duración
-      if (previousSlotDuration !== settings.slot_duration) {
-        const { data: plans, error: plansError } = await supabase
-          .from('plans')
-          .select('id, active, duration_minutes');
-
-        if (plansError) throw plansError;
-
-        const updates = plans.map(plan => {
-          let newDuration;
-
-          if (plan.active === false) {
-            // Plan compartido → siempre 1 slot
-            newDuration = settings.slot_duration;
-          } else {
-            // Detectar cuántos slots tenía usando la duración ANTERIOR
-            const slotCount = plan.duration_minutes / previousSlotDuration;
-            const roundedSlotCount = slotCount <= 1.5 ? 1 : 2;
-            newDuration = settings.slot_duration * roundedSlotCount;
-          }
-
-          return { id: plan.id, newDuration, oldDuration: plan.duration_minutes };
-        });
-
-        // Aplicar updates solo a los que cambian
-        for (const { id, newDuration, oldDuration } of updates) {
-          if (newDuration !== oldDuration) {
-            await supabase
-              .from('plans')
-              .update({ duration_minutes: newDuration })
-              .eq('id', id);
-          }
-        }
-
-        setMessage({
-          type: 'success',
-          text: `Configuración guardada. Planes actualizados a ${settings.slot_duration} min (1 slot) y ${settings.slot_duration * 2} min (2 slots).`
-        });
-      } else {
-        setMessage({ type: 'success', text: 'Configuración guardada correctamente' });
-      }
-
-      setTimeout(() => setMessage(null), 4000);
+      setMessage({ type: 'success', text: 'Configuración guardada correctamente' });
+      setTimeout(() => setMessage(null), 3000);
     } catch (error) {
       console.error('Error saving settings:', error);
       setMessage({ type: 'error', text: 'Error al guardar la configuración' });
@@ -530,7 +485,6 @@ export default function SettingsPanel() {
                 <option value={45}>45 minutos</option>
                 <option value={60}>60 minutos</option>
                 <option value={90}>90 minutos</option>
-                <option value={120}>120 minutos</option>
               </select>
             </div>
 
