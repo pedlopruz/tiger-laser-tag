@@ -50,7 +50,7 @@ export default function SettingsPanel() {
       const { data, error } = await supabase
         .from('business_settings')
         .select('*')
-        .single();
+        .maybeSingle();
       if (error) throw error;
       if (data) {
         setSettings({
@@ -225,7 +225,7 @@ export default function SettingsPanel() {
       const { data: existing } = await supabase
         .from('business_settings')
         .select('id')
-        .single();
+        .maybeSingle();
 
       if (existing?.id) {
         const { error } = await supabase
