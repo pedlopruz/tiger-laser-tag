@@ -62,18 +62,18 @@ export default function PlanPicker({ selectedSlots, onSelectPlan }) {
   const filteredPlans = useMemo(() => {
     if (!plans.length || !slotCount) return [];
 
-    // Para slots compartidos, mostrar SOLO el plan específico
+    // Para slots compartidos: mostrar SOLO el plan específico (active=false)
     if (isSharedSlot && sharedPlanId) {
       const sharedPlan = plans.find(p => p.id === sharedPlanId);
       return sharedPlan ? [sharedPlan] : [];
     }
 
-    // Para slots normales: mostrar planes activos que coincidan en duración
+    // Para slots normales: mostrar planes activos (active=true) que coincidan
     return plans.filter(
       plan =>
         plan.num_slots === slotCount &&
         plan.duration_minutes === requiredDuration &&
-        plan.active === true  // Cambiado: solo planes activos (true)
+        plan.active === true
     );
   }, [plans, slotCount, isSharedSlot, sharedPlanId, requiredDuration]);
 
@@ -120,6 +120,9 @@ export default function PlanPicker({ selectedSlots, onSelectPlan }) {
             <div>
               <p>No se encontró el plan compartido para este horario</p>
               <p className="text-xs mt-1">ID del plan: {sharedPlanId}</p>
+              <p className="text-xs mt-1 text-gray-400">
+                Verifica que el plan exista en la base de datos con active=false
+              </p>
             </div>
           ) : (
             <div>
@@ -139,6 +142,7 @@ export default function PlanPicker({ selectedSlots, onSelectPlan }) {
       <div className="space-y-4">
         {filteredPlans.map((plan) => {
           const isSelected = selectedPlan?.id === plan.id;
+          const isSharedPlan = plan.active === false;
 
           return (
             <button
@@ -158,9 +162,14 @@ export default function PlanPicker({ selectedSlots, onSelectPlan }) {
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <span className="font-semibold text-lg">{plan.name}</span>
-                    {isSharedSlot && (
+                    {isSharedPlan && (
                       <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
                         Compartido
+                      </span>
+                    )}
+                    {!isSharedPlan && isSelected && (
+                      <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                        Seleccionado
                       </span>
                     )}
                   </div>
@@ -169,16 +178,18 @@ export default function PlanPicker({ selectedSlots, onSelectPlan }) {
                   )}
                   <div className="text-xs text-gray-500 mt-2">
                     {plan.duration_minutes} min · hasta {plan.max_players} jugadores
+                    {isSharedPlan && (
+                      <span className="ml-2 text-blue-600">· Sin mínimo de grupo</span>
+                    )}
                   </div>
                 </div>
                 <div className="text-right ml-4">
                   <div className="font-bold text-xl text-tiger-green">
                     €{plan.price}
                   </div>
-                  <div className="text-xs text-gray-500">por persona</div>
-                  {isSharedSlot && (
-                    <div className="text-xs text-blue-600 mt-1">sin mínimo</div>
-                  )}
+                  <div className="text-xs text-gray-500">
+                    {isSharedPlan ? "por persona" : "total"}
+                  </div>
                 </div>
               </div>
             </button>
