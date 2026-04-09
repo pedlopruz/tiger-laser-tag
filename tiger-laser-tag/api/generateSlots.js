@@ -8,6 +8,8 @@ export default async function handler(req, res) {
   try {
     const { startDate, endDate } = req.body;
 
+    console.log("generateSlots called:", { startDate, endDate });
+
     if (!startDate || !endDate) {
       return res.status(400).json({ error: "startDate y endDate son requeridos" });
     }
@@ -25,7 +27,7 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ error: "Error generating slots" });
+    console.error("Error in generateSlots:", error);
+    return res.status(500).json({ error: error.message ?? "Error generating slots" });
   }
 }
