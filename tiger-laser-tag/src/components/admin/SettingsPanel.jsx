@@ -1,4 +1,3 @@
-// src/components/admin/SettingsPanel.jsx
 import { useState, useEffect } from 'react';
 import { Save, RefreshCw, AlertCircle, Calendar, Zap, CheckCircle, Lock, Unlock, X, Clock, Users } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
@@ -19,6 +18,7 @@ export default function SettingsPanel() {
   const [sharedDate, setSharedDate] = useState(new Date().toISOString().split('T')[0]);
   const [sharedSlotsForDate, setSharedSlotsForDate] = useState([]);
   const [sharedPlan, setSharedPlan] = useState(null);
+  const [availableSharedPlans, setAvailableSharedPlans] = useState([]);
   const [sharedModalOpen, setSharedModalOpen] = useState(false);
   const [sharedMessage, setSharedMessage] = useState(null);
   const [loadingShared, setLoadingShared] = useState(false);
@@ -41,25 +41,30 @@ export default function SettingsPanel() {
     loadSettings();
     loadBlockedSlots();
     loadBlockedDates();
-    loadSharedPlan();
+    loadAllSharedPlans();
   }, []);
 
+  // Cargar configuración - MANEJA MÚLTIPLES FILAS
   const loadSettings = async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
         .from('business_settings')
-        .select('*')
-        .maybeSingle();
+        .select('*');
+      
       if (error) throw error;
-      if (data) {
+      
+      if (data && data.length > 0) {
+        // Tomar el registro más reciente (mayor ID)
+        const latestSettings = data.sort((a, b) => (b.id || 0) - (a.id || 0))[0];
+        
         setSettings({
-          slot_duration: data.slot_duration || 60,
-          max_capacity: data.max_capacity || 20,
-          weekday_start: data.weekday_start || '17:00',
-          weekday_end: data.weekday_end || '23:00',
-          weekend_start: data.weekend_start || '16:00',
-          weekend_end: data.weekend_end || '23:30'
+          slot_duration: latestSettings.slot_duration || 60,
+          max_capacity: latestSettings.max_capacity || 20,
+          weekday_start: latestSettings.weekday_start || '17:00',
+          weekday_end: latestSettings.weekday_end || '23:00',
+          weekend_start: latestSettings.weekend_start || '16:00',
+          weekend_end: latestSettings.weekend_end || '23:30'
         });
       }
     } catch (error) {
@@ -67,6 +72,94 @@ export default function SettingsPanel() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Guardar configuración - MANEJA MÚLTIPLES FILAS
+  const saveSettings = async () => {
+    setSaving(true);
+    setMessage(null);
+    try {
+      const { data: existing } = await supabase
+        .from('business_settings')
+        .select('id');
+
+      if (existing && existing.length > 0) {
+        // Actualizar el primer registro
+        const { error } = await supabase
+          .from('business_settings')
+          .update(settings)
+          .eq('id', existing[0].id);
+        if (error) throw error;
+        
+        // Eliminar duplicados si existen
+        if (existing.length > 1) {
+          const idsToDelete = existing.slice(1).map(r => r.id);
+          await supabase.from('business_settings').delete().in('id', idsToDelete);
+        }
+      } else {
+        // Insertar nuevo registro
+        const { error } = await supabase
+          .from('business_settings')
+          .insert(settings);
+        if (error) throw error;
+      }
+
+      setMessage({ type: 'success', text: 'Configuración guardada correctamente' });
+      setTimeout(() => setMessage(null), 3000);
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      setMessage({ type: 'error', text: 'Error al guardar la configuración' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Cargar TODOS los planes compartidos disponibles
+  const loadAllSharedPlans = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('plans')
+        .select('*')
+        .eq('active', false)
+        .order('duration_minutes', { ascending: true });
+      
+      if (error) throw error;
+      setAvailableSharedPlans(data || []);
+      
+      // Cargar el plan para la duración actual
+      if (data && data.length > 0) {
+        await loadSharedPlanForDuration(settings.slot_duration);
+      }
+    } catch (error) {
+      console.error('Error loading shared plans:', error);
+      setAvailableSharedPlans([]);
+    }
+  };
+
+  // Cargar plan compartido específico para una duración
+  const loadSharedPlanForDuration = async (durationMinutes) => {
+    try {
+      const { data, error } = await supabase
+        .from('plans')
+        .select('*')
+        .eq('active', false)
+        .eq('duration_minutes', durationMinutes)
+        .maybeSingle();
+      
+      if (error) throw error;
+      setSharedPlan(data || null);
+      return data;
+    } catch (error) {
+      console.error('Error loading shared plan for duration:', error);
+      setSharedPlan(null);
+      return null;
+    }
+  };
+
+  // Cuando cambia la duración del slot, actualizar el plan compartido
+  const handleDurationChange = async (newDuration) => {
+    handleChange('slot_duration', parseInt(newDuration));
+    await loadSharedPlanForDuration(parseInt(newDuration));
   };
 
   const loadBlockedSlots = async () => {
@@ -104,7 +197,7 @@ export default function SettingsPanel() {
     try {
       const { data, error } = await supabase
         .from('time_slots')
-        .select('id, date, start_time, end_time, status, reserved_spots')
+        .select('id, date, start_time, end_time, status, reserved_spots, max_capacity')
         .eq('date', date)
         .order('start_time');
       if (error) throw error;
@@ -218,38 +311,6 @@ export default function SettingsPanel() {
 
   const isDayFullyBlocked = (date) => blockedDates.some(b => b.date === date);
 
-  const saveSettings = async () => {
-    setSaving(true);
-    setMessage(null);
-    try {
-      const { data: existing } = await supabase
-        .from('business_settings')
-        .select('id')
-        .maybeSingle();
-
-      if (existing?.id) {
-        const { error } = await supabase
-          .from('business_settings')
-          .update(settings)
-          .eq('id', existing.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('business_settings')
-          .insert(settings);
-        if (error) throw error;
-      }
-
-      setMessage({ type: 'success', text: 'Configuración guardada correctamente' });
-      setTimeout(() => setMessage(null), 3000);
-    } catch (error) {
-      console.error('Error saving settings:', error);
-      setMessage({ type: 'error', text: 'Error al guardar la configuración' });
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const generateSlots = async () => {
     if (!slotRange.startDate || !slotRange.endDate) {
       setGenerateMessage({ type: 'error', text: 'Selecciona un rango de fechas válido' });
@@ -294,21 +355,6 @@ export default function SettingsPanel() {
     setBlockModalOpen(true);
   };
 
-  // ✅ maybeSingle en vez de single — no explota si no hay plan compartido
-  const loadSharedPlan = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('plans')
-        .select('*')
-        .eq('active', false)
-        .maybeSingle();
-      if (error) throw error;
-      setSharedPlan(data || null);
-    } catch (error) {
-      console.error('Error loading shared plan:', error);
-    }
-  };
-
   const loadSharedSlotsForDate = async (date) => {
     setLoadingShared(true);
     try {
@@ -326,19 +372,33 @@ export default function SettingsPanel() {
     }
   };
 
-  const assignSharedPlan = async (slotId) => {
-    if (!sharedPlan) {
-      setSharedMessage({ type: 'error', text: 'No hay ningún plan compartido configurado (active: false)' });
+  const assignSharedPlan = async (slotId, slotDuration) => {
+    // Buscar el plan para esta duración específica
+    let planForDuration = sharedPlan;
+    
+    if (!planForDuration || planForDuration.duration_minutes !== slotDuration) {
+      planForDuration = await loadSharedPlanForDuration(slotDuration);
+    }
+    
+    if (!planForDuration) {
+      setSharedMessage({ 
+        type: 'error', 
+        text: `No hay plan compartido configurado para slots de ${slotDuration} minutos. Crea un plan con active=false y duration_minutes=${slotDuration}` 
+      });
       return;
     }
+    
     try {
       const { error } = await supabase
         .from('time_slots')
-        .update({ shared_plan_id: sharedPlan.id })
+        .update({ shared_plan_id: planForDuration.id })
         .eq('id', slotId);
       if (error) throw error;
       await loadSharedSlotsForDate(sharedDate);
-      setSharedMessage({ type: 'success', text: 'Slot asignado como compartido' });
+      setSharedMessage({ 
+        type: 'success', 
+        text: `Slot asignado como compartido (${slotDuration} min - ${planForDuration.name})` 
+      });
       setTimeout(() => setSharedMessage(null), 3000);
     } catch (error) {
       setSharedMessage({ type: 'error', text: 'Error al asignar: ' + error.message });
@@ -358,6 +418,13 @@ export default function SettingsPanel() {
     } catch (error) {
       setSharedMessage({ type: 'error', text: 'Error al quitar: ' + error.message });
     }
+  };
+
+  // Obtener la duración de un slot basado en start_time y end_time
+  const getSlotDuration = (startTime, endTime) => {
+    const start = new Date(`2000-01-01T${startTime}`);
+    const end = new Date(`2000-01-01T${endTime}`);
+    return (end - start) / (1000 * 60);
   };
 
   if (loading) {
@@ -398,7 +465,7 @@ export default function SettingsPanel() {
               <label className="block text-sm font-medium text-gray-700 mb-2">Duración de cada slot (minutos)</label>
               <select
                 value={settings.slot_duration}
-                onChange={(e) => handleChange('slot_duration', parseInt(e.target.value))}
+                onChange={(e) => handleDurationChange(parseInt(e.target.value))}
                 className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-tiger-orange"
               >
                 <option value={30}>30 minutos</option>
@@ -607,15 +674,24 @@ export default function SettingsPanel() {
             Activa o desactiva el modo compartido en slots específicos.
             Un slot compartido permite que varios grupos se apunten hasta completar el aforo.
           </p>
-          {sharedPlan ? (
-            <div className="mt-2 inline-flex items-center gap-2 bg-blue-50 border border-blue-200 text-blue-700 text-xs px-3 py-1 rounded-full">
-              <Users size={12} />
-              Plan compartido activo: <strong>{sharedPlan.name}</strong> — €{sharedPlan.price}/persona
+          
+          {/* Mostrar planes disponibles por duración */}
+          {availableSharedPlans.length > 0 ? (
+            <div className="mt-2 space-y-1">
+              {availableSharedPlans.map(plan => (
+                <div key={plan.id} className={`inline-flex items-center gap-2 text-xs px-3 py-1 rounded-full mr-2 mb-2 ${plan.duration_minutes === settings.slot_duration ? 'bg-green-100 border border-green-300 text-green-700' : 'bg-gray-100 border border-gray-300 text-gray-600'}`}>
+                  <Users size={12} />
+                  {plan.duration_minutes} min: <strong>{plan.name}</strong> — €{plan.price}/persona
+                  {plan.duration_minutes === settings.slot_duration && (
+                    <span className="ml-1 text-green-600">✓ Activo</span>
+                  )}
+                </div>
+              ))}
             </div>
           ) : (
             <div className="mt-2 inline-flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-700 text-xs px-3 py-1 rounded-full">
               <AlertCircle size={12} />
-              No hay ningún plan con active: false configurado
+              No hay planes compartidos configurados. Crea planes con active=false y duration_minutes=30,60,90
             </div>
           )}
         </div>
@@ -635,7 +711,7 @@ export default function SettingsPanel() {
             <Button
               onClick={async () => { await loadSharedSlotsForDate(sharedDate); setSharedModalOpen(true); }}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-              disabled={!sharedPlan}
+              disabled={availableSharedPlans.length === 0}
             >
               <Users size={16} className="mr-2" />
               Ver slots del día
@@ -661,8 +737,15 @@ export default function SettingsPanel() {
                 <button onClick={() => setSharedModalOpen(false)} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>
               </div>
 
-              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
-                <strong>Plan:</strong> {sharedPlan?.name} — €{sharedPlan?.price}/persona
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm">
+                <p className="font-medium text-blue-800 mb-2">Planes compartidos disponibles:</p>
+                <div className="space-y-1">
+                  {availableSharedPlans.map(plan => (
+                    <div key={plan.id} className="text-xs text-blue-700">
+                      • {plan.duration_minutes} minutos: <strong>{plan.name}</strong> (€{plan.price}/persona)
+                    </div>
+                  ))}
+                </div>
               </div>
 
               {loadingShared ? (
@@ -674,10 +757,14 @@ export default function SettingsPanel() {
                   {sharedSlotsForDate.map(slot => {
                     const isShared = !!slot.shared_plan_id;
                     const isBlocked = slot.status === 'blocked';
+                    const slotDuration = getSlotDuration(slot.start_time, slot.end_time);
+                    const planForThisSlot = availableSharedPlans.find(p => p.duration_minutes === slotDuration);
+                    
                     return (
                       <div key={slot.id} className={`flex justify-between items-center p-3 border rounded-lg ${isShared ? 'bg-blue-50 border-blue-300' : 'bg-white border-gray-200'}`}>
                         <div className="flex items-center gap-3">
                           <span className="font-medium">{slot.start_time?.slice(0,5)} - {slot.end_time?.slice(0,5)}</span>
+                          <span className="text-xs text-gray-500">({slotDuration} min)</span>
                           <span className={`text-xs px-2 py-1 rounded-full ${isShared ? 'bg-blue-100 text-blue-700' : isBlocked ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
                             {isShared ? '🤝 Compartido' : isBlocked ? '🔒 Bloqueado' : '✅ Normal'}
                           </span>
@@ -690,8 +777,13 @@ export default function SettingsPanel() {
                               Quitar compartido
                             </button>
                           ) : (
-                            <button onClick={() => assignSharedPlan(slot.id)} className="text-sm text-blue-600 hover:text-blue-800 border border-blue-300 hover:border-blue-500 px-3 py-1 rounded-lg transition">
-                              Activar compartido
+                            <button 
+                              onClick={() => assignSharedPlan(slot.id, slotDuration)} 
+                              className={`text-sm px-3 py-1 rounded-lg transition ${planForThisSlot ? 'text-blue-600 hover:text-blue-800 border border-blue-300 hover:border-blue-500' : 'text-gray-400 border border-gray-200 cursor-not-allowed'}`}
+                              disabled={!planForThisSlot}
+                              title={!planForThisSlot ? `No hay plan compartido para duración de ${slotDuration} minutos` : ''}
+                            >
+                              Activar compartido {planForThisSlot && `(${planForThisSlot.duration_minutes}min)`}
                             </button>
                           )
                         )}
