@@ -41,7 +41,7 @@ export default function PlanPicker({ selectedSlots, onSelectPlan }) {
       setSelectedPlan(sharedPlan);
       if (onSelectPlan) onSelectPlan(sharedPlan);
     }
-  }, [isSharedSlot, plans, sharedPlanId]);
+  }, [isSharedSlot, plans, sharedPlanId, onSelectPlan]);
 
   async function loadPlans() {
     setLoading(true);
@@ -62,16 +62,18 @@ export default function PlanPicker({ selectedSlots, onSelectPlan }) {
   const filteredPlans = useMemo(() => {
     if (!plans.length || !slotCount) return [];
 
-    if (isSharedSlot) {
-      return plans.filter(p => p.id === sharedPlanId);
+    // Para slots compartidos, mostrar SOLO el plan específico
+    if (isSharedSlot && sharedPlanId) {
+      const sharedPlan = plans.find(p => p.id === sharedPlanId);
+      return sharedPlan ? [sharedPlan] : [];
     }
 
-    // ✅ Debe coincidir tanto en número de slots como en duración total
+    // Para slots normales: mostrar planes activos que coincidan en duración
     return plans.filter(
       plan =>
         plan.num_slots === slotCount &&
         plan.duration_minutes === requiredDuration &&
-        plan.active !== false
+        plan.active === true  // Cambiado: solo planes activos (true)
     );
   }, [plans, slotCount, isSharedSlot, sharedPlanId, requiredDuration]);
 
@@ -112,10 +114,19 @@ export default function PlanPicker({ selectedSlots, onSelectPlan }) {
         <div className="text-sm text-red-500 bg-red-50 p-3 rounded">{error}</div>
       )}
 
-      {!loading && !error && filteredPlans.length === 0 && slotCount > 0 && !isSharedSlot && (
+      {!loading && !error && filteredPlans.length === 0 && slotCount > 0 && (
         <div className="text-sm text-gray-500 bg-gray-50 p-4 rounded text-center">
-          <p>No hay planes disponibles para {slotCount} slot{slotCount > 1 ? 's' : ''} de {singleSlotDuration} min ({requiredDuration} min en total)</p>
-          <p className="text-xs mt-1">Por favor, selecciona otra combinación de horarios</p>
+          {isSharedSlot ? (
+            <div>
+              <p>No se encontró el plan compartido para este horario</p>
+              <p className="text-xs mt-1">ID del plan: {sharedPlanId}</p>
+            </div>
+          ) : (
+            <div>
+              <p>No hay planes disponibles para {slotCount} slot{slotCount > 1 ? 's' : ''} de {singleSlotDuration} min ({requiredDuration} min en total)</p>
+              <p className="text-xs mt-1">Por favor, selecciona otra combinación de horarios</p>
+            </div>
+          )}
         </div>
       )}
 
