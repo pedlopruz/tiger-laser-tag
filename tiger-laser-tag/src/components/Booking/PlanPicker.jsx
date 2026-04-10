@@ -64,13 +64,14 @@ export default function PlanPicker({ selectedSlots, onSelectPlan }) {
   const filteredPlans = useMemo(() => {
     if (!plans.length || !slotCount) return [];
 
-    // Para slots compartidos: mostrar SOLO el plan específico (active=false)
-    if (isSharedSlot && sharedPlanId) {
+    // ✅ Slot compartido — siempre mostrar solo el plan compartido
+    if (isSharedSlot) {
+      if (!sharedPlanId) return []; // no mostrar nada si no hay plan compartido para este nº de slots
       const sharedPlan = plans.find(p => p.id === sharedPlanId);
       return sharedPlan ? [sharedPlan] : [];
     }
 
-    // Para slots normales: mostrar planes activos (active=true) que coincidan
+    // Slots normales — mostrar planes activos que coincidan
     return plans.filter(
       plan =>
         plan.num_slots === slotCount &&
@@ -138,6 +139,27 @@ export default function PlanPicker({ selectedSlots, onSelectPlan }) {
       {!loading && !error && slotCount === 0 && (
         <div className="text-sm text-gray-500 bg-gray-50 p-4 rounded text-center">
           Selecciona uno o dos horarios para ver los planes disponibles
+        </div>
+      )}
+
+      {!loading && !error && filteredPlans.length === 0 && slotCount > 0 && (
+        <div className="text-sm text-gray-500 bg-gray-50 p-4 rounded text-center">
+          {isSharedSlot ? (
+            <div>
+              <p>No hay plan compartido disponible para {slotCount} slot{slotCount > 1 ? 's' : ''}</p>
+              {slotCount === 2 && (
+                <p className="text-xs mt-1 text-amber-600">
+                  ⚠️ Este horario compartido no tiene configurado un plan de 2 slots.
+                  Selecciona solo 1 slot o contacta con el administrador.
+                </p>
+              )}
+            </div>
+          ) : (
+            <div>
+              <p>No hay planes disponibles para {slotCount} slot{slotCount > 1 ? 's' : ''} de {singleSlotDuration} min ({requiredDuration} min en total)</p>
+              <p className="text-xs mt-1">Por favor, selecciona otra combinación de horarios</p>
+            </div>
+          )}
         </div>
       )}
 
