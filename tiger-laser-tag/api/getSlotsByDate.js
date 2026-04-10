@@ -32,7 +32,7 @@ export default async function handler(req, res) {
         status,
         max_capacity,
         date,
-        shared_plan_id
+        shared_plan_id,
         shared_plan_id_2slots
       `)
       .eq("date", date)
