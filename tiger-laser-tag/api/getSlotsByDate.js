@@ -33,6 +33,7 @@ export default async function handler(req, res) {
         max_capacity,
         date,
         shared_plan_id
+        shared_plan_id_2slots
       `)
       .eq("date", date)
       .order("start_time");
@@ -130,6 +131,7 @@ export default async function handler(req, res) {
         isAvailable: isAvailable,
         isShared: isShared,
         shared_plan_id: slot.shared_plan_id,
+        shared_plan_id_2slots: slot.shared_plan_id_2slots,
         isBlocked: isBlocked,
         isPast: isPast,
         status: slot.status,

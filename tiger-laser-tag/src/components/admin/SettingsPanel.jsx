@@ -373,31 +373,31 @@ export default function SettingsPanel() {
   };
 
   const assignSharedPlan = async (slotId, slotDuration) => {
-    // Buscar el plan para esta duración específica
-    let planForDuration = sharedPlan;
-    
-    if (!planForDuration || planForDuration.duration_minutes !== slotDuration) {
-      planForDuration = await loadSharedPlanForDuration(slotDuration);
-    }
-    
-    if (!planForDuration) {
+    let planFor1Slot = availableSharedPlans.find(p => p.duration_minutes === slotDuration);
+    let planFor2Slots = availableSharedPlans.find(p => p.duration_minutes === slotDuration * 2);
+
+    if (!planFor1Slot) {
       setSharedMessage({ 
         type: 'error', 
-        text: `No hay plan compartido configurado para slots de ${slotDuration} minutos. Crea un plan con active=false y duration_minutes=${slotDuration}` 
+        text: `No hay plan compartido para ${slotDuration} minutos (1 slot)` 
       });
       return;
     }
-    
+
     try {
       const { error } = await supabase
         .from('time_slots')
-        .update({ shared_plan_id: planForDuration.id })
+        .update({ 
+          shared_plan_id: planFor1Slot.id,
+          shared_plan_id_2slots: planFor2Slots?.id || null  // ← null si no existe
+        })
         .eq('id', slotId);
       if (error) throw error;
+
       await loadSharedSlotsForDate(sharedDate);
       setSharedMessage({ 
         type: 'success', 
-        text: `Slot asignado como compartido (${slotDuration} min - ${planForDuration.name})` 
+        text: `Slot compartido activado${planFor2Slots ? ' (también disponible para 2 slots)' : ''}` 
       });
       setTimeout(() => setSharedMessage(null), 3000);
     } catch (error) {
@@ -409,7 +409,7 @@ export default function SettingsPanel() {
     try {
       const { error } = await supabase
         .from('time_slots')
-        .update({ shared_plan_id: null })
+        .update({ shared_plan_id: null, shared_plan_id_2slots: null })
         .eq('id', slotId);
       if (error) throw error;
       await loadSharedSlotsForDate(sharedDate);

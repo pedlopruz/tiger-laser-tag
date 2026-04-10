@@ -10,7 +10,9 @@ export default function PlanPicker({ selectedSlots, onSelectPlan }) {
 
   // Detectar si alguno de los slots seleccionados es compartido
   const isSharedSlot = selectedSlots?.some(s => s.isShared) ?? false;
-  const sharedPlanId = selectedSlots?.find(s => s.isShared)?.shared_plan_id ?? null;
+  const sharedPlanId = slotCount === 2
+  ? selectedSlots?.find(s => s.isShared)?.shared_plan_id_2slots
+  : selectedSlots?.find(s => s.isShared)?.shared_plan_id;
 
   // Calcular duración real de un slot a partir de start_time y end_time
   const getSlotDurationMinutes = (slot) => {
