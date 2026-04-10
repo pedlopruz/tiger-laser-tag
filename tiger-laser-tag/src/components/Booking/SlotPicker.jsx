@@ -45,9 +45,19 @@ export default function SlotPicker({
 
   function areConsecutive(a, b) {
     if (!a?.start_time || !b?.start_time || !a?.end_time) return false;
-    // El slot B empieza exactamente donde termina el slot A
-    return a.end_time.slice(0, 5) === b.start_time.slice(0, 5) ||
-          b.end_time.slice(0, 5) === a.start_time.slice(0, 5);
+
+    const timesMatch =
+      a.end_time.slice(0, 5) === b.start_time.slice(0, 5) ||
+      b.end_time.slice(0, 5) === a.start_time.slice(0, 5);
+
+    if (!timesMatch) return false;
+
+    // ✅ Si el primer slot es compartido, el segundo también debe serlo
+    if (a.isShared && !b.isShared) return false;
+    // ✅ Si el primer slot es normal, el segundo no puede ser compartido
+    if (!a.isShared && b.isShared) return false;
+
+    return true;
   }
 
   function isFutureSlot(slot) {
@@ -65,12 +75,9 @@ export default function SlotPicker({
 
   // ✅ ACTUALIZADO: Verificar si el slot está bloqueado (por reserva O por admin)
   function isSlotBlocked(slot) {
-    // Bloqueado si tiene reservas
-    if (slot.reserved > 0) return true;
-    // Bloqueado si el status es 'blocked' (bloqueado por admin)
     if (slot.status === 'blocked') return true;
-    // Bloqueado si la propiedad isBlocked está activa
-    if (slot.isBlocked === true) return true;
+    // ✅ Para slots normales, bloqueado si tiene reservas
+    if (!slot.isShared && slot.reserved > 0) return true;
     return false;
   }
 
@@ -207,22 +214,33 @@ export default function SlotPicker({
 
   function isDisabled(slot) {
     if (!isFutureSlot(slot)) return true;
-    if (isSlotBlocked(slot)) return true;
-    
-    const remaining = getRemaining(slot);
-    if (remaining < people) return true;
-    
+
+    // ✅ Slot bloqueado por admin — siempre deshabilitado
+    if (slot.status === 'blocked') return true;
+
+    // ✅ Slot normal con reserva — deshabilitado
+    if (!slot.isShared && slot.reserved > 0) return true;
+
+    // ✅ Slot compartido sin plazas — deshabilitado
+    if (slot.isShared && slot.remaining < people) return true;
+
+    // ✅ Slot normal sin plazas
+    if (!slot.isShared) {
+      const remaining = getRemaining(slot);
+      if (remaining < people) return true;
+    }
+
     if (selectedSlots.length === 1) {
       const first = selectedSlots[0];
       const isSame = slot.id === first.id;
       const isConsecutive = areConsecutive(first, slot);
       return !(isSame || (maxSlots > 1 && isConsecutive));
     }
-    
+
     if (selectedSlots.length === 2) {
       return !isSelected(slot);
     }
-    
+
     return false;
   }
 

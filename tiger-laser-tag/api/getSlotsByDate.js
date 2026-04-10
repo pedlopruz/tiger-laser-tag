@@ -104,12 +104,19 @@ export default async function handler(req, res) {
       // REGLA DE NEGOCIO: Disponible solo si no tiene reservas
       const isShared = !!slot.shared_plan_id;
 
+      let isAvailable;
+      let isBlocked;
+
   // Cambiar la regla de disponibilidad para slots compartidos:
-      const isAvailable = slot.status === "active" && !isPast && (
-        isShared
-          ? reservedCount < capacity   // compartido: disponible mientras haya hueco
-          : reservedCount === 0        // normal: solo si no hay nadie
-      );
+      if (isShared) {
+        // ✅ Compartido: disponible mientras haya plazas y no esté bloqueado por admin
+        isAvailable = slot.status === "active" && !isPast && reservedCount < capacity;
+        isBlocked = slot.status === 'blocked'; // solo bloqueado si admin lo bloqueó
+      } else {
+        // Normal: disponible solo si no hay nadie
+        isAvailable = slot.status === "active" && !isPast && reservedCount === 0;
+        isBlocked = reservedCount > 0 || slot.status === 'blocked';
+      }
 
       return {
         id: slot.id,
@@ -117,15 +124,17 @@ export default async function handler(req, res) {
         end_time: endTime,
         capacity: capacity,
         reserved: reservedCount,
-        remaining: isAvailable ? capacity - reservedCount : 0,
+        remaining: isShared
+          ? Math.max(capacity - reservedCount, 0)  // ✅ plazas reales restantes
+          : (isAvailable ? capacity : 0),
         isAvailable: isAvailable,
-        isShared: isShared,            
-        shared_plan_id: slot.shared_plan_id, 
-        isBlocked: slot.status === 'blocked' || (!isShared && reservedCount > 0),
+        isShared: isShared,
+        shared_plan_id: slot.shared_plan_id,
+        isBlocked: isBlocked,
         isPast: isPast,
         status: slot.status,
         statusMessage: isShared
-          ? `${capacity - reservedCount} plazas libres`
+          ? `${Math.max(capacity - reservedCount, 0)} plazas libres`
           : reservedCount > 0 ? "Reservado" : (isAvailable ? "Disponible" : "No disponible")
       };
     });
