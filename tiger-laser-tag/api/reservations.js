@@ -92,6 +92,7 @@ async function accessReservation(req, res, { code, email }) {
       .eq("reservation_code", code)
       .eq("email", email)
       .eq("status", "pending")
+      .eq("status", "confirmed") 
       .single();
 
     console.log("Resultado de la consulta:");

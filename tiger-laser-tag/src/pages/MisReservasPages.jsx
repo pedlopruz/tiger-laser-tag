@@ -484,6 +484,7 @@ export default function MisReservas() {
                   </div>
 
                   <div className="p-6 space-y-6">
+                    {/* Información básica - Siempre visible */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                         <Calendar className="text-tiger-green" size={20} />
@@ -515,171 +516,172 @@ export default function MisReservas() {
                       </div>
                     </div>
 
-                    {/* Botón de CONFIRMAR RESERVA - Solo para reservas pendientes */}
+                    {/* ============================================ */}
+                    {/* SECCIÓN EXCLUSIVA PARA RESERVAS PENDIENTES */}
+                    {/* ============================================ */}
                     {reservation.status === 'pending' && (
-                      <div className="border-t pt-6">
-                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
-                          <p className="text-amber-800 text-sm flex items-start gap-2">
-                            <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
-                            <span>
-                              Tu reserva está pendiente de confirmación. Una vez confirmada, no podrás modificar los datos.
-                              Te recomendamos confirmarla lo antes posible para asegurar tu plaza.
-                            </span>
-                          </p>
-                        </div>
-                        <Button
-                          onClick={confirmReservation}
-                          disabled={confirmLoading}
-                          className="w-full bg-green-600 hover:bg-green-700 text-white py-3 text-base font-bold"
-                        >
-                          {confirmLoading ? (
-                            <span className="flex items-center justify-center gap-2">
-                              <span className="animate-spin">⏳</span>
-                              Confirmando...
-                            </span>
-                          ) : (
-                            <span className="flex items-center justify-center gap-2">
-                              <CheckSquare size={18} />
-                              ✅ Confirmar reserva
-                            </span>
-                          )}
-                        </Button>
-                      </div>
-                    )}
-
-                    {/* Modificar jugadores - Solo para reservas pendientes */}
-                    {reservation.status === 'pending' && (
-                      <div className="border-t pt-6">
-                        <h3 className="font-semibold text-tiger-green mb-4">Modificar número de jugadores</h3>
-                        <div className="flex items-center justify-between flex-wrap gap-4">
-                          <div className="flex items-center gap-3">
-                            <span className="text-gray-600">Jugadores:</span>
-                            <input
-                              type="number"
-                              min={reservation.people}
-                              value={people}
-                              onChange={(e) => setPeople(Number(e.target.value))}
-                              className="border rounded-lg px-3 py-2 w-24 text-center focus:ring-2 focus:ring-tiger-orange"
-                            />
+                      <>
+                        {/* Botón de CONFIRMAR RESERVA */}
+                        <div className="border-t pt-6">
+                          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+                            <p className="text-amber-800 text-sm flex items-start gap-2">
+                              <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
+                              <span>
+                                Tu reserva está pendiente de confirmación. Una vez confirmada, no podrás modificar los datos.
+                                Te recomendamos confirmarla lo antes posible para asegurar tu plaza.
+                              </span>
+                            </p>
                           </div>
                           <Button
-                            onClick={updatePlayers}
-                            disabled={updateLoading || people === reservation.people}
-                            className="bg-tiger-green hover:bg-tiger-green/90 text-white"
+                            onClick={confirmReservation}
+                            disabled={confirmLoading}
+                            className="w-full bg-green-600 hover:bg-green-700 text-white py-3 text-base font-bold"
                           >
-                            {updateLoading ? "Actualizando..." : "Actualizar jugadores"}
+                            {confirmLoading ? (
+                              <span className="flex items-center justify-center gap-2">
+                                <span className="animate-spin">⏳</span>
+                                Confirmando...
+                              </span>
+                            ) : (
+                              <span className="flex items-center justify-center gap-2">
+                                <CheckSquare size={18} />
+                                ✅ Confirmar reserva
+                              </span>
+                            )}
                           </Button>
                         </div>
 
-                        <AnimatePresence>
-                          {showExtraWarning && (
-                            <motion.div
-                              initial={{ opacity: 0, y: -6 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, y: -6 }}
-                              className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg"
+                        {/* Modificar jugadores */}
+                        <div className="border-t pt-6">
+                          <h3 className="font-semibold text-tiger-green mb-4">Modificar número de jugadores</h3>
+                          <div className="flex items-center justify-between flex-wrap gap-4">
+                            <div className="flex items-center gap-3">
+                              <span className="text-gray-600">Jugadores:</span>
+                              <input
+                                type="number"
+                                min={reservation.people}
+                                value={people}
+                                onChange={(e) => setPeople(Number(e.target.value))}
+                                className="border rounded-lg px-3 py-2 w-24 text-center focus:ring-2 focus:ring-tiger-orange"
+                              />
+                            </div>
+                            <Button
+                              onClick={updatePlayers}
+                              disabled={updateLoading || people === reservation.people}
+                              className="bg-tiger-green hover:bg-tiger-green/90 text-white"
                             >
-                              <p className="text-sm text-amber-800">
-                                💡 Al superar los 10 jugadores se generará un pago adicional de <strong>€{extra}</strong>
-                              </p>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
+                              {updateLoading ? "Actualizando..." : "Actualizar jugadores"}
+                            </Button>
+                          </div>
 
-                        <AnimatePresence>
-                          {message && message.includes("Jugadores") && (
-                            <motion.div
-                              initial={{ opacity: 0, y: 6 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0 }}
-                              className="mt-4 p-3 bg-green-50 border border-green-200 text-green-700 text-sm rounded-lg flex items-center gap-2"
-                            >
-                              <CheckCircle size={16} />
-                              {message}
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    )}
-
-                    {/* Cambiar horario - Solo para reservas pendientes */}
-                    {reservation.status === 'pending' && (
-                      <div className="border-t pt-6">
-                        <h3 className="font-semibold text-tiger-green mb-4">Cambiar fecha y horario</h3>
-                        <CalendarPicker
-                          initialDate={reservation?.time_slots?.date}
-                          onSelectDate={(date) => {
-                            setSelectedDate(date);
-                            setSelectedSlots([]);
-                          }}
-                        />
-
-                        {selectedDate && (
-                          <>
-                            <p className="text-sm text-gray-500 mt-3 mb-2">
-                              {requiredSlots === 2
-                                ? "⚠️ Tu reserva original era de 2 horas, selecciona 2 horas consecutivas"
-                                : "Selecciona 1 hora disponible"}
-                            </p>
-                            <SlotPickerEdit
-                              key={selectedDate}
-                              date={selectedDate}
-                              people={people}
-                              maxSlots={requiredSlots}
-                              minSlots={requiredSlots}
-                              onSelectSlots={(slots) => setSelectedSlots(slots)}
-                            />
-                          </>
-                        )}
-
-                        <AnimatePresence>
-                          {selectedSlots.length === requiredSlots && (
-                            <motion.div
-                              initial={{ opacity: 0, y: 6 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0 }}
-                            >
-                              <Button
-                                onClick={updateSlot}
-                                disabled={updateLoading}
-                                className="w-full mt-4 bg-tiger-orange hover:bg-tiger-orange/90 text-white"
+                          <AnimatePresence>
+                            {showExtraWarning && (
+                              <motion.div
+                                initial={{ opacity: 0, y: -6 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -6 }}
+                                className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg"
                               >
-                                {updateLoading ? (
-                                  <span className="flex items-center justify-center gap-2">
-                                    <span className="animate-spin">⏳</span>
-                                    Cambiando...
-                                  </span>
-                                ) : "Confirmar cambio de horario"}
-                              </Button>
-                            </motion.div>
+                                <p className="text-sm text-amber-800">
+                                  💡 Al superar los 10 jugadores se generará un pago adicional de <strong>€{extra}</strong>
+                                </p>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+
+                          <AnimatePresence>
+                            {message && message.includes("Jugadores") && (
+                              <motion.div
+                                initial={{ opacity: 0, y: 6 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0 }}
+                                className="mt-4 p-3 bg-green-50 border border-green-200 text-green-700 text-sm rounded-lg flex items-center gap-2"
+                              >
+                                <CheckCircle size={16} />
+                                {message}
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+
+                        {/* Cambiar horario */}
+                        <div className="border-t pt-6">
+                          <h3 className="font-semibold text-tiger-green mb-4">Cambiar fecha y horario</h3>
+                          <CalendarPicker
+                            initialDate={reservation?.time_slots?.date}
+                            onSelectDate={(date) => {
+                              setSelectedDate(date);
+                              setSelectedSlots([]);
+                            }}
+                          />
+
+                          {selectedDate && (
+                            <>
+                              <p className="text-sm text-gray-500 mt-3 mb-2">
+                                {requiredSlots === 2
+                                  ? "⚠️ Tu reserva original era de 2 horas, selecciona 2 horas consecutivas"
+                                  : "Selecciona 1 hora disponible"}
+                              </p>
+                              <SlotPickerEdit
+                                key={selectedDate}
+                                date={selectedDate}
+                                people={people}
+                                maxSlots={requiredSlots}
+                                minSlots={requiredSlots}
+                                onSelectSlots={(slots) => setSelectedSlots(slots)}
+                              />
+                            </>
                           )}
-                        </AnimatePresence>
-                      </div>
+
+                          <AnimatePresence>
+                            {selectedSlots.length === requiredSlots && (
+                              <motion.div
+                                initial={{ opacity: 0, y: 6 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0 }}
+                              >
+                                <Button
+                                  onClick={updateSlot}
+                                  disabled={updateLoading}
+                                  className="w-full mt-4 bg-tiger-orange hover:bg-tiger-orange/90 text-white"
+                                >
+                                  {updateLoading ? (
+                                    <span className="flex items-center justify-center gap-2">
+                                      <span className="animate-spin">⏳</span>
+                                      Cambiando...
+                                    </span>
+                                  ) : "Confirmar cambio de horario"}
+                                </Button>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+
+                        {/* Cancelar reserva */}
+                        <div className="border-t pt-6">
+                          <Button
+                            onClick={cancelReservation}
+                            disabled={cancelLoading}
+                            variant="destructive"
+                            className="w-full bg-red-600 hover:bg-red-700 text-white"
+                          >
+                            {cancelLoading ? (
+                              <span className="flex items-center justify-center gap-2">
+                                <span className="animate-spin">⏳</span>
+                                Cancelando...
+                              </span>
+                            ) : "Cancelar reserva"}
+                          </Button>
+                          <p className="text-xs text-gray-500 text-center mt-3">
+                            ⚠️ Esta acción no se puede deshacer
+                          </p>
+                        </div>
+                      </>
                     )}
 
-                    {/* Cancelar reserva - Solo para reservas pendientes */}
-                    {reservation.status === 'pending' && (
-                      <div className="border-t pt-6">
-                        <Button
-                          onClick={cancelReservation}
-                          disabled={cancelLoading}
-                          variant="destructive"
-                          className="w-full bg-red-600 hover:bg-red-700 text-white"
-                        >
-                          {cancelLoading ? (
-                            <span className="flex items-center justify-center gap-2">
-                              <span className="animate-spin">⏳</span>
-                              Cancelando...
-                            </span>
-                          ) : "Cancelar reserva"}
-                        </Button>
-                        <p className="text-xs text-gray-500 text-center mt-3">
-                          ⚠️ Esta acción no se puede deshacer
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Mensaje para reservas confirmadas */}
+                    {/* ============================================ */}
+                    {/* SECCIÓN EXCLUSIVA PARA RESERVAS CONFIRMADAS */}
+                    {/* ============================================ */}
                     {reservation.status === 'confirmed' && (
                       <div className="border-t pt-6">
                         <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
