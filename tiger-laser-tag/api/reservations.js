@@ -78,7 +78,7 @@ async function accessReservation(req, res, { code, email }) {
 
   try {
     console.log("📡 Consultando Supabase...");
-    console.log("Parámetros:", { code, email, status: "pending" });
+    console.log("Parámetros:", { code, email, status: ["pending", "confirmed"] });
 
     const { data: reservation, error } = await supabaseAdmin
       .from("reservations")
@@ -92,7 +92,7 @@ async function accessReservation(req, res, { code, email }) {
       .eq("reservation_code", code)
       .eq("email", email)
       .in("status", ["pending", "confirmed"])
-      .single();
+      .maybeSingle();
 
     console.log("Resultado de la consulta:");
     console.log("- Error:", error);
