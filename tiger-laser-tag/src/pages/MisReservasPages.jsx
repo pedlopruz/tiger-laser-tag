@@ -55,6 +55,18 @@ export default function MisReservas() {
     setLoading(false);
   }
 
+  // Función para limpiar y buscar otra reserva
+  function handleSearchAnother() {
+    setReservation(null);
+    setCancelled(false);
+    setSelectedDate(null);
+    setSelectedSlots([]);
+    setError("");
+    setMessage("");
+    setCode("");
+    setEmail("");
+  }
+
   // Función para confirmar la reserva
   async function confirmReservation() {
     if (!confirm("¿Confirmar esta reserva? Una vez confirmada no podrás modificarla.")) return;
@@ -366,7 +378,7 @@ export default function MisReservas() {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0 }}
-                className="bg-white rounded-2xl shadow-xl p-10 text-center"
+                className="bg-white rounded-2xl shadow-xl p-10 text-center mb-8"
               >
                 <div className="inline-flex items-center justify-center w-20 h-20 bg-red-100 rounded-full mb-6">
                   <XCircle className="text-red-500" size={40} />
@@ -376,11 +388,7 @@ export default function MisReservas() {
                   Tu reserva ha sido cancelada correctamente. Si tienes alguna duda, contacta con nosotros.
                 </p>
                 <Button
-                  onClick={() => {
-                    setCancelled(false);
-                    setCode("");
-                    setEmail("");
-                  }}
+                  onClick={handleSearchAnother}
                   className="bg-tiger-green hover:bg-tiger-green/90 text-white"
                 >
                   Consultar otra reserva
@@ -389,77 +397,90 @@ export default function MisReservas() {
             )}
           </AnimatePresence>
 
-          {/* Buscador */}
-          {!cancelled && !reservation && (
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-            >
-              <form onSubmit={handleSearch} className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-                <div className="text-center mb-8">
-                  <div className="inline-flex items-center justify-center w-16 h-16 bg-tiger-golden/20 rounded-full mb-4">
-                    <Search className="text-tiger-golden" size={28} />
-                  </div>
-                  <h2 className="text-2xl font-bold text-tiger-green">Consultar reserva</h2>
-                  <p className="text-gray-500 mt-2">Ingresa el código y el email con el que reservaste</p>
+          {/* Buscador - SIEMPRE VISIBLE */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="mb-8"
+          >
+            <form onSubmit={handleSearch} className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+              <div className="text-center mb-8">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-tiger-golden/20 rounded-full mb-4">
+                  <Search className="text-tiger-golden" size={28} />
+                </div>
+                <h2 className="text-2xl font-bold text-tiger-green">Consultar reserva</h2>
+                <p className="text-gray-500 mt-2">Ingresa el código y el email con el que reservaste</p>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Código de reserva</label>
+                  <input
+                    type="text"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-tiger-orange focus:border-tiger-orange transition-all"
+                    placeholder="Ej: ABC123XYZ"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-tiger-orange focus:border-tiger-orange transition-all"
+                    placeholder="tu@email.com"
+                    required
+                  />
                 </div>
 
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Código de reserva</label>
-                    <input
-                      type="text"
-                      value={code}
-                      onChange={(e) => setCode(e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-tiger-orange focus:border-tiger-orange transition-all"
-                      placeholder="Ej: ABC123XYZ"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-tiger-orange focus:border-tiger-orange transition-all"
-                      placeholder="tu@email.com"
-                      required
-                    />
-                  </div>
-
-                  <Button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full bg-tiger-orange hover:bg-tiger-orange/90 text-white py-3 text-base font-bold rounded-lg transition-all duration-300"
-                  >
-                    {loading ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <span className="animate-spin">⏳</span>
-                        Buscando...
-                      </span>
-                    ) : (
-                      <span className="flex items-center justify-center gap-2">
-                        Consultar reserva
-                        <ArrowRight size={18} />
-                      </span>
-                    )}
-                  </Button>
-
-                  {error && (
-                    <motion.div
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className="bg-red-50 border border-red-200 text-red-600 text-sm p-3 rounded-lg flex items-center gap-2"
-                    >
-                      <AlertCircle size={16} />
-                      {error}
-                    </motion.div>
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-tiger-orange hover:bg-tiger-orange/90 text-white py-3 text-base font-bold rounded-lg transition-all duration-300"
+                >
+                  {loading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="animate-spin">⏳</span>
+                      Buscando...
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center gap-2">
+                      Consultar reserva
+                      <ArrowRight size={18} />
+                    </span>
                   )}
-                </div>
-              </form>
-            </motion.div>
+                </Button>
+
+                {error && (
+                  <motion.div
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="bg-red-50 border border-red-200 text-red-600 text-sm p-3 rounded-lg flex items-center gap-2"
+                  >
+                    <AlertCircle size={16} />
+                    {error}
+                  </motion.div>
+                )}
+              </div>
+            </form>
+          </motion.div>
+
+          {/* Botón para limpiar y buscar otra reserva (solo cuando hay una reserva visible) */}
+          {reservation && !cancelled && (
+            <div className="mb-6 text-right">
+              <Button
+                onClick={handleSearchAnother}
+                variant="outline"
+                className="bg-white hover:bg-gray-50 text-tiger-green border-tiger-green"
+              >
+                <Search size={16} className="mr-2" />
+                Buscar otra reserva
+              </Button>
+            </div>
           )}
 
           {/* Detalle de la reserva */}
@@ -470,7 +491,6 @@ export default function MisReservas() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -30 }}
                 transition={{ duration: 0.5 }}
-                className="mt-10"
               >
                 <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
                   <div className="bg-gradient-to-r from-tiger-green to-tiger-green-dark px-6 py-4">
@@ -690,7 +710,7 @@ export default function MisReservas() {
                             ✅ Reserva confirmada
                           </p>
                           <p className="text-green-600 text-sm mt-1">
-                            Tu reserva ya está confirmada. Presenta el código QR que recibiste por email el día de tu visita.
+                            Tu reserva ya está confirmada. Presenta el código de la reserva el día de tu visita.
                           </p>
                         </div>
                       </div>
