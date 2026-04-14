@@ -379,7 +379,7 @@ export default function SettingsPanel() {
     if (!planFor1Slot) {
       setSharedMessage({ 
         type: 'error', 
-        text: `No hay plan compartido para ${slotDuration} minutos (1 slot)` 
+        text: `No hay plan Reserva libre para ${slotDuration} minutos (1 slot)` 
       });
       return;
     }
@@ -397,7 +397,7 @@ export default function SettingsPanel() {
       await loadSharedSlotsForDate(sharedDate);
       setSharedMessage({ 
         type: 'success', 
-        text: `Slot compartido activado${planFor2Slots ? ' (también disponible para 2 slots)' : ''}` 
+        text: `Slot Reserva Libre activado${planFor2Slots ? ' (también disponible para 2 slots)' : ''}` 
       });
       setTimeout(() => setSharedMessage(null), 3000);
     } catch (error) {
@@ -668,11 +668,11 @@ export default function SettingsPanel() {
         <div className="mb-6">
           <h2 className="text-xl font-bold text-tiger-green flex items-center gap-2">
             <Users size={20} />
-            Slots Compartidos
+            Slots Reserva Libre
           </h2>
           <p className="text-sm text-gray-500 mt-1">
-            Activa o desactiva el modo compartido en slots específicos.
-            Un slot compartido permite que varios grupos se apunten hasta completar el aforo.
+            Activa o desactiva la reserva libre  en slots específicos.
+            Un slot de reserva libre permite que varios grupos se apunten hasta completar el aforo.
           </p>
           
           {/* Mostrar planes disponibles por duración */}
@@ -691,7 +691,7 @@ export default function SettingsPanel() {
           ) : (
             <div className="mt-2 inline-flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-700 text-xs px-3 py-1 rounded-full">
               <AlertCircle size={12} />
-              No hay planes compartidos configurados. Crea planes con active=false y duration_minutes=30,60,90
+              No hay planes de reserva libre configurados. Crea planes con active=false y duration_minutes=30,60,90
             </div>
           )}
         </div>
@@ -738,7 +738,7 @@ export default function SettingsPanel() {
               </div>
 
               <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm">
-                <p className="font-medium text-blue-800 mb-2">Planes compartidos disponibles:</p>
+                <p className="font-medium text-blue-800 mb-2">Planes de reserva libre disponibles:</p>
                 <div className="space-y-1">
                   {availableSharedPlans.map(plan => (
                     <div key={plan.id} className="text-xs text-blue-700">
@@ -766,7 +766,7 @@ export default function SettingsPanel() {
                           <span className="font-medium">{slot.start_time?.slice(0,5)} - {slot.end_time?.slice(0,5)}</span>
                           <span className="text-xs text-gray-500">({slotDuration} min)</span>
                           <span className={`text-xs px-2 py-1 rounded-full ${isShared ? 'bg-blue-100 text-blue-700' : isBlocked ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
-                            {isShared ? '🤝 Compartido' : isBlocked ? '🔒 Bloqueado' : '✅ Normal'}
+                            {isShared ? '🤝 Reserva Libre' : isBlocked ? '🔒 Bloqueado' : '✅ Normal'}
                           </span>
                           <span className="text-xs text-gray-400">Aforo: {slot.max_capacity}</span>
                         </div>
@@ -774,16 +774,16 @@ export default function SettingsPanel() {
                         {!isBlocked && (
                           isShared ? (
                             <button onClick={() => removeSharedPlan(slot.id)} className="text-sm text-gray-600 hover:text-red-600 border border-gray-300 hover:border-red-300 px-3 py-1 rounded-lg transition">
-                              Quitar compartido
+                              Quitar reserva libre
                             </button>
                           ) : (
                             <button 
                               onClick={() => assignSharedPlan(slot.id, slotDuration)} 
                               className={`text-sm px-3 py-1 rounded-lg transition ${planForThisSlot ? 'text-blue-600 hover:text-blue-800 border border-blue-300 hover:border-blue-500' : 'text-gray-400 border border-gray-200 cursor-not-allowed'}`}
                               disabled={!planForThisSlot}
-                              title={!planForThisSlot ? `No hay plan compartido para duración de ${slotDuration} minutos` : ''}
+                              title={!planForThisSlot ? `No hay plan de reserva libre para duración de ${slotDuration} minutos` : ''}
                             >
-                              Activar compartido {planForThisSlot && `(${planForThisSlot.duration_minutes}min)`}
+                              Activar reserva libre {planForThisSlot && `(${planForThisSlot.duration_minutes}min)`}
                             </button>
                           )
                         )}
