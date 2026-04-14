@@ -15,12 +15,11 @@ export default function ReservationsList() {
 
   useEffect(() => {
     loadReservations();
-  }, [filter]); // ✅ Solo recargar cuando cambia el filtro de estado
+  }, [filter]);
 
   const loadReservations = async () => {
     setLoading(true);
     try {
-      // ✅ Traer todas las reservas sin filtrar por fecha en la query
       let query = supabase
         .from('reservations')
         .select(`
@@ -43,12 +42,10 @@ export default function ReservationsList() {
       const { data, error } = await query;
       if (error) throw error;
       
-      // ✅ Filtrar por fecha después de obtener los datos
       let filteredData = data || [];
       
       if (dateFilter) {
         filteredData = filteredData.filter(reservation => {
-          // Verificar si la reserva tiene slots con la fecha filtrada
           return reservation.reservation_slots?.some(slot => {
             const slotDate = slot.time_slots?.date;
             return slotDate === dateFilter;
@@ -64,10 +61,8 @@ export default function ReservationsList() {
     }
   };
 
-  // ✅ Recargar cuando cambia el filtro de fecha (sin recargar toda la BD)
   useEffect(() => {
     if (reservations.length > 0 || !loading) {
-      // Ya tenemos los datos, solo filtramos
       const applyDateFilter = async () => {
         setLoading(true);
         try {
@@ -120,7 +115,6 @@ export default function ReservationsList() {
     if (!confirm(`¿Estás seguro de cancelar la reserva ${reservationCode}?`)) return;
 
     try {
-      // Llamar a una función RPC que maneje la cancelación completa
       const { data, error } = await supabase
         .rpc('cancel_reservation', {
           p_reservation_id: id
@@ -153,7 +147,6 @@ export default function ReservationsList() {
     }
   };
 
-  // ✅ Filtrar por término de búsqueda
   const filteredReservations = reservations.filter(res => {
     if (!searchTerm) return true;
     return res.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -161,11 +154,9 @@ export default function ReservationsList() {
            res.reservation_code?.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
-  // ✅ Función para obtener la fecha del slot (evitando N/D)
   const getSlotDate = (reservation) => {
     const slot = reservation.reservation_slots?.[0]?.time_slots;
     if (slot?.date) {
-      // Formatear fecha a español
       const [year, month, day] = slot.date.split('-');
       return new Date(year, month - 1, day).toLocaleDateString('es-ES', {
         weekday: 'long',
@@ -176,7 +167,6 @@ export default function ReservationsList() {
     return 'Fecha no disponible';
   };
 
-  // ✅ Función para obtener la hora del slot
   const getSlotTime = (reservation) => {
     const slot = reservation.reservation_slots?.[0]?.time_slots;
     if (slot?.start_time) {
@@ -280,11 +270,12 @@ export default function ReservationsList() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha / Hora</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plan</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Personas</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
-               </tr>
+              </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredReservations.map((res) => (
@@ -293,18 +284,23 @@ export default function ReservationsList() {
                     <span className="font-mono text-sm font-medium text-tiger-green">
                       {res.reservation_code}
                     </span>
-                   </td>
+                  </td>
                   <td className="px-6 py-4">
                     <div className="font-medium text-gray-900">{res.name}</div>
                     <div className="text-sm text-gray-500">{res.email}</div>
                     {res.phone && <div className="text-xs text-gray-400">{res.phone}</div>}
-                   </td>
+                  </td>
                   <td className="px-6 py-4 text-sm">
                     <div>{getSlotDate(res)}</div>
                     <span className="text-xs text-gray-500">
                       {getSlotTime(res)}
                     </span>
-                   </td>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      {res.plans?.name || 'No especificado'}
+                    </span>
+                  </td>
                   <td className="px-6 py-4 text-sm">{res.people} personas</td>
                   <td className="px-6 py-4 text-sm font-medium">€{res.precio_total}</td>
                   <td className="px-6 py-4">{getStatusBadge(res.status)}</td>
@@ -339,7 +335,7 @@ export default function ReservationsList() {
                         </button>
                       )}
                     </div>
-                   </td>
+                  </td>
                 </tr>
               ))}
             </tbody>
