@@ -55,17 +55,6 @@ export default function MisReservas() {
     setLoading(false);
   }
 
-  // Función para limpiar y buscar otra reserva
-  function handleSearchAnother() {
-    setReservation(null);
-    setCancelled(false);
-    setSelectedDate(null);
-    setSelectedSlots([]);
-    setError("");
-    setMessage("");
-    setCode("");
-    setEmail("");
-  }
 
   // Función para confirmar la reserva
   async function confirmReservation() {
@@ -468,20 +457,7 @@ export default function MisReservas() {
               </div>
             </form>
           </motion.div>
-
-          {/* Botón para limpiar y buscar otra reserva (solo cuando hay una reserva visible) */}
-          {reservation && !cancelled && (
-            <div className="mb-6 text-right">
-              <Button
-                onClick={handleSearchAnother}
-                variant="outline"
-                className="bg-white hover:bg-gray-50 text-tiger-green border-tiger-green"
-              >
-                <Search size={16} className="mr-2" />
-                Buscar otra reserva
-              </Button>
-            </div>
-          )}
+          
 
           {/* Detalle de la reserva */}
           <AnimatePresence>
