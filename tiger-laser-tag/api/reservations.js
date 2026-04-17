@@ -145,7 +145,10 @@ async function changeReservation(req, res, { code, email, people, newSlotIds }) 
         people,
         plan_id,
         plans(price),
-        reservation_slots(slot_id)
+        reservation_slots(
+          slot_id,
+          time_slots(slot_type)
+        )
       `)
       .eq("reservation_code", code)
       .eq("email", email)
@@ -156,7 +159,7 @@ async function changeReservation(req, res, { code, email, people, newSlotIds }) 
       return res.status(404).json({ error: "Reserva no encontrada" });
     }
 
-    // Caso: Cambiar número de jugadores
+    // ─── Caso: Cambiar número de jugadores ───────────────────────────────────
     if (people && people !== reservation.people) {
       const pricePerPerson = reservation.plans.price;
       const MINIMUM_BILLED = 10;
@@ -181,8 +184,18 @@ async function changeReservation(req, res, { code, email, people, newSlotIds }) 
       });
     }
 
-    // Caso: Cambiar horario (array de slots)
+    // ─── Caso: Cambiar horario ───────────────────────────────────────────────
     if (newSlotIds && newSlotIds.length > 0) {
+
+      // NUEVO: Bloquear cambio si alguno de los slots actuales es de tipo compartido
+      const hasSharedSlot = reservation.reservation_slots.some(
+        rs => rs.time_slots?.slot_type === "shared"
+      );
+      if (hasSharedSlot) {
+        return res.status(400).json({
+          error: "Las reservas con slots compartidos no pueden cambiar de horario"
+        });
+      }
 
       // Verificar disponibilidad de todos los slots nuevos
       const { data: newSlots, error: slotError } = await supabaseAdmin
@@ -199,7 +212,79 @@ async function changeReservation(req, res, { code, email, people, newSlotIds }) 
         return res.status(400).json({ error: "Uno de los horarios seleccionados no está disponible" });
       }
 
-      // Liberar slots antiguos
+      // NUEVO: Recalcular el plan y precio si cambia la cantidad de slots
+      const oldSlotCount = reservation.reservation_slots.length;
+      const newSlotCount = newSlotIds.length;
+
+      if (oldSlotCount !== newSlotCount) {
+        // Buscar el plan que corresponde al nuevo número de slots
+        const { data: newPlan, error: planError } = await supabaseAdmin
+          .from("plans")
+          .select("id, price")
+          .eq("num_slots", newSlotCount)
+          .single();
+
+        if (planError || !newPlan) {
+          return res.status(400).json({
+            error: `No existe un plan disponible para ${newSlotCount} slot(s)`
+          });
+        }
+
+        const MINIMUM_BILLED = 10;
+        const billable = (n) => Math.max(n, MINIMUM_BILLED);
+        const newTotal = newPlan.price * billable(reservation.people);
+
+        const oldTotal = reservation.plans.price * billable(reservation.people);
+        const extraPayment = Math.max(newTotal - oldTotal, 0);
+
+        // Actualizar plan y precio en la reserva
+        const { error: updateError } = await supabaseAdmin
+          .from("reservations")
+          .update({ plan_id: newPlan.id, precio_total: newTotal })
+          .eq("id", reservation.id);
+
+        if (updateError) throw updateError;
+
+        // Liberar slots antiguos
+        const oldSlotIds = reservation.reservation_slots.map(rs => rs.slot_id);
+        if (oldSlotIds.length > 0) {
+          await supabaseAdmin
+            .from("time_slots")
+            .update({ status: "active" })
+            .in("id", oldSlotIds);
+        }
+
+        // Reemplazar relaciones de slots
+        await supabaseAdmin
+          .from("reservation_slots")
+          .delete()
+          .eq("reservation_id", reservation.id);
+
+        await supabaseAdmin
+          .from("reservation_slots")
+          .insert(newSlotIds.map(slotId => ({
+            reservation_id: reservation.id,
+            slot_id: slotId
+          })));
+
+        // Bloquear los nuevos slots
+        await supabaseAdmin
+          .from("time_slots")
+          .update({ status: "blocked" })
+          .in("id", newSlotIds);
+
+        return res.status(200).json({
+          success: true,
+          extra_payment: extraPayment,
+          new_total: newTotal,
+          new_plan_id: newPlan.id,
+          message: extraPayment > 0
+            ? "Horario y plan actualizados. Se requiere pago adicional"
+            : "Horario y plan actualizados correctamente"
+        });
+      }
+
+      // Sin cambio de cantidad de slots: flujo original
       const oldSlotIds = reservation.reservation_slots.map(rs => rs.slot_id);
       if (oldSlotIds.length > 0) {
         await supabaseAdmin
@@ -208,13 +293,11 @@ async function changeReservation(req, res, { code, email, people, newSlotIds }) 
           .in("id", oldSlotIds);
       }
 
-      // Eliminar relaciones antiguas
       await supabaseAdmin
         .from("reservation_slots")
         .delete()
         .eq("reservation_id", reservation.id);
 
-      // Crear nuevas relaciones
       await supabaseAdmin
         .from("reservation_slots")
         .insert(newSlotIds.map(slotId => ({
@@ -222,7 +305,6 @@ async function changeReservation(req, res, { code, email, people, newSlotIds }) 
           slot_id: slotId
         })));
 
-      // Bloquear los nuevos slots
       await supabaseAdmin
         .from("time_slots")
         .update({ status: "blocked" })

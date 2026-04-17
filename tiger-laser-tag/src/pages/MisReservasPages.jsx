@@ -12,6 +12,7 @@ export default function MisReservas() {
   const [reservation, setReservation] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedSlots, setSelectedSlots] = useState([]);
+  const [newSlotCount, setNewSlotCount] = useState(null); // null = sin cambio de duración
   const [people, setPeople] = useState(null);
   const [extraPayment, setExtraPayment] = useState(0);
   const [showPayment, setShowPayment] = useState(false);
@@ -29,6 +30,9 @@ export default function MisReservas() {
     setMessage("");
     setReservation(null);
     setCancelled(false);
+    setNewSlotCount(null);
+    setSelectedSlots([]);
+    setSelectedDate(null);
     setLoading(true);
 
     try {
@@ -55,23 +59,30 @@ export default function MisReservas() {
     setLoading(false);
   }
 
+  function handleSearchAnother() {
+    setCancelled(false);
+    setReservation(null);
+    setCode("");
+    setEmail("");
+    setMessage("");
+    setError("");
+  }
 
   // Función para confirmar la reserva
   async function confirmReservation() {
     if (!confirm("¿Confirmar esta reserva? Una vez confirmada no podrás modificarla.")) return;
-    
+
     setConfirmLoading(true);
     setMessage("");
 
     try {
-      // 1. Confirmar la reserva en la base de datos
       const res = await fetch("/api/reservations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          action: "confirm", 
-          code, 
-          email 
+        body: JSON.stringify({
+          action: "confirm",
+          code,
+          email
         })
       });
 
@@ -83,9 +94,8 @@ export default function MisReservas() {
         return;
       }
 
-      // 2. Enviar email de confirmación final
       const timeSlots = reservation.reservation_slots?.[0]?.time_slots || reservation.time_slots;
-      
+
       await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -96,7 +106,7 @@ export default function MisReservas() {
           phone: reservation.phone,
           reservation_code: reservation.reservation_code,
           date: timeSlots?.date,
-          time_range: timeSlots 
+          time_range: timeSlots
             ? `${timeSlots.start_time?.slice(0, 5)} - ${timeSlots.end_time?.slice(0, 5)}`
             : null,
           duration: reservation.num_slots || 1,
@@ -109,15 +119,8 @@ export default function MisReservas() {
         })
       });
 
-      // 3. Actualizar el estado local
-      setReservation(prev => ({
-        ...prev,
-        status: "confirmed"
-      }));
-
+      setReservation(prev => ({ ...prev, status: "confirmed" }));
       setMessage("✅ ¡Reserva confirmada correctamente! Se ha enviado un email de confirmación.");
-      
-      // Limpiar el mensaje después de 5 segundos
       setTimeout(() => setMessage(""), 5000);
 
     } catch (err) {
@@ -127,6 +130,7 @@ export default function MisReservas() {
     setConfirmLoading(false);
   }
 
+  // ─── Constantes de cálculo ───────────────────────────────────────────────
   const pricePerPerson = reservation?.plans?.price || 0;
   const originalPeople = reservation?.people || 0;
   const MINIMUM_BILLED = 10;
@@ -137,6 +141,19 @@ export default function MisReservas() {
   );
   const showExtraWarning = people > MINIMUM_BILLED && people > originalPeople;
   const requiredSlots = reservation?.num_slots ?? 1;
+
+  // Plan compartido: active === false → ocultar sección de cambio de horario
+  const isSharedPlan = reservation?.plans?.active === false;
+
+  // Número de slots efectivo: el nuevo elegido o el original
+  const effectiveSlotCount = newSlotCount ?? requiredSlots;
+
+  // Cálculo estimado de diferencia de precio al cambiar slots
+  const slotCountChanged = newSlotCount !== null && newSlotCount !== requiredSlots;
+  const estimatedNewTotal = pricePerPerson * newSlotCount * billablePeople(originalPeople);
+  const estimatedCurrentTotal = reservation?.precio_total ?? 0;
+  const estimatedDiff = Math.abs(estimatedNewTotal - estimatedCurrentTotal);
+  const slotPriceIncreases = newSlotCount > requiredSlots;
 
   async function updatePlayers() {
     if (!people) return;
@@ -198,9 +215,9 @@ export default function MisReservas() {
   }
 
   async function updateSlot() {
-    console.log("selectedSlots al confirmar:", selectedSlots);
     if (selectedSlots.length === 0) return;
     setUpdateLoading(true);
+    setMessage("");
 
     try {
       const res = await fetch("/api/reservations", {
@@ -221,7 +238,12 @@ export default function MisReservas() {
         setUpdateLoading(false);
         return;
       }
-      
+
+      if (data.extra_payment > 0) {
+        setExtraPayment(data.extra_payment);
+        setShowPayment(true);
+      }
+
       await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -238,9 +260,12 @@ export default function MisReservas() {
           new_time_range: selectedSlots.length === 2
             ? `${selectedSlots[0].start_time?.slice(0, 5)} - ${selectedSlots[1].end_time?.slice(0, 5)}`
             : `${selectedSlots[0].start_time?.slice(0, 5)} - ${selectedSlots[0].end_time?.slice(0, 5)}`,
-          plan_name: reservation.plans?.name,
+          plan_name: data.new_plan_id
+            ? `Plan ${effectiveSlotCount} hora${effectiveSlotCount > 1 ? "s" : ""}`
+            : reservation.plans?.name,
           people: reservation.people,
-          total_price: reservation.precio_total
+          total_price: data.new_total ?? reservation.precio_total,
+          extra_payment: data.extra_payment || 0
         })
       });
 
@@ -457,7 +482,6 @@ export default function MisReservas() {
               </div>
             </form>
           </motion.div>
-          
 
           {/* Detalle de la reserva */}
           <AnimatePresence>
@@ -480,7 +504,7 @@ export default function MisReservas() {
                   </div>
 
                   <div className="p-6 space-y-6">
-                    {/* Información básica - Siempre visible */}
+                    {/* Información básica */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                         <Calendar className="text-tiger-green" size={20} />
@@ -493,7 +517,9 @@ export default function MisReservas() {
                         <Clock className="text-tiger-green" size={20} />
                         <div>
                           <p className="text-xs text-gray-500">Hora</p>
-                          <p className="font-medium">{formatTime(reservation.time_slots?.start_time)+" - "+formatTime(reservation.time_slots?.end_time)}</p>
+                          <p className="font-medium">
+                            {formatTime(reservation.time_slots?.start_time) + " - " + formatTime(reservation.time_slots?.end_time)}
+                          </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
@@ -513,11 +539,11 @@ export default function MisReservas() {
                     </div>
 
                     {/* ============================================ */}
-                    {/* SECCIÓN EXCLUSIVA PARA RESERVAS PENDIENTES */}
+                    {/* SECCIÓN EXCLUSIVA PARA RESERVAS PENDIENTES  */}
                     {/* ============================================ */}
-                    {reservation.status === 'pending' && (
+                    {reservation.status === "pending" && (
                       <>
-                        {/* Botón de CONFIRMAR RESERVA */}
+                        {/* Botón CONFIRMAR RESERVA */}
                         <div className="border-t pt-6">
                           <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
                             <p className="text-amber-800 text-sm flex items-start gap-2">
@@ -600,58 +626,157 @@ export default function MisReservas() {
                           </AnimatePresence>
                         </div>
 
-                        {/* Cambiar horario */}
-                        <div className="border-t pt-6">
-                          <h3 className="font-semibold text-tiger-green mb-4">Cambiar fecha y horario</h3>
-                          <CalendarPicker
-                            initialDate={reservation?.time_slots?.date}
-                            onSelectDate={(date) => {
-                              setSelectedDate(date);
-                              setSelectedSlots([]);
-                            }}
-                          />
+                        {/* ─── Cambiar fecha y horario ─────────────────────── */}
+                        {!isSharedPlan ? (
+                          <div className="border-t pt-6">
+                            <h3 className="font-semibold text-tiger-green mb-4">Cambiar fecha y horario</h3>
 
-                          {selectedDate && (
-                            <>
-                              <p className="text-sm text-gray-500 mt-3 mb-2">
-                                {requiredSlots === 2
-                                  ? "⚠️ Tu reserva original era de 2 horas, selecciona 2 horas consecutivas"
-                                  : "Selecciona 1 hora disponible"}
+                            {/* Selector de duración (1 o 2 horas) */}
+                            <div className="mb-5">
+                              <p className="text-sm text-gray-600 mb-2">
+                                Tu reserva actual es de{" "}
+                                <strong>{requiredSlots} hora{requiredSlots > 1 ? "s" : ""}</strong>.
+                                ¿Quieres cambiar la duración?
                               </p>
-                              <SlotPickerEdit
-                                key={selectedDate}
-                                date={selectedDate}
-                                people={people}
-                                maxSlots={requiredSlots}
-                                minSlots={requiredSlots}
-                                onSelectSlots={(slots) => setSelectedSlots(slots)}
-                              />
-                            </>
-                          )}
+                              <div className="flex gap-3">
+                                {[1, 2].map((n) => {
+                                  const isSelected = effectiveSlotCount === n;
+                                  return (
+                                    <button
+                                      key={n}
+                                      type="button"
+                                      onClick={() => {
+                                        setNewSlotCount(n === requiredSlots ? null : n);
+                                        setSelectedSlots([]);
+                                      }}
+                                      className={`flex-1 py-2 px-4 rounded-lg border-2 text-sm font-medium transition-all ${
+                                        isSelected
+                                          ? "border-tiger-orange bg-tiger-orange/10 text-tiger-orange"
+                                          : "border-gray-200 text-gray-500 hover:border-gray-300"
+                                      }`}
+                                    >
+                                      {n} hora{n > 1 ? "s" : ""}
+                                      {n === requiredSlots && (
+                                        <span className="ml-1 text-xs opacity-60">(actual)</span>
+                                      )}
+                                    </button>
+                                  );
+                                })}
+                              </div>
 
-                          <AnimatePresence>
-                            {selectedSlots.length === requiredSlots && (
-                              <motion.div
-                                initial={{ opacity: 0, y: 6 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0 }}
-                              >
-                                <Button
-                                  onClick={updateSlot}
-                                  disabled={updateLoading}
-                                  className="w-full mt-4 bg-tiger-orange hover:bg-tiger-orange/90 text-white"
-                                >
-                                  {updateLoading ? (
-                                    <span className="flex items-center justify-center gap-2">
-                                      <span className="animate-spin">⏳</span>
-                                      Cambiando...
-                                    </span>
-                                  ) : "Confirmar cambio de horario"}
-                                </Button>
-                              </motion.div>
+                              {/* Aviso de diferencia de precio al cambiar slots */}
+                              <AnimatePresence>
+                                {slotCountChanged && (
+                                  <motion.div
+                                    initial={{ opacity: 0, y: -6 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -6 }}
+                                    className={`mt-3 p-3 rounded-lg text-sm border ${
+                                      slotPriceIncreases
+                                        ? "bg-amber-50 border-amber-200 text-amber-800"
+                                        : "bg-blue-50 border-blue-200 text-blue-800"
+                                    }`}
+                                  >
+                                    {slotPriceIncreases ? (
+                                      <>
+                                        ⚠️ Al pasar a <strong>{newSlotCount} horas</strong> se generará un
+                                        pago adicional de aproximadamente{" "}
+                                        <strong>€{estimatedDiff}</strong>. El precio exacto se
+                                        confirmará al guardar.
+                                      </>
+                                    ) : (
+                                      <>
+                                        💡 Al reducir a <strong>{newSlotCount} hora</strong>, el precio
+                                        bajará aproximadamente <strong>€{estimatedDiff}</strong>. El
+                                        ajuste exacto se confirmará al guardar.
+                                      </>
+                                    )}
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </div>
+
+                            <CalendarPicker
+                              initialDate={reservation?.time_slots?.date}
+                              onSelectDate={(date) => {
+                                setSelectedDate(date);
+                                setSelectedSlots([]);
+                              }}
+                            />
+
+                            {selectedDate && (
+                              <>
+                                <p className="text-sm text-gray-500 mt-3 mb-2">
+                                  {effectiveSlotCount === 2
+                                    ? "⚠️ Tu reserva es de 2 horas, selecciona 2 horas consecutivas"
+                                    : "Selecciona 1 hora disponible"}
+                                </p>
+                                <SlotPickerEdit
+                                  key={`${selectedDate}-${effectiveSlotCount}`}
+                                  date={selectedDate}
+                                  people={people}
+                                  maxSlots={effectiveSlotCount}
+                                  minSlots={effectiveSlotCount}
+                                  onSelectSlots={(slots) => setSelectedSlots(slots)}
+                                />
+                              </>
                             )}
-                          </AnimatePresence>
-                        </div>
+
+                            <AnimatePresence>
+                              {selectedSlots.length === effectiveSlotCount && (
+                                <motion.div
+                                  initial={{ opacity: 0, y: 6 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  exit={{ opacity: 0 }}
+                                >
+                                  {/* Resumen del cambio de plan antes de confirmar */}
+                                  {slotCountChanged && (
+                                    <div className={`mt-4 p-3 rounded-lg text-sm border ${
+                                      slotPriceIncreases
+                                        ? "bg-amber-50 border-amber-200 text-amber-800"
+                                        : "bg-blue-50 border-blue-200 text-blue-800"
+                                    }`}>
+                                      {slotPriceIncreases
+                                        ? `⚠️ Se cambiará tu plan a ${newSlotCount} horas. Se generará un cobro adicional al confirmar.`
+                                        : `💡 Se cambiará tu plan a ${newSlotCount} hora. Se aplicará una reducción en el precio al confirmar.`
+                                      }
+                                    </div>
+                                  )}
+
+                                  <Button
+                                    onClick={updateSlot}
+                                    disabled={updateLoading}
+                                    className="w-full mt-4 bg-tiger-orange hover:bg-tiger-orange/90 text-white"
+                                  >
+                                    {updateLoading ? (
+                                      <span className="flex items-center justify-center gap-2">
+                                        <span className="animate-spin">⏳</span>
+                                        Cambiando...
+                                      </span>
+                                    ) : "Confirmar cambio de horario"}
+                                  </Button>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
+                        ) : (
+                          /* Aviso plan compartido: no se puede cambiar horario */
+                          <div className="border-t pt-6">
+                            <h3 className="font-semibold text-tiger-green mb-3">Cambiar fecha y horario</h3>
+                            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 flex items-start gap-3">
+                              <AlertCircle className="text-gray-400 flex-shrink-0 mt-0.5" size={18} />
+                              <p className="text-sm text-gray-600">
+                                Este tipo de reserva es de{" "}
+                                <strong>horario compartido</strong> y no permite cambiar la fecha ni el
+                                horario. Si necesitas modificaciones, por favor{" "}
+                                <a href="/contacto" className="text-tiger-orange underline">
+                                  contáctanos
+                                </a>
+                                .
+                              </p>
+                            </div>
+                          </div>
+                        )}
 
                         {/* Cancelar reserva */}
                         <div className="border-t pt-6">
@@ -678,13 +803,11 @@ export default function MisReservas() {
                     {/* ============================================ */}
                     {/* SECCIÓN EXCLUSIVA PARA RESERVAS CONFIRMADAS */}
                     {/* ============================================ */}
-                    {reservation.status === 'confirmed' && (
+                    {reservation.status === "confirmed" && (
                       <div className="border-t pt-6">
                         <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
                           <CheckCircle className="text-green-600 mx-auto mb-2" size={32} />
-                          <p className="text-green-800 font-medium">
-                            ✅ Reserva confirmada
-                          </p>
+                          <p className="text-green-800 font-medium">✅ Reserva confirmada</p>
                           <p className="text-green-600 text-sm mt-1">
                             Tu reserva ya está confirmada. Presenta el código de la reserva el día de tu visita.
                           </p>
@@ -700,7 +823,7 @@ export default function MisReservas() {
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0 }}
                           className={`p-4 rounded-lg text-center ${
-                            message.includes("✅") 
+                            message.includes("✅")
                               ? "bg-green-50 text-green-800 border border-green-200"
                               : "bg-blue-50 text-blue-800 border border-blue-200"
                           }`}
