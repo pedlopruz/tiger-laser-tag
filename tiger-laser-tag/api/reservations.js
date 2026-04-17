@@ -138,11 +138,13 @@ async function changeReservation(req, res, { code, email, people, newSlotIds }) 
   }
 
   try {
+    // Obtener la reserva incluyendo el status
     const { data: reservation, error: fetchError } = await supabaseAdmin
       .from("reservations")
       .select(`
         id,
         people,
+        status,
         plan_id,
         plans(price),
         reservation_slots(
@@ -152,12 +154,22 @@ async function changeReservation(req, res, { code, email, people, newSlotIds }) 
       `)
       .eq("reservation_code", code)
       .eq("email", email)
-      .eq("status", "pending")
+      .in("status", ["pending", "confirmed"])
       .single();
 
     if (fetchError || !reservation) {
+      console.log("❌ Reserva no encontrada:", fetchError);
       return res.status(404).json({ error: "Reserva no encontrada" });
     }
+
+    // ✅ BLOQUEAR CAMBIOS si la reserva ya está confirmada
+    if (reservation.status === "confirmed") {
+      return res.status(403).json({ 
+        error: "Las reservas confirmadas no pueden modificarse. Contacta con el establecimiento si necesitas hacer cambios." 
+      });
+    }
+
+    // ─── A partir de aquí, solo reservas PENDIENTES ─────────────────────────
 
     // ─── Caso: Cambiar número de jugadores ───────────────────────────────────
     if (people && people !== reservation.people) {
@@ -187,7 +199,7 @@ async function changeReservation(req, res, { code, email, people, newSlotIds }) 
     // ─── Caso: Cambiar horario ───────────────────────────────────────────────
     if (newSlotIds && newSlotIds.length > 0) {
 
-      // NUEVO: Bloquear cambio si alguno de los slots actuales es de tipo compartido
+      // Verificar si alguno de los slots actuales es de tipo compartido
       const hasSharedSlot = reservation.reservation_slots.some(
         rs => rs.time_slots?.slot_type === "shared"
       );
@@ -212,7 +224,7 @@ async function changeReservation(req, res, { code, email, people, newSlotIds }) 
         return res.status(400).json({ error: "Uno de los horarios seleccionados no está disponible" });
       }
 
-      // NUEVO: Recalcular el plan y precio si cambia la cantidad de slots
+      // Recalcular el plan y precio si cambia la cantidad de slots
       const oldSlotCount = reservation.reservation_slots.length;
       const newSlotCount = newSlotIds.length;
 
@@ -342,7 +354,7 @@ async function cancelReservation(req, res, { code, email }) {
       `)
       .eq("reservation_code", code)
       .eq("email", email)
-      .eq("status", "pending")
+      .in("status", ["pending", "confirmed"])
       .single();
 
     if (fetchError || !reservation) {
