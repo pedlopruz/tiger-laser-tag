@@ -131,7 +131,9 @@ async function accessReservation(req, res, { code, email }) {
     return res.status(500).json({ error: "Error al buscar la reserva", details: error.message });
   }
 }
-
+// ============================================
+// CAMBIAR RESERVA
+// ============================================
 async function changeReservation(req, res, { code, email, people, newSlotIds }) {
   if (!code || !email) {
     return res.status(400).json({ error: "Campos requeridos faltantes" });
@@ -146,7 +148,7 @@ async function changeReservation(req, res, { code, email, people, newSlotIds }) 
         people,
         status,
         plan_id,
-        plans(price, num_slots)
+        plans(price, num_slots, related_plan_id)
       `)
       .eq("reservation_code", code)
       .eq("email", email)
@@ -176,12 +178,15 @@ async function changeReservation(req, res, { code, email, people, newSlotIds }) 
     const oldSlotIds = reservationSlots?.map(rs => rs.slot_id) || [];
     const oldSlotCount = oldSlotIds.length;
 
+    // Constantes de facturación mínima
+    const MINIMUM_BILLED = 10;
+    const billable = (n) => Math.max(n, MINIMUM_BILLED);
+
     // ─── Caso: Cambiar número de jugadores ───────────────────────────────────
     if (people && people !== reservation.people) {
       const pricePerPerson = reservation.plans.price;
-      const MINIMUM_BILLED = 10;
-      const billable = (n) => Math.max(n, MINIMUM_BILLED);
-
+      
+      // Calcular con facturación mínima de 10 personas
       const originalTotal = pricePerPerson * billable(reservation.people);
       const newTotal = pricePerPerson * billable(people);
       const extraPayment = Math.max(newTotal - originalTotal, 0);
@@ -240,25 +245,84 @@ async function changeReservation(req, res, { code, email, people, newSlotIds }) 
       const newSlotCount = newSlotIds.length;
 
       if (oldSlotCount !== newSlotCount) {
-        // Buscar el plan que corresponde al nuevo número de slots
-        const { data: newPlan, error: planError } = await supabaseAdmin
-          .from("plans")
-          .select("id, price")
-          .eq("num_slots", newSlotCount)
-          .single();
-
-        if (planError || !newPlan) {
+        let newPlan = null;
+        
+        // ✅ Usar related_plan_id para encontrar el plan correspondiente
+        if (oldSlotCount === 2 && newSlotCount === 1) {
+          // Reduciendo de 2 horas a 1 hora - buscar el plan relacionado (versión de 1h)
+          const { data: currentPlan } = await supabaseAdmin
+            .from("plans")
+            .select("related_plan_id")
+            .eq("id", reservation.plan_id)
+            .single();
+          
+          if (currentPlan?.related_plan_id) {
+            const { data: relatedPlan } = await supabaseAdmin
+              .from("plans")
+              .select("id, price, num_slots")
+              .eq("id", currentPlan.related_plan_id)
+              .eq("active", true)
+              .single();
+            
+            newPlan = relatedPlan;
+          }
+        } 
+        else if (oldSlotCount === 1 && newSlotCount === 2) {
+          // Aumentando de 1 hora a 2 horas - buscar el plan relacionado (versión de 2h)
+          const { data: currentPlan } = await supabaseAdmin
+            .from("plans")
+            .select("related_plan_id")
+            .eq("id", reservation.plan_id)
+            .single();
+          
+          if (currentPlan?.related_plan_id) {
+            const { data: relatedPlan } = await supabaseAdmin
+              .from("plans")
+              .select("id, price, num_slots")
+              .eq("id", currentPlan.related_plan_id)
+              .eq("active", true)
+              .single();
+            
+            newPlan = relatedPlan;
+          }
+        }
+        
+        // ✅ Fallback: si no se encontró por related_plan_id, buscar por num_slots
+        if (!newPlan) {
+          const { data: planBySlots } = await supabaseAdmin
+            .from("plans")
+            .select("id, price, num_slots")
+            .eq("num_slots", newSlotCount)
+            .eq("active", true)
+            .maybeSingle();
+          
+          newPlan = planBySlots;
+        }
+        
+        if (!newPlan) {
           return res.status(400).json({
-            error: `No existe un plan disponible para ${newSlotCount} hora(s)`
+            error: `No se encontró un plan disponible para ${newSlotCount} hora(s)`
           });
         }
 
-        const MINIMUM_BILLED = 10;
-        const billable = (n) => Math.max(n, MINIMUM_BILLED);
+        // ✅ Calcular el nuevo total con la regla de facturación mínima de 10 personas
         const newTotal = newPlan.price * billable(reservation.people);
-
         const oldTotal = reservation.plans.price * billable(reservation.people);
         const extraPayment = Math.max(newTotal - oldTotal, 0);
+
+        console.log("💰 Cálculo de cambio de plan:", {
+          oldPlanId: reservation.plan_id,
+          oldPlanPrice: reservation.plans.price,
+          oldSlotCount,
+          newPlanId: newPlan.id,
+          newPlanPrice: newPlan.price,
+          newSlotCount,
+          people: reservation.people,
+          billablePeople: billable(reservation.people),
+          oldTotal,
+          newTotal,
+          extraPayment
+        });
 
         // Actualizar plan y precio en la reserva
         const { error: updateError } = await supabaseAdmin
@@ -301,8 +365,8 @@ async function changeReservation(req, res, { code, email, people, newSlotIds }) 
           new_total: newTotal,
           new_plan_id: newPlan.id,
           message: extraPayment > 0
-            ? "Horario y plan actualizados. Se requiere pago adicional"
-            : "Horario y plan actualizados correctamente"
+            ? `Horario y plan actualizados a ${newSlotCount} hora(s). Se requiere pago adicional de €${extraPayment}`
+            : `Horario y plan actualizados correctamente a ${newSlotCount} hora(s)`
         });
       }
 
