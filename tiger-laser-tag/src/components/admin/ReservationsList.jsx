@@ -151,6 +151,14 @@ export default function ReservationsList() {
     }
   };
 
+  // ✅ MOVER filteredReservations AQUÍ - antes del return
+  const filteredReservations = reservations.filter(res => {
+    if (!searchTerm) return true;
+    return res.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           res.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           res.reservation_code?.toLowerCase().includes(searchTerm.toLowerCase());
+  });
+
   // Nueva función para obtener todos los slots ordenados
   const getSlotsInfo = (reservation) => {
     const slots = reservation.reservation_slots || [];
