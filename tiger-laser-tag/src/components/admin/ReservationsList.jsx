@@ -1,6 +1,6 @@
 // src/components/admin/ReservationsList.jsx
 import { useState, useEffect } from 'react';
-import { Search, Filter, Calendar as CalendarIcon, X, Eye, Trash2, CheckCircle } from 'lucide-react';
+import { Search, Filter, Calendar as CalendarIcon, X, Eye, Trash2, CheckCircle, Clock } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { Button } from '@/components/ui/button';
 
@@ -24,11 +24,13 @@ export default function ReservationsList() {
         .from('reservations')
         .select(`
           *,
-          plans(name, price),
+          plans(name, price, num_slots),
           reservation_slots (
             slot_id,
             time_slots (
+              id,
               start_time, 
+              end_time,
               date
             )
           )
@@ -70,11 +72,13 @@ export default function ReservationsList() {
             .from('reservations')
             .select(`
               *,
-              plans(name, price),
+              plans(name, price, num_slots),
               reservation_slots (
                 slot_id,
                 time_slots (
+                  id,
                   start_time, 
+                  end_time,
                   date
                 )
               )
@@ -147,32 +151,71 @@ export default function ReservationsList() {
     }
   };
 
-  const filteredReservations = reservations.filter(res => {
-    if (!searchTerm) return true;
-    return res.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           res.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           res.reservation_code?.toLowerCase().includes(searchTerm.toLowerCase());
-  });
-
-  const getSlotDate = (reservation) => {
-    const slot = reservation.reservation_slots?.[0]?.time_slots;
-    if (slot?.date) {
-      const [year, month, day] = slot.date.split('-');
-      return new Date(year, month - 1, day).toLocaleDateString('es-ES', {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'long'
-      });
-    }
-    return 'Fecha no disponible';
+  // Nueva función para obtener todos los slots ordenados
+  const getSlotsInfo = (reservation) => {
+    const slots = reservation.reservation_slots || [];
+    const sortedSlots = [...slots].sort((a, b) => {
+      const timeA = a.time_slots?.start_time || '';
+      const timeB = b.time_slots?.start_time || '';
+      return timeA.localeCompare(timeB);
+    });
+    
+    return sortedSlots.map(slot => ({
+      start_time: slot.time_slots?.start_time,
+      end_time: slot.time_slots?.end_time,
+      date: slot.time_slots?.date
+    }));
   };
 
-  const getSlotTime = (reservation) => {
-    const slot = reservation.reservation_slots?.[0]?.time_slots;
-    if (slot?.start_time) {
-      return slot.start_time.slice(0, 5);
+  // Obtener fecha formateada
+  const getSlotDate = (reservation) => {
+    const slots = getSlotsInfo(reservation);
+    if (slots.length === 0 || !slots[0].date) return 'Fecha no disponible';
+    
+    const [year, month, day] = slots[0].date.split('-');
+    return new Date(year, month - 1, day).toLocaleDateString('es-ES', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+  };
+
+  // Obtener rango de hora formateado
+  const getSlotTimeRange = (reservation) => {
+    const slots = getSlotsInfo(reservation);
+    if (slots.length === 0) return 'Hora no disponible';
+    
+    const startTime = slots[0].start_time?.slice(0, 5) || '--:--';
+    const endTime = slots[slots.length - 1].end_time?.slice(0, 5) || '--:--';
+    
+    return `${startTime} - ${endTime}`;
+  };
+
+  // Obtener información detallada de horas (para múltiples slots)
+  const getDetailedTimes = (reservation) => {
+    const slots = getSlotsInfo(reservation);
+    if (slots.length === 0) return null;
+    
+    if (slots.length === 1) {
+      return {
+        type: 'single',
+        display: `${slots[0].start_time?.slice(0, 5)} - ${slots[0].end_time?.slice(0, 5)}`,
+        full: `${slots[0].start_time?.slice(0, 5)} a ${slots[0].end_time?.slice(0, 5)}`
+      };
+    } else {
+      return {
+        type: 'multiple',
+        slots: slots.map((slot, idx) => ({
+          number: idx + 1,
+          start: slot.start_time?.slice(0, 5),
+          end: slot.end_time?.slice(0, 5),
+          range: `${slot.start_time?.slice(0, 5)} - ${slot.end_time?.slice(0, 5)}`
+        })),
+        display: `${slots[0].start_time?.slice(0, 5)} - ${slots[slots.length - 1].end_time?.slice(0, 5)}`,
+        full: slots.map(s => `${s.start_time?.slice(0, 5)}-${s.end_time?.slice(0, 5)}`).join(' y ')
+      };
     }
-    return 'Hora no disponible';
   };
 
   const getStatusBadge = (status) => {
@@ -278,66 +321,90 @@ export default function ReservationsList() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {filteredReservations.map((res) => (
-                <tr key={res.id} className="hover:bg-gray-50 transition">
-                  <td className="px-6 py-4">
-                    <span className="font-mono text-sm font-medium text-tiger-green">
-                      {res.reservation_code}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="font-medium text-gray-900">{res.name}</div>
-                    <div className="text-sm text-gray-500">{res.email}</div>
-                    {res.phone && <div className="text-xs text-gray-400">{res.phone}</div>}
-                  </td>
-                  <td className="px-6 py-4 text-sm">
-                    <div>{getSlotDate(res)}</div>
-                    <span className="text-xs text-gray-500">
-                      {getSlotTime(res)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      {res.plans?.name || 'No especificado'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm">{res.people} personas</td>
-                  <td className="px-6 py-4 text-sm font-medium">€{res.precio_total}</td>
-                  <td className="px-6 py-4">{getStatusBadge(res.status)}</td>
-                  <td className="px-6 py-4">
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => {
-                          setSelectedReservation(res);
-                          setShowModal(true);
-                        }}
-                        className="text-blue-600 hover:text-blue-800 transition"
-                        title="Ver detalles"
-                      >
-                        <Eye size={18} />
-                      </button>
-                      {res.status !== 'confirmed' && res.status !== 'cancelled' && (
-                        <button
-                          onClick={() => confirmReservation(res.id)}
-                          className="text-green-600 hover:text-green-800 transition"
-                          title="Confirmar"
-                        >
-                          <CheckCircle size={18} />
-                        </button>
+              {filteredReservations.map((res) => {
+                const slotCount = res.reservation_slots?.length || 1;
+                const timeInfo = getDetailedTimes(res);
+                const isMultipleSlots = slotCount > 1;
+                
+                return (
+                  <tr key={res.id} className="hover:bg-gray-50 transition">
+                    <td className="px-6 py-4">
+                      <span className="font-mono text-sm font-medium text-tiger-green">
+                        {res.reservation_code}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="font-medium text-gray-900">{res.name}</div>
+                      <div className="text-sm text-gray-500">{res.email}</div>
+                      {res.phone && <div className="text-xs text-gray-400">{res.phone}</div>}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm font-medium text-gray-900">{getSlotDate(res)}</div>
+                      <div className="flex items-center gap-1 mt-1">
+                        <Clock size={12} className="text-gray-400" />
+                        <span className="text-sm text-gray-700">
+                          {getSlotTimeRange(res)}
+                        </span>
+                        {isMultipleSlots && (
+                          <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                            2 slots
+                          </span>
+                        )}
+                      </div>
+                      {isMultipleSlots && timeInfo?.type === 'multiple' && (
+                        <div className="text-xs text-gray-500 mt-1">
+                          ({timeInfo.slots.map(s => s.range).join(' + ')})
+                        </div>
                       )}
-                      {res.status !== 'cancelled' && (
-                        <button
-                          onClick={() => cancelReservation(res.id, res.reservation_code)}
-                          className="text-red-600 hover:text-red-800 transition"
-                          title="Cancelar"
-                        >
-                          <Trash2 size={18} />
-                        </button>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {res.plans?.name || 'No especificado'}
+                      </div>
+                      {isMultipleSlots && (
+                        <div className="text-xs text-gray-500 mt-1">
+                          {slotCount} hora{slotCount > 1 ? 's' : ''}
+                        </div>
                       )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="px-6 py-4 text-sm">{res.people} personas</td>
+                    <td className="px-6 py-4 text-sm font-medium">€{res.precio_total}</td>
+                    <td className="px-6 py-4">{getStatusBadge(res.status)}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            setSelectedReservation(res);
+                            setShowModal(true);
+                          }}
+                          className="text-blue-600 hover:text-blue-800 transition"
+                          title="Ver detalles"
+                        >
+                          <Eye size={18} />
+                        </button>
+                        {res.status !== 'confirmed' && res.status !== 'cancelled' && (
+                          <button
+                            onClick={() => confirmReservation(res.id)}
+                            className="text-green-600 hover:text-green-800 transition"
+                            title="Confirmar"
+                          >
+                            <CheckCircle size={18} />
+                          </button>
+                        )}
+                        {res.status !== 'cancelled' && (
+                          <button
+                            onClick={() => cancelReservation(res.id, res.reservation_code)}
+                            className="text-red-600 hover:text-red-800 transition"
+                            title="Cancelar"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -382,11 +449,21 @@ export default function ReservationsList() {
                 
                 <div>
                   <label className="text-xs text-gray-500">Detalles de la partida</label>
-                  <p>Fecha: {getSlotDate(selectedReservation)}</p>
-                  <p>Hora: {getSlotTime(selectedReservation)}</p>
-                  <p>Jugadores: {selectedReservation.people}</p>
-                  <p>Participan en Electroshock: {selectedReservation.personas_electroshock}</p>
-                  <p>Plan: {selectedReservation.plans?.name || 'N/A'}</p>
+                  <div className="mt-2 space-y-2">
+                    <p><span className="text-gray-600">Fecha:</span> {getSlotDate(selectedReservation)}</p>
+                    <p><span className="text-gray-600">Horario:</span></p>
+                    <div className="ml-4 space-y-1">
+                      {getSlotsInfo(selectedReservation).map((slot, idx) => (
+                        <p key={idx} className="text-sm">
+                          • Slot {idx + 1}: {slot.start_time?.slice(0, 5)} - {slot.end_time?.slice(0, 5)}
+                        </p>
+                      ))}
+                    </div>
+                    <p><span className="text-gray-600">Jugadores:</span> {selectedReservation.people}</p>
+                    <p><span className="text-gray-600">Participan en Electroshock:</span> {selectedReservation.personas_electroshock}</p>
+                    <p><span className="text-gray-600">Plan:</span> {selectedReservation.plans?.name || 'N/A'}</p>
+                    <p><span className="text-gray-600">Duración:</span> {selectedReservation.reservation_slots?.length || 1} hora(s)</p>
+                  </div>
                 </div>
                 
                 <div>
