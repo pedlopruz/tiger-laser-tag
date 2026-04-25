@@ -34,8 +34,8 @@ export default function ReservationsList() {
               end_time,
               date,
               status,
-              capacity,
-              reserved,
+              max_capacity,
+              reserved_spots,
               shared_plan_id
             )
           )
@@ -63,130 +63,23 @@ export default function ReservationsList() {
       setReservations(filteredData);
     } catch (error) {
       console.error('Error loading reservations:', error);
+      alert('Error al cargar las reservas: ' + error.message);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    if (reservations.length > 0 || !loading) {
-      const applyDateFilter = async () => {
-        setLoading(true);
-        try {
-          let query = supabase
-            .from('reservations')
-            .select(`
-              *,
-              plans(name, price, num_slots, active),
-              reservation_slots (
-                slot_id,
-                time_slots (
-                  id,
-                  start_time, 
-                  end_time,
-                  date,
-                  status,
-                  capacity,
-                  reserved,
-                  shared_plan_id
-                )
-              )
-            `)
-            .order('created_at', { ascending: false });
-
-          if (filter !== 'all') {
-            query = query.eq('status', filter);
-          }
-
-          const { data, error } = await query;
-          if (error) throw error;
-          
-          let filteredData = data || [];
-          
-          if (dateFilter) {
-            filteredData = filteredData.filter(reservation => {
-              return reservation.reservation_slots?.some(slot => {
-                const slotDate = slot.time_slots?.date;
-                return slotDate === dateFilter;
-              });
-            });
-          }
-          
-          setReservations(filteredData);
-        } catch (error) {
-          console.error('Error loading reservations:', error);
-        } finally {
-          setLoading(false);
-        }
-      };
-      
-      applyDateFilter();
-    }
-  }, [dateFilter, filter]);
-
-  // ✅ Cancelar reserva (maneja normal y compartida)
+  // ✅ Cancelar reserva (usa RPC existente)
   const cancelReservation = async (id, reservationCode) => {
     if (!confirm(`¿Estás seguro de cancelar la reserva ${reservationCode}?`)) return;
 
     try {
-      // Primero obtener la reserva para saber si es compartida
-      const { data: reservation, error: fetchError } = await supabase
-        .from('reservations')
-        .select(`
-          id,
-          people,
-          plan_id,
-          plans(active),
-          reservation_slots(slot_id)
-        `)
-        .eq('id', id)
-        .single();
+      const { data, error } = await supabase
+        .rpc('cancel_reservation', {
+          p_reservation_id: id
+        });
 
-      if (fetchError) throw fetchError;
-
-      const isSharedPlan = reservation.plans?.active === false;
-      const slotIds = reservation.reservation_slots?.map(rs => rs.slot_id) || [];
-
-      if (isSharedPlan) {
-        // ✅ Cancelar reserva compartida: restar reserved
-        for (const slotId of slotIds) {
-          const { data: slot, error: slotError } = await supabase
-            .from('time_slots')
-            .select('reserved')
-            .eq('id', slotId)
-            .single();
-
-          if (slotError) throw slotError;
-
-          const newReserved = Math.max((slot.reserved || 0) - reservation.people, 0);
-          
-          const { error: updateError } = await supabase
-            .from('time_slots')
-            .update({ reserved: newReserved })
-            .eq('id', slotId);
-
-          if (updateError) throw updateError;
-        }
-      } else {
-        // ✅ Cancelar reserva normal: liberar slots
-        if (slotIds.length > 0) {
-          const { error: slotError } = await supabase
-            .from('time_slots')
-            .update({ status: 'active' })
-            .in('id', slotIds);
-
-          if (slotError) throw slotError;
-        }
-      }
-
-      // Cambiar estado de la reserva a cancelled
-      const { error: updateError } = await supabase
-        .from('reservations')
-        .update({ status: 'cancelled' })
-        .eq('id', id);
-
-      if (updateError) throw updateError;
-
+      if (error) throw error;
       alert('Reserva cancelada correctamente');
       loadReservations();
     } catch (error) {
@@ -195,6 +88,7 @@ export default function ReservationsList() {
     }
   };
 
+  // ✅ Confirmar reserva
   const confirmReservation = async (id) => {
     if (!confirm('¿Confirmar esta reserva?')) return;
 
@@ -213,7 +107,7 @@ export default function ReservationsList() {
     }
   };
 
-  // ✅ Reactivar una reserva cancelada (maneja normal y compartida)
+  // ✅ Reactivar reserva cancelada
   const reactivateReservation = async (reservation) => {
     const slotIds = reservation.reservation_slots?.map(rs => rs.slot_id) || [];
     
@@ -221,6 +115,9 @@ export default function ReservationsList() {
       alert('Esta reserva no tiene slots asociados');
       return;
     }
+
+    const isSharedPlan = reservation.plans?.active === false;
+    const people = parseInt(reservation.people) || 1;
 
     if (!confirm(`¿Reactivar la reserva ${reservation.reservation_code}? Se verificará que los horarios estén disponibles.`)) return;
 
@@ -230,18 +127,15 @@ export default function ReservationsList() {
       // Obtener información de los slots
       const { data: slots, error: slotsError } = await supabase
         .from('time_slots')
-        .select('id, status, start_time, date, shared_plan_id, capacity, reserved')
+        .select('id, status, start_time, date, max_capacity, reserved_spots, shared_plan_id')
         .in('id', slotIds);
 
       if (slotsError) throw slotsError;
 
-      const isSharedPlan = reservation.plans?.active === false;
-      const people = reservation.people || 1;
-
       if (isSharedPlan) {
         // ✅ RESERVA COMPARTIDA: Verificar capacidad disponible
         for (const slot of slots) {
-          const availableSpots = (slot.capacity || 0) - (slot.reserved || 0);
+          const availableSpots = (slot.max_capacity || 0) - (slot.reserved_spots || 0);
           
           if (availableSpots < people) {
             alert(`No se puede reactivar la reserva. El horario ${slot.start_time?.slice(0, 5)} solo tiene ${availableSpots} plazas disponibles y necesitas ${people}.`);
@@ -258,11 +152,11 @@ export default function ReservationsList() {
 
         if (updateError) throw updateError;
 
-        // Incrementar reserved en cada slot compartido
+        // Incrementar reserved_spots en cada slot compartido
         for (const slot of slots) {
           const { error: incrementError } = await supabase
             .from('time_slots')
-            .update({ reserved: (slot.reserved || 0) + people })
+            .update({ reserved_spots: (slot.reserved_spots || 0) + people })
             .eq('id', slot.id);
 
           if (incrementError) throw incrementError;
@@ -330,7 +224,7 @@ export default function ReservationsList() {
     }
   };
 
-  // ✅ MOVER filteredReservations AQUÍ - antes del return
+  // Filtrar reservas
   const filteredReservations = reservations.filter(res => {
     if (!searchTerm) return true;
     return res.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -338,7 +232,7 @@ export default function ReservationsList() {
            res.reservation_code?.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
-  // Función para obtener todos los slots ordenados
+  // Funciones auxiliares para formateo
   const getSlotsInfo = (reservation) => {
     const slots = reservation.reservation_slots || [];
     const sortedSlots = [...slots].sort((a, b) => {
@@ -354,7 +248,6 @@ export default function ReservationsList() {
     }));
   };
 
-  // Obtener fecha formateada
   const getSlotDate = (reservation) => {
     const slots = getSlotsInfo(reservation);
     if (slots.length === 0 || !slots[0].date) return 'Fecha no disponible';
@@ -368,7 +261,6 @@ export default function ReservationsList() {
     });
   };
 
-  // Obtener rango de hora formateado
   const getSlotTimeRange = (reservation) => {
     const slots = getSlotsInfo(reservation);
     if (slots.length === 0) return 'Hora no disponible';
@@ -379,7 +271,6 @@ export default function ReservationsList() {
     return `${startTime} - ${endTime}`;
   };
 
-  // Obtener información detallada de horas (para múltiples slots)
   const getDetailedTimes = (reservation) => {
     const slots = getSlotsInfo(reservation);
     if (slots.length === 0) return null;
@@ -555,11 +446,6 @@ export default function ReservationsList() {
                       <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                         {res.plans?.name || 'No especificado'}
                       </div>
-                      {isMultipleSlots && (
-                        <div className="text-xs text-gray-500 mt-1">
-                          {slotCount} hora{slotCount > 1 ? 's' : ''}
-                        </div>
-                      )}
                     </td>
                     <td className="px-6 py-4 text-sm">{res.people} personas</td>
                     <td className="px-6 py-4 text-sm font-medium">€{res.precio_total}</td>
