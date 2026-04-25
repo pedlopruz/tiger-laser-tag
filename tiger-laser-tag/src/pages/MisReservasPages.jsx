@@ -349,6 +349,11 @@ export default function MisReservas() {
     );
   }
 
+  // ✅ Determinar si se debe mostrar el botón de cancelar
+  const showCancelButton = 
+    reservation?.status === "pending" || // Siempre mostrar en pendientes
+    (reservation?.status === "confirmed" && isSharedPlan); // Mostrar en confirmadas solo si es compartida
+
   return (
     <>
       <Helmet>
@@ -413,7 +418,6 @@ export default function MisReservas() {
             className="mb-8"
           >
             <form onSubmit={handleSearch} className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-              {/* ... contenido del formulario ... */}
               <div className="text-center mb-8">
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-tiger-golden/20 rounded-full mb-4">
                   <Search className="text-tiger-golden" size={28} />
@@ -533,17 +537,17 @@ export default function MisReservas() {
                       </div>
                     </div>
 
-                    {/* Solo para reservas pendientes */}
-                    {reservation.status === "pending" && (
+                    {/* Solo para reservas pendientes y NO compartidas */}
+                    {reservation.status === "pending" && !isSharedPlan && (
                       <>
                         <div className="border-t pt-6">
                           <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
                             <p className="text-amber-800 text-sm flex items-start gap-2">
                               <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
-                              <span>Tu reserva está pendiente de confirmación...</span>
+                              <span>Tu reserva está pendiente de confirmación. Una vez confirmada, no podrás modificar los datos.</span>
                             </p>
                           </div>
-                          <Button onClick={confirmReservation} disabled={confirmLoading} className="w-full bg-green-600 hover:bg-green-700">
+                          <Button onClick={confirmReservation} disabled={confirmLoading} className="w-full bg-green-600 hover:bg-green-700 text-white py-3 text-base font-bold">
                             {confirmLoading ? "Confirmando..." : "✅ Confirmar reserva"}
                           </Button>
                         </div>
@@ -562,91 +566,97 @@ export default function MisReservas() {
                                 className="border rounded-lg px-3 py-2 w-24 text-center"
                               />
                             </div>
-                            <Button onClick={updatePlayers} disabled={updateLoading || people === reservation.people}>
+                            <Button onClick={updatePlayers} disabled={updateLoading || people === reservation.people} className="bg-tiger-green hover:bg-tiger-green/90 text-white">
                               {updateLoading ? "Actualizando..." : "Actualizar jugadores"}
                             </Button>
                           </div>
                         </div>
 
                         {/* Cambiar fecha y horario */}
-                        {!isSharedPlan && (
-                          <div className="border-t pt-6">
-                            <h3 className="font-semibold text-tiger-green mb-4">Cambiar fecha y horario</h3>
-
-                            {/* Selector de duración */}
-                            <div className="mb-5">
-                              <p className="text-sm text-gray-600 mb-2">
-                                Tu reserva actual es de <strong>{requiredSlots} hora{requiredSlots > 1 ? "s" : ""}</strong>.
-                                ¿Quieres cambiar la duración?
-                              </p>
-                              <div className="flex gap-3">
-                                {[1, 2].map((n) => (
-                                  <button
-                                    key={n}
-                                    type="button"
-                                    onClick={() => {
-                                      setNewSlotCount(n === requiredSlots ? null : n);
-                                      setSelectedSlots([]);
-                                    }}
-                                    className={`flex-1 py-2 px-4 rounded-lg border-2 text-sm font-medium transition-all ${
-                                      effectiveSlotCount === n
-                                        ? "border-tiger-orange bg-tiger-orange/10 text-tiger-orange"
-                                        : "border-gray-200 text-gray-500"
-                                    }`}
-                                  >
-                                    {n} hora{n > 1 ? "s" : ""}
-                                    {n === requiredSlots && <span className="ml-1 text-xs">(actual)</span>}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-
-                            <CalendarPicker
-                              initialDate={reservation?.time_slots?.date}
-                              onSelectDate={(date) => {
-                                setSelectedDate(date);
-                                setSelectedSlots([]);
-                              }}
-                            />
-
-                            {selectedDate && (
-                              <>
-                                <p className="text-sm text-gray-500 mt-3 mb-2">
-                                  {effectiveSlotCount === 2
-                                    ? "Selecciona 2 horas consecutivas"
-                                    : "Selecciona 1 hora disponible"}
-                                </p>
-                                <SlotPickerEdit
-                                  key={`${selectedDate}-${effectiveSlotCount}`}
-                                  date={selectedDate}
-                                  people={people}
-                                  maxSlots={effectiveSlotCount}
-                                  minSlots={effectiveSlotCount}
-                                  currentSlotIds={currentSlotIds}
-                                  onSelectSlots={(slots) => setSelectedSlots(slots)}
-                                />
-                              </>
-                            )}
-
-                            {selectedSlots.length === effectiveSlotCount && (
-                              <Button onClick={updateSlot} disabled={updateLoading} className="w-full mt-4 bg-tiger-orange">
-                                {updateLoading ? "Cambiando..." : "Confirmar cambio de horario"}
-                              </Button>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Cancelar reserva */}
                         <div className="border-t pt-6">
-                          <Button onClick={cancelReservation} disabled={cancelLoading} variant="destructive" className="w-full bg-red-600">
-                            {cancelLoading ? "Cancelando..." : "Cancelar reserva"}
-                          </Button>
+                          <h3 className="font-semibold text-tiger-green mb-4">Cambiar fecha y horario</h3>
+
+                          {/* Selector de duración */}
+                          <div className="mb-5">
+                            <p className="text-sm text-gray-600 mb-2">
+                              Tu reserva actual es de <strong>{requiredSlots} hora{requiredSlots > 1 ? "s" : ""}</strong>.
+                              ¿Quieres cambiar la duración?
+                            </p>
+                            <div className="flex gap-3">
+                              {[1, 2].map((n) => (
+                                <button
+                                  key={n}
+                                  type="button"
+                                  onClick={() => {
+                                    setNewSlotCount(n === requiredSlots ? null : n);
+                                    setSelectedSlots([]);
+                                  }}
+                                  className={`flex-1 py-2 px-4 rounded-lg border-2 text-sm font-medium transition-all ${
+                                    effectiveSlotCount === n
+                                      ? "border-tiger-orange bg-tiger-orange/10 text-tiger-orange"
+                                      : "border-gray-200 text-gray-500"
+                                  }`}
+                                >
+                                  {n} hora{n > 1 ? "s" : ""}
+                                  {n === requiredSlots && <span className="ml-1 text-xs">(actual)</span>}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          <CalendarPicker
+                            initialDate={reservation?.time_slots?.date}
+                            onSelectDate={(date) => {
+                              setSelectedDate(date);
+                              setSelectedSlots([]);
+                            }}
+                          />
+
+                          {selectedDate && (
+                            <>
+                              <p className="text-sm text-gray-500 mt-3 mb-2">
+                                {effectiveSlotCount === 2
+                                  ? "Selecciona 2 horas consecutivas"
+                                  : "Selecciona 1 hora disponible"}
+                              </p>
+                              <SlotPickerEdit
+                                key={`${selectedDate}-${effectiveSlotCount}`}
+                                date={selectedDate}
+                                people={people}
+                                maxSlots={effectiveSlotCount}
+                                minSlots={effectiveSlotCount}
+                                currentSlotIds={currentSlotIds}
+                                onSelectSlots={(slots) => setSelectedSlots(slots)}
+                              />
+                            </>
+                          )}
+
+                          {selectedSlots.length === effectiveSlotCount && (
+                            <Button onClick={updateSlot} disabled={updateLoading} className="w-full mt-4 bg-tiger-orange hover:bg-tiger-orange/90 text-white">
+                              {updateLoading ? "Cambiando..." : "Confirmar cambio de horario"}
+                            </Button>
+                          )}
                         </div>
                       </>
                     )}
 
-                    {/* Reservas confirmadas */}
-                    {reservation.status === "confirmed" && (
+                    {/* Mensaje para planes compartidos (no se pueden modificar) */}
+                    {reservation.status === "pending" && isSharedPlan && (
+                      <div className="border-t pt-6">
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                          <p className="text-blue-800 text-sm flex items-start gap-2">
+                            <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
+                            <span>
+                              Esta es una reserva de <strong>horario compartido</strong>. No se puede modificar la fecha ni el horario.
+                              Si necesitas cambios, por favor contáctanos.
+                            </span>
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Reservas confirmadas - Solo información básica */}
+                    {reservation.status === "confirmed" && !isSharedPlan && (
                       <div className="border-t pt-6">
                         <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
                           <CheckCircle className="text-green-600 mx-auto mb-2" size={32} />
@@ -655,6 +665,41 @@ export default function MisReservas() {
                             Tu reserva ya está confirmada. Presenta el código el día de tu visita.
                           </p>
                         </div>
+                      </div>
+                    )}
+
+                    {/* Reservas confirmadas compartidas - Info + botón cancelar */}
+                    {reservation.status === "confirmed" && isSharedPlan && (
+                      <div className="border-t pt-6">
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4 text-center">
+                          <CheckCircle className="text-green-600 mx-auto mb-2" size={32} />
+                          <p className="text-green-800 font-medium">✅ Reserva confirmada</p>
+                          <p className="text-green-600 text-sm mt-1">
+                            Tu reserva de horario compartido está confirmada.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* ✅ Botón de cancelar - Siempre visible en pendientes, solo en compartidas confirmadas */}
+                    {showCancelButton && (
+                      <div className="border-t pt-6">
+                        <Button
+                          onClick={cancelReservation}
+                          disabled={cancelLoading}
+                          variant="destructive"
+                          className="w-full bg-red-600 hover:bg-red-700 text-white"
+                        >
+                          {cancelLoading ? (
+                            <span className="flex items-center justify-center gap-2">
+                              <span className="animate-spin">⏳</span>
+                              Cancelando...
+                            </span>
+                          ) : "Cancelar reserva"}
+                        </Button>
+                        <p className="text-xs text-gray-500 text-center mt-3">
+                          ⚠️ Esta acción no se puede deshacer
+                        </p>
                       </div>
                     )}
                   </div>
