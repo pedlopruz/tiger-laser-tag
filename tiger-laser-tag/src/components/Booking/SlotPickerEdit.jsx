@@ -6,7 +6,8 @@ export default function SlotPickerEdit({
   people = 1,
   onSelectSlots,
   maxSlots = 2,
-  minSlots = 1
+  minSlots = 1,
+  currentSlotIds = []  // ✅ IDs de slots que el usuario ya tiene reservados
 }) {
 
   const [slots, setSlots] = useState([]);
@@ -26,15 +27,8 @@ export default function SlotPickerEdit({
     return time.slice(0, 5);
   }
 
-  function getMinutesFromTime(time) {
-    if (!time) return 0;
-    const [hours, minutes] = time.split(':').map(Number);
-    return hours * 60 + minutes;
-  }
-
   function areConsecutive(a, b) {
     if (!a?.start_time || !b?.start_time || !a?.end_time) return false;
-    // El slot B empieza exactamente donde termina el slot A
     return a.end_time.slice(0, 5) === b.start_time.slice(0, 5) ||
           b.end_time.slice(0, 5) === a.start_time.slice(0, 5);
   }
@@ -47,12 +41,21 @@ export default function SlotPickerEdit({
   }
 
   function getRemaining(slot) {
+    // ✅ Para slots del usuario, mostrar disponibilidad normal
+    if (currentSlotIds.includes(slot.id)) {
+      return slot.capacity || slot.remaining || people;
+    }
+    
     if (slot.remaining !== undefined && slot.remaining > 0) return slot.remaining;
     if (slot.capacity && !slot.reserved) return slot.capacity;
     return 0;
   }
 
   function isSlotBlocked(slot) {
+    // ✅ Los slots del usuario NO están bloqueados para él
+    if (currentSlotIds.includes(slot.id)) {
+      return false;
+    }
     return slot.reserved > 0 || slot.isBlocked === true;
   }
 
@@ -124,12 +127,12 @@ export default function SlotPickerEdit({
     const currentSelected = selectedSlotsRef.current;
 
     if (isSlotBlocked(slot)) {
-      alert("Este horario ya está reservado");
+      alert("Este horario ya está reservado por otro cliente");
       return;
     }
 
     const remaining = getRemaining(slot);
-    if (remaining < people) {
+    if (remaining < people && !currentSlotIds.includes(slot.id)) {
       alert(`Solo quedan ${remaining} plazas`);
       return;
     }
@@ -159,7 +162,7 @@ export default function SlotPickerEdit({
 
     setSelectedSlots(newSelection);
     if (onSelectSlots) onSelectSlots(newSelection);
-  }, [people, onSelectSlots, maxSlots]);
+  }, [people, onSelectSlots, maxSlots, currentSlotIds]);
 
   function isSelected(slot) {
     return selectedSlots.some(s => s.id === slot.id);
@@ -170,7 +173,7 @@ export default function SlotPickerEdit({
     if (isSlotBlocked(slot)) return true;
 
     const remaining = getRemaining(slot);
-    if (remaining < people) return true;
+    if (remaining < people && !currentSlotIds.includes(slot.id)) return true;
 
     if (selectedSlots.length === 1) {
       const first = selectedSlots[0];
@@ -189,19 +192,32 @@ export default function SlotPickerEdit({
   function getSlotStyle(slot) {
     const selected = isSelected(slot);
     const disabled = isDisabled(slot);
+    const isCurrentSlot = currentSlotIds.includes(slot.id);
     const isConsecutivePossible = selectedSlots.length === 1 &&
                                   !selected &&
                                   areConsecutive(selectedSlots[0], slot);
 
     if (selected && selectedSlots.length === 2) return "bg-tiger-green text-white border-tiger-green";
     if (selected) return "bg-tiger-orange text-white border-tiger-orange";
-    if (disabled) return "bg-gray-100 text-gray-400 cursor-not-allowed";
+    if (disabled && !isCurrentSlot) return "bg-gray-100 text-gray-400 cursor-not-allowed";
+    
+    // ✅ Estilo especial para slots que el usuario ya tiene reservados
+    if (isCurrentSlot && !selected) {
+      return "bg-blue-50 text-blue-700 border-blue-300 hover:bg-blue-100 ring-2 ring-blue-300";
+    }
+    
     if (isConsecutivePossible) return "bg-green-50 text-green-700 border-green-300 hover:bg-green-100";
     return "bg-white hover:bg-gray-50 border-gray-200";
   }
 
   function getSlotStatusText(slot) {
     if (!isFutureSlot(slot)) return "⏰ Pasado";
+    
+    // ✅ Indicar que es su reserva actual
+    if (currentSlotIds.includes(slot.id) && !isSelected(slot)) {
+      return "📌 Tu reserva actual";
+    }
+    
     if (isSlotBlocked(slot)) return "🔒 Reservado";
     const remaining = getRemaining(slot);
     if (remaining < people) return `⚠️ ${remaining} plazas`;
@@ -232,6 +248,12 @@ export default function SlotPickerEdit({
           </span>
         )}
       </h3>
+
+      {currentSlotIds.length > 0 && (
+        <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
+          💡 Tus horarios actuales aparecen destacados en azul. Puedes cambiarlos o reducirlos seleccionando solo uno.
+        </div>
+      )}
 
       {loading && (
         <div className="text-sm text-gray-500 animate-pulse">Cargando horarios...</div>

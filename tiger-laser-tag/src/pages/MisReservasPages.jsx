@@ -717,6 +717,7 @@ export default function MisReservas() {
                                   people={people}
                                   maxSlots={effectiveSlotCount}
                                   minSlots={effectiveSlotCount}
+                                  currentSlotIds={currentSlotIds}
                                   onSelectSlots={(slots) => setSelectedSlots(slots)}
                                 />
                               </>
