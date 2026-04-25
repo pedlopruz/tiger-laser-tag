@@ -85,9 +85,10 @@ async function accessReservation(req, res, { code, email }) {
       .select(`
         *,
         reservation_slots(
+          slot_id,
           time_slots(date, start_time, end_time)
         ),
-        plans(name, price, duration_minutes)
+        plans(name, price, duration_minutes, active, num_slots)
       `)
       .eq("reservation_code", code)
       .eq("email", email)
@@ -109,10 +110,18 @@ async function accessReservation(req, res, { code, email }) {
       return res.status(404).json({ error: "Reserva no encontrada" });
     }
 
-   // Aplanar time_slots para no modificar el frontend
+    // ✅ Guardar los slot_ids actuales antes de modificar
+    const currentSlotIds = reservation.reservation_slots?.map(rs => rs.slot_id) || [];
+    
+    // ✅ Aplanar time_slots para el frontend (sin eliminar el original)
     reservation.time_slots = reservation.reservation_slots?.[0]?.time_slots || null;
-    reservation.num_slots = reservation.reservation_slots?.length || 1; // ← añade esta línea
-    delete reservation.reservation_slots;
+    reservation.num_slots = reservation.reservation_slots?.length || 1;
+    
+    // ✅ Añadir campo con los IDs de los slots actuales
+    reservation.current_slot_ids = currentSlotIds;
+    
+    // ❌ NO eliminar reservation_slots - mantenerlo para que el frontend pueda acceder
+    // delete reservation.reservation_slots;
 
     console.log("✅ Reserva encontrada:", {
       id: reservation.id,
@@ -120,7 +129,9 @@ async function accessReservation(req, res, { code, email }) {
       name: reservation.name,
       status: reservation.status,
       people: reservation.people,
-      time_slots: reservation.time_slots
+      time_slots: reservation.time_slots,
+      current_slot_ids: reservation.current_slot_ids,
+      num_slots: reservation.num_slots
     });
 
     return res.status(200).json({ reservation });

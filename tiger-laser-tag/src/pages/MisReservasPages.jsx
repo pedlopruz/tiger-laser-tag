@@ -148,7 +148,7 @@ export default function MisReservas() {
   const slotPriceIncreases = newSlotCount > requiredSlots;
 
   // ✅ DEFINIR currentSlotIds - Obtener los slots actuales de la reserva
-  const currentSlotIds = reservation?.reservation_slots?.map(rs => rs.slot_id) || [];
+  const currentSlotIds = reservation?.current_slot_ids || [];
 
   async function updatePlayers() {
     if (!people) return;
