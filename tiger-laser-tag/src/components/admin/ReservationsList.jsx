@@ -210,7 +210,7 @@ export default function ReservationsList() {
       // Reactivar la reserva: cambiar estado a 'pending'
       const { error: updateError } = await supabase
         .from('reservations')
-        .update({ status: 'pending' })
+        .update({ status: 'confirmed' })
         .eq('id', reservation.id);
 
       if (updateError) throw updateError;
