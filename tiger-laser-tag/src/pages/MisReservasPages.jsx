@@ -139,16 +139,26 @@ export default function MisReservas() {
   );
   const showExtraWarning = people > MINIMUM_BILLED && people > originalPeople;
   const requiredSlots = reservation?.num_slots ?? 1;
-  const isSharedPlan = reservation?.plans?.active === false;
+  
+  // ✅ Detectar plan compartido (active=false o nombre contiene "Compartido")
+  const isSharedPlan = 
+    reservation?.plans?.active === false ||
+    reservation?.plans?.name?.toLowerCase().includes("compartido");
+  
   const effectiveSlotCount = newSlotCount ?? requiredSlots;
   const slotCountChanged = newSlotCount !== null && newSlotCount !== requiredSlots;
-  const estimatedNewTotal = pricePerPerson * newSlotCount * billablePeople(originalPeople);
+  const estimatedNewTotal = pricePerPerson * (newSlotCount || requiredSlots) * billablePeople(originalPeople);
   const estimatedCurrentTotal = reservation?.precio_total ?? 0;
   const estimatedDiff = Math.abs(estimatedNewTotal - estimatedCurrentTotal);
-  const slotPriceIncreases = newSlotCount > requiredSlots;
+  const slotPriceIncreases = (newSlotCount || 0) > requiredSlots;
 
-  // ✅ DEFINIR currentSlotIds - Obtener los slots actuales de la reserva
+  // ✅ Obtener los slots actuales de la reserva
   const currentSlotIds = reservation?.current_slot_ids || [];
+
+  // ✅ Determinar si se debe mostrar el botón de cancelar
+  const showCancelButton = 
+    reservation?.status === "pending" ||
+    (reservation?.status === "confirmed" && isSharedPlan);
 
   async function updatePlayers() {
     if (!people) return;
@@ -349,11 +359,6 @@ export default function MisReservas() {
     );
   }
 
-  // ✅ Determinar si se debe mostrar el botón de cancelar
-  const showCancelButton = 
-    reservation?.status === "pending" || // Siempre mostrar en pendientes
-    (reservation?.status === "confirmed" && isSharedPlan); // Mostrar en confirmadas solo si es compartida
-
   return (
     <>
       <Helmet>
@@ -517,7 +522,7 @@ export default function MisReservas() {
                         <div>
                           <p className="text-xs text-gray-500">Hora</p>
                           <p className="font-medium">
-                            {formatTime(reservation.time_slots?.start_time) + " - " + formatTime(reservation.time_slots?.end_time)}
+                            {formatTime(reservation.time_slots?.start_time)} - {formatTime(reservation.time_slots?.end_time)}
                           </p>
                         </div>
                       </div>
@@ -563,7 +568,7 @@ export default function MisReservas() {
                                 min={reservation.people}
                                 value={people}
                                 onChange={(e) => setPeople(Number(e.target.value))}
-                                className="border rounded-lg px-3 py-2 w-24 text-center"
+                                className="border rounded-lg px-3 py-2 w-24 text-center focus:ring-2 focus:ring-tiger-orange"
                               />
                             </div>
                             <Button onClick={updatePlayers} disabled={updateLoading || people === reservation.people} className="bg-tiger-green hover:bg-tiger-green/90 text-white">
@@ -594,7 +599,7 @@ export default function MisReservas() {
                                   className={`flex-1 py-2 px-4 rounded-lg border-2 text-sm font-medium transition-all ${
                                     effectiveSlotCount === n
                                       ? "border-tiger-orange bg-tiger-orange/10 text-tiger-orange"
-                                      : "border-gray-200 text-gray-500"
+                                      : "border-gray-200 text-gray-500 hover:border-gray-300"
                                   }`}
                                 >
                                   {n} hora{n > 1 ? "s" : ""}
@@ -602,6 +607,21 @@ export default function MisReservas() {
                                 </button>
                               ))}
                             </div>
+
+                            {/* Aviso de diferencia de precio */}
+                            {slotCountChanged && (
+                              <div className={`mt-3 p-3 rounded-lg text-sm border ${
+                                slotPriceIncreases
+                                  ? "bg-amber-50 border-amber-200 text-amber-800"
+                                  : "bg-blue-50 border-blue-200 text-blue-800"
+                              }`}>
+                                {slotPriceIncreases ? (
+                                  <>⚠️ Al pasar a <strong>{newSlotCount} horas</strong> se generará un pago adicional de aproximadamente <strong>€{estimatedDiff}</strong>.</>
+                                ) : (
+                                  <>💡 Al reducir a <strong>{newSlotCount} hora</strong>, el precio bajará aproximadamente <strong>€{estimatedDiff}</strong>.</>
+                                )}
+                              </div>
+                            )}
                           </div>
 
                           <CalendarPicker
@@ -640,7 +660,7 @@ export default function MisReservas() {
                       </>
                     )}
 
-                    {/* Mensaje para planes compartidos (no se pueden modificar) */}
+                    {/* Mensaje para planes compartidos pendientes */}
                     {reservation.status === "pending" && isSharedPlan && (
                       <div className="border-t pt-6">
                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -655,7 +675,7 @@ export default function MisReservas() {
                       </div>
                     )}
 
-                    {/* Reservas confirmadas - Solo información básica */}
+                    {/* Reservas confirmadas NO compartidas */}
                     {reservation.status === "confirmed" && !isSharedPlan && (
                       <div className="border-t pt-6">
                         <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
@@ -668,7 +688,7 @@ export default function MisReservas() {
                       </div>
                     )}
 
-                    {/* Reservas confirmadas compartidas - Info + botón cancelar */}
+                    {/* Reservas confirmadas compartidas */}
                     {reservation.status === "confirmed" && isSharedPlan && (
                       <div className="border-t pt-6">
                         <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4 text-center">
@@ -681,7 +701,7 @@ export default function MisReservas() {
                       </div>
                     )}
 
-                    {/* ✅ Botón de cancelar - Siempre visible en pendientes, solo en compartidas confirmadas */}
+                    {/* Botón de cancelar */}
                     {showCancelButton && (
                       <div className="border-t pt-6">
                         <Button
@@ -702,6 +722,24 @@ export default function MisReservas() {
                         </p>
                       </div>
                     )}
+
+                    {/* Mensajes generales */}
+                    <AnimatePresence>
+                      {message && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0 }}
+                          className={`p-4 rounded-lg text-center ${
+                            message.includes("✅")
+                              ? "bg-green-50 text-green-800 border border-green-200"
+                              : "bg-blue-50 text-blue-800 border border-blue-200"
+                          }`}
+                        >
+                          {message}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 </div>
               </motion.div>
