@@ -1,6 +1,6 @@
 // src/components/admin/ReservationsList.jsx
 import { useState, useEffect } from 'react';
-import { Search, Filter, Calendar as CalendarIcon, X, Eye, Trash2, CheckCircle, Clock } from 'lucide-react';
+import { Search, Filter, Calendar as CalendarIcon, X, Eye, Trash2, CheckCircle, Clock, RotateCcw } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { Button } from '@/components/ui/button';
 
@@ -12,6 +12,7 @@ export default function ReservationsList() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedReservation, setSelectedReservation] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [reactivateLoading, setReactivateLoading] = useState({});
 
   useEffect(() => {
     loadReservations();
@@ -24,14 +25,15 @@ export default function ReservationsList() {
         .from('reservations')
         .select(`
           *,
-          plans(name, price, num_slots),
+          plans(name, price, num_slots, active),
           reservation_slots (
             slot_id,
             time_slots (
               id,
               start_time, 
               end_time,
-              date
+              date,
+              status
             )
           )
         `)
@@ -72,14 +74,15 @@ export default function ReservationsList() {
             .from('reservations')
             .select(`
               *,
-              plans(name, price, num_slots),
+              plans(name, price, num_slots, active),
               reservation_slots (
                 slot_id,
                 time_slots (
                   id,
                   start_time, 
                   end_time,
-                  date
+                  date,
+                  status
                 )
               )
             `)
@@ -151,6 +154,106 @@ export default function ReservationsList() {
     }
   };
 
+  // ✅ Nueva función para reactivar una reserva cancelada
+  const reactivateReservation = async (reservation) => {
+    const slotIds = reservation.reservation_slots?.map(rs => rs.slot_id) || [];
+    
+    if (slotIds.length === 0) {
+      alert('Esta reserva no tiene slots asociados');
+      return;
+    }
+
+    if (!confirm(`¿Reactivar la reserva ${reservation.reservation_code}? Se verificará que los horarios estén disponibles.`)) return;
+
+    setReactivateLoading(prev => ({ ...prev, [reservation.id]: true }));
+
+    try {
+      // Verificar que los slots estén disponibles (status = 'active')
+      const { data: slots, error: slotsError } = await supabase
+        .from('time_slots')
+        .select('id, status, start_time, date')
+        .in('id', slotIds);
+
+      if (slotsError) throw slotsError;
+
+      // Verificar si algún slot no está activo
+      const unavailableSlots = slots.filter(slot => slot.status !== 'active');
+      
+      if (unavailableSlots.length > 0) {
+        const unavailableTimes = unavailableSlots.map(slot => 
+          `${slot.date} ${slot.start_time?.slice(0, 5)}`
+        ).join(', ');
+        alert(`No se puede reactivar la reserva porque los siguientes horarios no están disponibles:\n${unavailableTimes}`);
+        setReactivateLoading(prev => ({ ...prev, [reservation.id]: false }));
+        return;
+      }
+
+      // Verificar también que los slots no tengan conflictos con otras reservas activas
+      const { data: conflictingReservations, error: conflictError } = await supabase
+        .from('reservation_slots')
+        .select(`
+          reservation_id,
+          reservations!inner(status)
+        `)
+        .in('slot_id', slotIds)
+        .neq('reservation_id', reservation.id)
+        .eq('reservations.status', 'confirmed');
+
+      if (conflictError) throw conflictError;
+
+      if (conflictingReservations && conflictingReservations.length > 0) {
+        alert('No se puede reactivar la reserva porque hay conflictos con otras reservas confirmadas en los mismos horarios.');
+        setReactivateLoading(prev => ({ ...prev, [reservation.id]: false }));
+        return;
+      }
+
+      // Reactivar la reserva: cambiar estado a 'pending'
+      const { error: updateError } = await supabase
+        .from('reservations')
+        .update({ status: 'pending' })
+        .eq('id', reservation.id);
+
+      if (updateError) throw updateError;
+
+      // Bloquear los slots nuevamente
+      const { error: blockError } = await supabase
+        .from('time_slots')
+        .update({ status: 'blocked' })
+        .in('id', slotIds);
+
+      if (blockError) throw blockError;
+
+      alert('✅ Reserva reactivada correctamente');
+      loadReservations();
+    } catch (error) {
+      console.error('Error reactivating reservation:', error);
+      alert('Error al reactivar la reserva');
+    } finally {
+      setReactivateLoading(prev => ({ ...prev, [reservation.id]: false }));
+    }
+  };
+
+  // ✅ Verificar si una reserva cancelada puede ser reactivada
+  const canReactivate = async (reservation) => {
+    const slotIds = reservation.reservation_slots?.map(rs => rs.slot_id) || [];
+    if (slotIds.length === 0) return false;
+
+    try {
+      const { data: slots, error } = await supabase
+        .from('time_slots')
+        .select('status')
+        .in('id', slotIds);
+
+      if (error) throw error;
+      
+      // Todos los slots deben estar activos
+      return slots.every(slot => slot.status === 'active');
+    } catch (error) {
+      console.error('Error checking availability:', error);
+      return false;
+    }
+  };
+
   // ✅ MOVER filteredReservations AQUÍ - antes del return
   const filteredReservations = reservations.filter(res => {
     if (!searchTerm) return true;
@@ -159,7 +262,7 @@ export default function ReservationsList() {
            res.reservation_code?.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
-  // Nueva función para obtener todos los slots ordenados
+  // Función para obtener todos los slots ordenados
   const getSlotsInfo = (reservation) => {
     const slots = reservation.reservation_slots || [];
     const sortedSlots = [...slots].sort((a, b) => {
@@ -333,6 +436,7 @@ export default function ReservationsList() {
                 const slotCount = res.reservation_slots?.length || 1;
                 const timeInfo = getDetailedTimes(res);
                 const isMultipleSlots = slotCount > 1;
+                const isCancelled = res.status === 'cancelled';
                 
                 return (
                   <tr key={res.id} className="hover:bg-gray-50 transition">
@@ -390,7 +494,9 @@ export default function ReservationsList() {
                         >
                           <Eye size={18} />
                         </button>
-                        {res.status !== 'confirmed' && res.status !== 'cancelled' && (
+                        
+                        {/* Botón Confirmar - solo para reservas pendientes */}
+                        {res.status === 'pending' && (
                           <button
                             onClick={() => confirmReservation(res.id)}
                             className="text-green-600 hover:text-green-800 transition"
@@ -399,6 +505,8 @@ export default function ReservationsList() {
                             <CheckCircle size={18} />
                           </button>
                         )}
+                        
+                        {/* Botón Cancelar - para reservas pendientes o confirmadas (no compartidas) */}
                         {res.status !== 'cancelled' && (
                           <button
                             onClick={() => cancelReservation(res.id, res.reservation_code)}
@@ -408,9 +516,25 @@ export default function ReservationsList() {
                             <Trash2 size={18} />
                           </button>
                         )}
+                        
+                        {/* ✅ Botón Reactivar - solo para reservas canceladas */}
+                        {isCancelled && (
+                          <button
+                            onClick={() => reactivateReservation(res)}
+                            disabled={reactivateLoading[res.id]}
+                            className="text-amber-600 hover:text-amber-800 transition disabled:opacity-50"
+                            title="Reactivar reserva (si los horarios están disponibles)"
+                          >
+                            {reactivateLoading[res.id] ? (
+                              <div className="animate-spin h-4 w-4 border-2 border-amber-600 border-t-transparent rounded-full" />
+                            ) : (
+                              <RotateCcw size={18} />
+                            )}
+                          </button>
+                        )}
                       </div>
                     </td>
-                  </tr>
+                   </tr>
                 );
               })}
             </tbody>
@@ -468,7 +592,7 @@ export default function ReservationsList() {
                       ))}
                     </div>
                     <p><span className="text-gray-600">Jugadores:</span> {selectedReservation.people}</p>
-                    <p><span className="text-gray-600">Participan en Electroshock:</span> {selectedReservation.personas_electroshock}</p>
+                    <p><span className="text-gray-600">Participan en Electroshock:</span> {selectedReservation.personas_electroshock || 0}</p>
                     <p><span className="text-gray-600">Plan:</span> {selectedReservation.plans?.name || 'N/A'}</p>
                     <p><span className="text-gray-600">Duración:</span> {selectedReservation.reservation_slots?.length || 1} hora(s)</p>
                   </div>
