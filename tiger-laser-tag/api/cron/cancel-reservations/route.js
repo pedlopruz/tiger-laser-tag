@@ -1,6 +1,8 @@
 // tiger-laser-tag/api/cron/cancel-reservations/route.js
 import { createClient } from '@supabase/supabase-js';
-import { NextResponse } from 'next/server';
+
+// ❌ Eliminar esta línea (edge runtime config)
+// export const config = { runtime: 'edge' };
 
 export async function GET(request) {
   // 🔒 Verificar clave secreta
@@ -9,28 +11,33 @@ export async function GET(request) {
   
   if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
     console.log('❌ Unauthorized cron attempt');
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
+      status: 401,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 
   console.log('🕐 Ejecutando cron job...', new Date().toISOString());
 
-  // ✅ Usar las variables correctas (sin NEXT_PUBLIC_)
+  // Usar las variables correctas
   const supabaseUrl = process.env.SUPABASE_URL;
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !supabaseServiceKey) {
     console.error('❌ Faltan variables de entorno');
-    return NextResponse.json({ error: 'Missing environment variables' }, { status: 500 });
+    return new Response(JSON.stringify({ error: 'Missing environment variables' }), { 
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   const now = new Date();
   let cancelledCount = 0;
-  const cancelledReservations = [];
 
   try {
-    // Obtener reservas pendientes con sus slots
+    // Obtener reservas pendientes
     const { data: reservations, error: fetchError } = await supabase
       .from('reservations')
       .select(`
@@ -54,7 +61,6 @@ export async function GET(request) {
       const slots = reservation.reservation_slots;
       if (!slots?.length) continue;
 
-      // Ordenar slots por hora
       const sortedSlots = [...slots].sort((a, b) => 
         a.time_slots.start_time.localeCompare(b.time_slots.start_time)
       );
@@ -63,11 +69,10 @@ export async function GET(request) {
       const slotDateTime = new Date(`${firstSlot.time_slots.date}T${firstSlot.time_slots.start_time}`);
       const hoursDiff = (slotDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
 
-      // Si faltan menos de 48 horas y la reserva sigue pendiente
       if (hoursDiff < 48 && hoursDiff > 0) {
         const slotIds = slots.map(s => s.slot_id);
         
-        // Liberar slots (ponerlos como activos)
+        // Liberar slots
         const { error: slotsError } = await supabase
           .from('time_slots')
           .update({ status: 'active' })
@@ -75,7 +80,7 @@ export async function GET(request) {
         
         if (slotsError) throw slotsError;
         
-        // Cancelar la reserva
+        // Cancelar reserva
         const { error: updateError } = await supabase
           .from('reservations')
           .update({ status: 'cancelled' })
@@ -84,35 +89,26 @@ export async function GET(request) {
         if (updateError) throw updateError;
         
         cancelledCount++;
-        cancelledReservations.push({
-          id: reservation.id,
-          code: reservation.reservation_code,
-          name: reservation.name
-        });
-        
-        console.log(`✅ Cancelada reserva: ${reservation.reservation_code} - ${reservation.name}`);
+        console.log(`✅ Cancelada: ${reservation.reservation_code}`);
       }
     }
 
     console.log(`📊 Total canceladas: ${cancelledCount}`);
 
-    return NextResponse.json({ 
+    return new Response(JSON.stringify({ 
       success: true, 
       cancelled: cancelledCount,
-      details: cancelledReservations,
       timestamp: new Date().toISOString()
+    }), { 
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
     });
 
   } catch (error) {
-    console.error('❌ Error en cron job:', error);
-    return NextResponse.json({ 
-      error: error.message,
-      timestamp: new Date().toISOString()
-    }, { status: 500 });
+    console.error('❌ Error:', error);
+    return new Response(JSON.stringify({ error: error.message }), { 
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 }
-
-// Opcional: Configuración para edge runtime
-export const config = {
-  runtime: 'edge',
-};
