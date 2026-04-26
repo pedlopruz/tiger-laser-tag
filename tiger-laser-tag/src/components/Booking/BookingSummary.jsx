@@ -9,39 +9,36 @@ export default function BookingSummary({
   setPeople,
   onConfirm,
   showForm,
-  onElectroshockChange  // ✅ Callback para enviar el valor al padre
+  onElectroshockChange
 }) {
 
-  const pricePerPerson = plan?.price || 0;
-  const basePeople = Math.max(people, 10);
-  const total = pricePerPerson * basePeople;
+  // ✅ Detectar si es reserva compartida desde los slots seleccionados
+  const isShared = slots.some(s => s.isShared);
 
-  // ✅ Estado para personas electroshock
+  // ✅ Precio según tipo de reserva
+  const pricePerPerson = plan?.price || 0;
+  const billablePeople = isShared
+    ? people                      // compartida: se paga lo que se reserva
+    : Math.max(people, 10);       // normal: mínimo 10
+  const total = pricePerPerson * billablePeople;
+
   const [electroshock, setElectroshock] = useState(people);
 
-  // ✅ Cuando cambia people, actualizar electroshock (si es mayor, igualar; si es menor, mantener o ajustar)
   useEffect(() => {
     if (people < electroshock) {
-      // Si los jugadores disminuyen y electroshock es mayor, ajustar
       setElectroshock(people);
       if (onElectroshockChange) onElectroshockChange(people);
     } else if (people > electroshock) {
-      // Si los jugadores aumentan, igualar electroshock
       setElectroshock(people);
       if (onElectroshockChange) onElectroshockChange(people);
     }
   }, [people]);
 
-  // ✅ Notificar al padre cuando cambia electroshock
   useEffect(() => {
     if (onElectroshockChange) {
       onElectroshockChange(electroshock);
     }
   }, [electroshock, onElectroshockChange]);
-
-  /* --------------------------
-     Helpers
-  -------------------------- */
 
   function formatTime(time) {
     return time?.slice(0, 5);
@@ -57,24 +54,12 @@ export default function BookingSummary({
     });
   }
 
-  /* --------------------------
-     Rango de horas
-  -------------------------- */
-
   function getTimeRange() {
     if (!slots.length) return "-";
-    if (slots.length === 1) {
-      return formatTime(slots[0].start_time);
-    }
-    const sorted = [...slots].sort(
-      (a, b) => a.start_time.localeCompare(b.start_time)
-    );
+    if (slots.length === 1) return formatTime(slots[0].start_time);
+    const sorted = [...slots].sort((a, b) => a.start_time.localeCompare(b.start_time));
     return `${formatTime(sorted[0].start_time)} - ${formatTime(sorted[sorted.length - 1].end_time)}`;
   }
-
-  /* --------------------------
-     Disponibilidad real
-  -------------------------- */
 
   function getRemaining() {
     if (!slots.length) return null;
@@ -90,7 +75,6 @@ export default function BookingSummary({
 
   const remaining = getRemaining();
 
-  // ✅ Manejar incremento/decremento de electroshock (solo puede bajar, nunca subir)
   const handleElectroshockDecrease = () => {
     if (electroshock > 1) {
       const newValue = electroshock - 1;
@@ -99,7 +83,6 @@ export default function BookingSummary({
   };
 
   const handleElectroshockIncrease = () => {
-    // ❌ No permitir aumentar por encima de people
     if (electroshock < people) {
       const newValue = electroshock + 1;
       setElectroshock(newValue);
@@ -108,7 +91,6 @@ export default function BookingSummary({
 
   const handleElectroshockChange = (e) => {
     let newValue = Number(e.target.value);
-    // Validar: mínimo 1, máximo people
     if (newValue < 1) newValue = 1;
     if (newValue > people) newValue = people;
     setElectroshock(newValue);
@@ -118,6 +100,11 @@ export default function BookingSummary({
     <div className="space-y-6">
       <h2 className="text-xl font-bold text-tiger-green">
         Tu reserva
+        {isShared && (
+          <span className="ml-2 text-xs font-normal bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+            🤝 Compartida
+          </span>
+        )}
       </h2>
 
       <div className="space-y-4 text-sm">
@@ -141,7 +128,7 @@ export default function BookingSummary({
           <span className="font-medium">{plan?.name || "-"}</span>
         </div>
 
-        {/* Jugadores - Total de personas que pagan */}
+        {/* Jugadores */}
         <div className="flex items-center justify-between">
           <span className="text-gray-500">Jugadores (total)</span>
           <div className="flex items-center gap-2">
@@ -172,7 +159,14 @@ export default function BookingSummary({
           </div>
         </div>
 
-        {/* ✅ Personas Electroshock - Solo puede reducirse */}
+        {/* ✅ Validación de plazas disponibles para reserva compartida */}
+        {isShared && remaining !== null && people > remaining && (
+          <div className="text-xs text-red-600 bg-red-50 p-2 rounded">
+            ⚠️ Solo quedan {remaining} plazas disponibles en este horario compartido
+          </div>
+        )}
+
+        {/* Personas Electroshock */}
         <div className="flex items-center justify-between border-t pt-3 mt-2">
           <span className="text-gray-500">
             Personas Electroshock
@@ -206,21 +200,20 @@ export default function BookingSummary({
           </div>
         </div>
 
-        {/* Aviso si hay diferencia */}
         {electroshock < people && (
           <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded">
             💡 {people - electroshock} persona(s) no participarán en Electroshock
           </div>
         )}
 
-        {/* aviso mínimo */}
-        {people < 10 && plan && (
-          <div className="text-xs text-orange-600">
+        {/* ✅ Aviso mínimo solo para reservas normales */}
+        {!isShared && people < 10 && plan && (
+          <div className="text-xs text-orange-600 bg-orange-50 p-2 rounded">
             ⚠️ El precio mínimo es equivalente a 10 jugadores
           </div>
         )}
 
-        {/* disponibilidad */}
+        {/* Disponibilidad */}
         {remaining !== null && (
           <div className="flex justify-between text-sm">
             <span className="text-gray-500">Disponibilidad</span>
@@ -235,15 +228,29 @@ export default function BookingSummary({
         )}
       </div>
 
-      {/* precio */}
+      {/* Precio */}
       {plan && (
         <div className="border-t pt-4">
-          <div className="flex justify-between text-sm mb-2">
-            <span>
-              {pricePerPerson}€ × {basePeople} jugadores
-            </span>
-            <span>{total}€</span>
-          </div>
+          {isShared ? (
+            // ✅ Compartida: precio real por personas reservadas
+            <div className="flex justify-between text-sm mb-2">
+              <span>{pricePerPerson}€ × {people} jugadores</span>
+              <span>{total}€</span>
+            </div>
+          ) : (
+            // ✅ Normal: precio con mínimo de 10
+            <>
+              <div className="flex justify-between text-sm mb-2">
+                <span>
+                  {pricePerPerson}€ × {billablePeople} jugadores
+                  {people < 10 && (
+                    <span className="text-xs text-gray-400 ml-1">(mín. 10)</span>
+                  )}
+                </span>
+                <span>{total}€</span>
+              </div>
+            </>
+          )}
           <div className="flex justify-between font-bold text-lg">
             <span>Total</span>
             <span className="text-tiger-orange">{total}€</span>
@@ -251,11 +258,15 @@ export default function BookingSummary({
         </div>
       )}
 
-      {/* botón */}
+      {/* Botón */}
       {!showForm && (
         <Button
           className="w-full mt-4 bg-tiger-orange hover:bg-tiger-orange/90 text-white py-6 text-lg font-bold"
-          disabled={!date || !slots.length || !plan}
+          disabled={
+            !date || !slots.length || !plan ||
+            // ✅ Para compartidas, bloquear si piden más plazas de las disponibles
+            (isShared && remaining !== null && people > remaining)
+          }
           onClick={onConfirm}
         >
           Continuar

@@ -31,10 +31,16 @@ export default async function handler(req, res) {
         end_time,
         status,
         max_capacity,
-        date
+        date,
+        shared_plan_id,
+        shared_plan_id_2slots
       `)
       .eq("date", date)
       .order("start_time");
+
+        // ← añade esto
+    console.log("Slots query error:", error);
+    console.log("Slots data length:", slots?.length);
 
     if (error) {
       console.error("Error fetching slots:", error);
@@ -97,10 +103,21 @@ export default async function handler(req, res) {
       const isPast = date < todayStr || (date === todayStr && startTime <= currentTime);
       
       // REGLA DE NEGOCIO: Disponible solo si no tiene reservas
-      const isAvailable = 
-        slot.status === "active" && 
-        !isPast && 
-        reservedCount === 0;
+      const isShared = !!slot.shared_plan_id;
+
+      let isAvailable;
+      let isBlocked;
+
+  // Cambiar la regla de disponibilidad para slots compartidos:
+      if (isShared) {
+        // ✅ Compartido: disponible mientras haya plazas y no esté bloqueado por admin
+        isAvailable = slot.status === "active" && !isPast && reservedCount < capacity;
+        isBlocked = slot.status === 'blocked'; // solo bloqueado si admin lo bloqueó
+      } else {
+        // Normal: disponible solo si no hay nadie
+        isAvailable = slot.status === "active" && !isPast && reservedCount === 0;
+        isBlocked = reservedCount > 0 || slot.status === 'blocked';
+      }
 
       return {
         id: slot.id,
@@ -108,12 +125,19 @@ export default async function handler(req, res) {
         end_time: endTime,
         capacity: capacity,
         reserved: reservedCount,
-        remaining: isAvailable ? capacity : 0,
+        remaining: isShared
+          ? Math.max(capacity - reservedCount, 0)  // ✅ plazas reales restantes
+          : (isAvailable ? capacity : 0),
         isAvailable: isAvailable,
-        isBlocked: reservedCount > 0 || slot.status === 'blocked',
+        isShared: isShared,
+        shared_plan_id: slot.shared_plan_id,
+        shared_plan_id_2slots: slot.shared_plan_id_2slots,
+        isBlocked: isBlocked,
         isPast: isPast,
         status: slot.status,
-        statusMessage: reservedCount > 0 ? "Reservado" : (isAvailable ? "Disponible" : "No disponible")
+        statusMessage: isShared
+          ? `${Math.max(capacity - reservedCount, 0)} plazas libres`
+          : reservedCount > 0 ? "Reservado" : (isAvailable ? "Disponible" : "No disponible")
       };
     });
 

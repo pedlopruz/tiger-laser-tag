@@ -1,6 +1,6 @@
 // src/components/admin/ReservationsList.jsx
 import { useState, useEffect } from 'react';
-import { Search, Filter, Calendar as CalendarIcon, X, Eye, Trash2, CheckCircle } from 'lucide-react';
+import { Search, Filter, Calendar as CalendarIcon, X, Eye, Trash2, CheckCircle, Clock, RotateCcw } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { Button } from '@/components/ui/button';
 
@@ -12,25 +12,31 @@ export default function ReservationsList() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedReservation, setSelectedReservation] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [reactivateLoading, setReactivateLoading] = useState({});
 
   useEffect(() => {
     loadReservations();
-  }, [filter]); // ✅ Solo recargar cuando cambia el filtro de estado
+  }, [filter]);
 
   const loadReservations = async () => {
     setLoading(true);
     try {
-      // ✅ Traer todas las reservas sin filtrar por fecha en la query
       let query = supabase
         .from('reservations')
         .select(`
           *,
-          plans(name, price),
+          plans(name, price, num_slots, active),
           reservation_slots (
             slot_id,
             time_slots (
+              id,
               start_time, 
-              date
+              end_time,
+              date,
+              status,
+              max_capacity,
+              reserved_spots,
+              shared_plan_id
             )
           )
         `)
@@ -43,12 +49,10 @@ export default function ReservationsList() {
       const { data, error } = await query;
       if (error) throw error;
       
-      // ✅ Filtrar por fecha después de obtener los datos
       let filteredData = data || [];
       
       if (dateFilter) {
         filteredData = filteredData.filter(reservation => {
-          // Verificar si la reserva tiene slots con la fecha filtrada
           return reservation.reservation_slots?.some(slot => {
             const slotDate = slot.time_slots?.date;
             return slotDate === dateFilter;
@@ -59,68 +63,17 @@ export default function ReservationsList() {
       setReservations(filteredData);
     } catch (error) {
       console.error('Error loading reservations:', error);
+      alert('Error al cargar las reservas: ' + error.message);
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ Recargar cuando cambia el filtro de fecha (sin recargar toda la BD)
-  useEffect(() => {
-    if (reservations.length > 0 || !loading) {
-      // Ya tenemos los datos, solo filtramos
-      const applyDateFilter = async () => {
-        setLoading(true);
-        try {
-          let query = supabase
-            .from('reservations')
-            .select(`
-              *,
-              plans(name, price),
-              reservation_slots (
-                slot_id,
-                time_slots (
-                  start_time, 
-                  date
-                )
-              )
-            `)
-            .order('created_at', { ascending: false });
-
-          if (filter !== 'all') {
-            query = query.eq('status', filter);
-          }
-
-          const { data, error } = await query;
-          if (error) throw error;
-          
-          let filteredData = data || [];
-          
-          if (dateFilter) {
-            filteredData = filteredData.filter(reservation => {
-              return reservation.reservation_slots?.some(slot => {
-                const slotDate = slot.time_slots?.date;
-                return slotDate === dateFilter;
-              });
-            });
-          }
-          
-          setReservations(filteredData);
-        } catch (error) {
-          console.error('Error loading reservations:', error);
-        } finally {
-          setLoading(false);
-        }
-      };
-      
-      applyDateFilter();
-    }
-  }, [dateFilter, filter]);
-
+  // ✅ Cancelar reserva (usa RPC existente)
   const cancelReservation = async (id, reservationCode) => {
     if (!confirm(`¿Estás seguro de cancelar la reserva ${reservationCode}?`)) return;
 
     try {
-      // Llamar a una función RPC que maneje la cancelación completa
       const { data, error } = await supabase
         .rpc('cancel_reservation', {
           p_reservation_id: id
@@ -135,6 +88,7 @@ export default function ReservationsList() {
     }
   };
 
+  // ✅ Confirmar reserva
   const confirmReservation = async (id) => {
     if (!confirm('¿Confirmar esta reserva?')) return;
 
@@ -153,7 +107,124 @@ export default function ReservationsList() {
     }
   };
 
-  // ✅ Filtrar por término de búsqueda
+  // ✅ Reactivar reserva cancelada
+  const reactivateReservation = async (reservation) => {
+    const slotIds = reservation.reservation_slots?.map(rs => rs.slot_id) || [];
+    
+    if (slotIds.length === 0) {
+      alert('Esta reserva no tiene slots asociados');
+      return;
+    }
+
+    const isSharedPlan = reservation.plans?.active === false;
+    const people = parseInt(reservation.people) || 1;
+
+    if (!confirm(`¿Reactivar la reserva ${reservation.reservation_code}? Se verificará que los horarios estén disponibles.`)) return;
+
+    setReactivateLoading(prev => ({ ...prev, [reservation.id]: true }));
+
+    try {
+      // Obtener información de los slots
+      const { data: slots, error: slotsError } = await supabase
+        .from('time_slots')
+        .select('id, status, start_time, date, max_capacity, reserved_spots, shared_plan_id')
+        .in('id', slotIds);
+
+      if (slotsError) throw slotsError;
+
+      if (isSharedPlan) {
+        // ✅ RESERVA COMPARTIDA: Verificar capacidad disponible
+        for (const slot of slots) {
+          const availableSpots = (slot.max_capacity || 0) - (slot.reserved_spots || 0);
+          
+          if (availableSpots < people) {
+            alert(`No se puede reactivar la reserva. El horario ${slot.start_time?.slice(0, 5)} solo tiene ${availableSpots} plazas disponibles y necesitas ${people}.`);
+            setReactivateLoading(prev => ({ ...prev, [reservation.id]: false }));
+            return;
+          }
+        }
+
+        // Reactivar reserva compartida: cambiar estado a 'confirmed'
+        const { error: updateError } = await supabase
+          .from('reservations')
+          .update({ status: 'confirmed' })
+          .eq('id', reservation.id);
+
+        if (updateError) throw updateError;
+
+        // Incrementar reserved_spots en cada slot compartido
+        for (const slot of slots) {
+          const { error: incrementError } = await supabase
+            .from('time_slots')
+            .update({ reserved_spots: (slot.reserved_spots || 0) + people })
+            .eq('id', slot.id);
+
+          if (incrementError) throw incrementError;
+        }
+
+        alert('✅ Reserva compartida reactivada correctamente');
+
+      } else {
+        // ✅ RESERVA NORMAL: Verificar slots activos
+        const unavailableSlots = slots.filter(slot => slot.status !== 'active');
+        
+        if (unavailableSlots.length > 0) {
+          const unavailableTimes = unavailableSlots.map(slot => 
+            `${slot.date} ${slot.start_time?.slice(0, 5)}`
+          ).join(', ');
+          alert(`No se puede reactivar la reserva porque los siguientes horarios no están disponibles:\n${unavailableTimes}`);
+          setReactivateLoading(prev => ({ ...prev, [reservation.id]: false }));
+          return;
+        }
+
+        // Verificar conflictos con otras reservas activas
+        const { data: conflictingReservations, error: conflictError } = await supabase
+          .from('reservation_slots')
+          .select(`
+            reservation_id,
+            reservations!inner(status)
+          `)
+          .in('slot_id', slotIds)
+          .neq('reservation_id', reservation.id)
+          .eq('reservations.status', 'confirmed');
+
+        if (conflictError) throw conflictError;
+
+        if (conflictingReservations && conflictingReservations.length > 0) {
+          alert('No se puede reactivar la reserva porque hay conflictos con otras reservas confirmadas en los mismos horarios.');
+          setReactivateLoading(prev => ({ ...prev, [reservation.id]: false }));
+          return;
+        }
+
+        // Reactivar reserva normal: cambiar estado a 'pending'
+        const { error: updateError } = await supabase
+          .from('reservations')
+          .update({ status: 'pending' })
+          .eq('id', reservation.id);
+
+        if (updateError) throw updateError;
+
+        // Bloquear los slots nuevamente
+        const { error: blockError } = await supabase
+          .from('time_slots')
+          .update({ status: 'blocked' })
+          .in('id', slotIds);
+
+        if (blockError) throw blockError;
+
+        alert('✅ Reserva reactivada correctamente');
+      }
+
+      loadReservations();
+    } catch (error) {
+      console.error('Error reactivating reservation:', error);
+      alert('Error al reactivar la reserva');
+    } finally {
+      setReactivateLoading(prev => ({ ...prev, [reservation.id]: false }));
+    }
+  };
+
+  // Filtrar reservas
   const filteredReservations = reservations.filter(res => {
     if (!searchTerm) return true;
     return res.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -161,28 +232,68 @@ export default function ReservationsList() {
            res.reservation_code?.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
-  // ✅ Función para obtener la fecha del slot (evitando N/D)
-  const getSlotDate = (reservation) => {
-    const slot = reservation.reservation_slots?.[0]?.time_slots;
-    if (slot?.date) {
-      // Formatear fecha a español
-      const [year, month, day] = slot.date.split('-');
-      return new Date(year, month - 1, day).toLocaleDateString('es-ES', {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'long'
-      });
-    }
-    return 'Fecha no disponible';
+  // Funciones auxiliares para formateo
+  const getSlotsInfo = (reservation) => {
+    const slots = reservation.reservation_slots || [];
+    const sortedSlots = [...slots].sort((a, b) => {
+      const timeA = a.time_slots?.start_time || '';
+      const timeB = b.time_slots?.start_time || '';
+      return timeA.localeCompare(timeB);
+    });
+    
+    return sortedSlots.map(slot => ({
+      start_time: slot.time_slots?.start_time,
+      end_time: slot.time_slots?.end_time,
+      date: slot.time_slots?.date
+    }));
   };
 
-  // ✅ Función para obtener la hora del slot
-  const getSlotTime = (reservation) => {
-    const slot = reservation.reservation_slots?.[0]?.time_slots;
-    if (slot?.start_time) {
-      return slot.start_time.slice(0, 5);
+  const getSlotDate = (reservation) => {
+    const slots = getSlotsInfo(reservation);
+    if (slots.length === 0 || !slots[0].date) return 'Fecha no disponible';
+    
+    const [year, month, day] = slots[0].date.split('-');
+    return new Date(year, month - 1, day).toLocaleDateString('es-ES', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+  };
+
+  const getSlotTimeRange = (reservation) => {
+    const slots = getSlotsInfo(reservation);
+    if (slots.length === 0) return 'Hora no disponible';
+    
+    const startTime = slots[0].start_time?.slice(0, 5) || '--:--';
+    const endTime = slots[slots.length - 1].end_time?.slice(0, 5) || '--:--';
+    
+    return `${startTime} - ${endTime}`;
+  };
+
+  const getDetailedTimes = (reservation) => {
+    const slots = getSlotsInfo(reservation);
+    if (slots.length === 0) return null;
+    
+    if (slots.length === 1) {
+      return {
+        type: 'single',
+        display: `${slots[0].start_time?.slice(0, 5)} - ${slots[0].end_time?.slice(0, 5)}`,
+        full: `${slots[0].start_time?.slice(0, 5)} a ${slots[0].end_time?.slice(0, 5)}`
+      };
+    } else {
+      return {
+        type: 'multiple',
+        slots: slots.map((slot, idx) => ({
+          number: idx + 1,
+          start: slot.start_time?.slice(0, 5),
+          end: slot.end_time?.slice(0, 5),
+          range: `${slot.start_time?.slice(0, 5)} - ${slot.end_time?.slice(0, 5)}`
+        })),
+        display: `${slots[0].start_time?.slice(0, 5)} - ${slots[slots.length - 1].end_time?.slice(0, 5)}`,
+        full: slots.map(s => `${s.start_time?.slice(0, 5)}-${s.end_time?.slice(0, 5)}`).join(' y ')
+      };
     }
-    return 'Hora no disponible';
   };
 
   const getStatusBadge = (status) => {
@@ -280,68 +391,120 @@ export default function ReservationsList() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha / Hora</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plan</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Personas</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
-               </tr>
+              </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {filteredReservations.map((res) => (
-                <tr key={res.id} className="hover:bg-gray-50 transition">
-                  <td className="px-6 py-4">
-                    <span className="font-mono text-sm font-medium text-tiger-green">
-                      {res.reservation_code}
-                    </span>
-                   </td>
-                  <td className="px-6 py-4">
-                    <div className="font-medium text-gray-900">{res.name}</div>
-                    <div className="text-sm text-gray-500">{res.email}</div>
-                    {res.phone && <div className="text-xs text-gray-400">{res.phone}</div>}
-                   </td>
-                  <td className="px-6 py-4 text-sm">
-                    <div>{getSlotDate(res)}</div>
-                    <span className="text-xs text-gray-500">
-                      {getSlotTime(res)}
-                    </span>
-                   </td>
-                  <td className="px-6 py-4 text-sm">{res.people} personas</td>
-                  <td className="px-6 py-4 text-sm font-medium">€{res.precio_total}</td>
-                  <td className="px-6 py-4">{getStatusBadge(res.status)}</td>
-                  <td className="px-6 py-4">
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => {
-                          setSelectedReservation(res);
-                          setShowModal(true);
-                        }}
-                        className="text-blue-600 hover:text-blue-800 transition"
-                        title="Ver detalles"
-                      >
-                        <Eye size={18} />
-                      </button>
-                      {res.status !== 'confirmed' && res.status !== 'cancelled' && (
-                        <button
-                          onClick={() => confirmReservation(res.id)}
-                          className="text-green-600 hover:text-green-800 transition"
-                          title="Confirmar"
-                        >
-                          <CheckCircle size={18} />
-                        </button>
+              {filteredReservations.map((res) => {
+                const slotCount = res.reservation_slots?.length || 1;
+                const timeInfo = getDetailedTimes(res);
+                const isMultipleSlots = slotCount > 1;
+                const isCancelled = res.status === 'cancelled';
+                const isSharedPlan = res.plans?.active === false;
+                
+                return (
+                  <tr key={res.id} className="hover:bg-gray-50 transition">
+                    <td className="px-6 py-4">
+                      <span className="font-mono text-sm font-medium text-tiger-green">
+                        {res.reservation_code}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="font-medium text-gray-900">{res.name}</div>
+                      <div className="text-sm text-gray-500">{res.email}</div>
+                      {res.phone && <div className="text-xs text-gray-400">{res.phone}</div>}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm font-medium text-gray-900">{getSlotDate(res)}</div>
+                      <div className="flex items-center gap-1 mt-1">
+                        <Clock size={12} className="text-gray-400" />
+                        <span className="text-sm text-gray-700">
+                          {getSlotTimeRange(res)}
+                        </span>
+                        {isMultipleSlots && (
+                          <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                            {slotCount} slots
+                          </span>
+                        )}
+                        {isSharedPlan && (
+                          <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                            Compartido
+                          </span>
+                        )}
+                      </div>
+                      {isMultipleSlots && timeInfo?.type === 'multiple' && (
+                        <div className="text-xs text-gray-500 mt-1">
+                          ({timeInfo.slots.map(s => s.range).join(' + ')})
+                        </div>
                       )}
-                      {res.status !== 'cancelled' && (
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {res.plans?.name || 'No especificado'}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-sm">{res.people} personas</td>
+                    <td className="px-6 py-4 text-sm font-medium">€{res.precio_total}</td>
+                    <td className="px-6 py-4">{getStatusBadge(res.status)}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex gap-2">
                         <button
-                          onClick={() => cancelReservation(res.id, res.reservation_code)}
-                          className="text-red-600 hover:text-red-800 transition"
-                          title="Cancelar"
+                          onClick={() => {
+                            setSelectedReservation(res);
+                            setShowModal(true);
+                          }}
+                          className="text-blue-600 hover:text-blue-800 transition"
+                          title="Ver detalles"
                         >
-                          <Trash2 size={18} />
+                          <Eye size={18} />
                         </button>
-                      )}
-                    </div>
-                   </td>
-                </tr>
-              ))}
+                        
+                        {/* Botón Confirmar - solo para reservas pendientes no compartidas */}
+                        {res.status === 'pending' && !isSharedPlan && (
+                          <button
+                            onClick={() => confirmReservation(res.id)}
+                            className="text-green-600 hover:text-green-800 transition"
+                            title="Confirmar"
+                          >
+                            <CheckCircle size={18} />
+                          </button>
+                        )}
+                        
+                        {/* Botón Cancelar - solo si no está cancelada */}
+                        {res.status !== 'cancelled' && (
+                          <button
+                            onClick={() => cancelReservation(res.id, res.reservation_code)}
+                            className="text-red-600 hover:text-red-800 transition"
+                            title="Cancelar"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        )}
+                        
+                        {/* Botón Reactivar - solo para reservas canceladas */}
+                        {isCancelled && (
+                          <button
+                            onClick={() => reactivateReservation(res)}
+                            disabled={reactivateLoading[res.id]}
+                            className="text-amber-600 hover:text-amber-800 transition disabled:opacity-50"
+                            title="Reactivar reserva (si los horarios están disponibles)"
+                          >
+                            {reactivateLoading[res.id] ? (
+                              <div className="animate-spin h-4 w-4 border-2 border-amber-600 border-t-transparent rounded-full" />
+                            ) : (
+                              <RotateCcw size={18} />
+                            )}
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -386,11 +549,24 @@ export default function ReservationsList() {
                 
                 <div>
                   <label className="text-xs text-gray-500">Detalles de la partida</label>
-                  <p>Fecha: {getSlotDate(selectedReservation)}</p>
-                  <p>Hora: {getSlotTime(selectedReservation)}</p>
-                  <p>Jugadores: {selectedReservation.people}</p>
-                  <p>Participan en Electroshock: {selectedReservation.personas_electroshock}</p>
-                  <p>Plan: {selectedReservation.plans?.name || 'N/A'}</p>
+                  <div className="mt-2 space-y-2">
+                    <p><span className="text-gray-600">Fecha:</span> {getSlotDate(selectedReservation)}</p>
+                    <p><span className="text-gray-600">Horario:</span></p>
+                    <div className="ml-4 space-y-1">
+                      {getSlotsInfo(selectedReservation).map((slot, idx) => (
+                        <p key={idx} className="text-sm">
+                          • Slot {idx + 1}: {slot.start_time?.slice(0, 5)} - {slot.end_time?.slice(0, 5)}
+                        </p>
+                      ))}
+                    </div>
+                    <p><span className="text-gray-600">Jugadores:</span> {selectedReservation.people}</p>
+                    <p><span className="text-gray-600">Participan en Electroshock:</span> {selectedReservation.personas_electroshock || 0}</p>
+                    <p><span className="text-gray-600">Plan:</span> {selectedReservation.plans?.name || 'N/A'}</p>
+                    <p><span className="text-gray-600">Duración:</span> {selectedReservation.reservation_slots?.length || 1} hora(s)</p>
+                    {selectedReservation.plans?.active === false && (
+                      <p><span className="text-gray-600">Tipo:</span> <span className="text-blue-600">Horario compartido</span></p>
+                    )}
+                  </div>
                 </div>
                 
                 <div>

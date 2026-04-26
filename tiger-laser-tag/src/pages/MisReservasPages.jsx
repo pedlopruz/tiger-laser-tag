@@ -12,6 +12,7 @@ export default function MisReservas() {
   const [reservation, setReservation] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedSlots, setSelectedSlots] = useState([]);
+  const [newSlotCount, setNewSlotCount] = useState(null);
   const [people, setPeople] = useState(null);
   const [extraPayment, setExtraPayment] = useState(0);
   const [showPayment, setShowPayment] = useState(false);
@@ -29,6 +30,9 @@ export default function MisReservas() {
     setMessage("");
     setReservation(null);
     setCancelled(false);
+    setNewSlotCount(null);
+    setSelectedSlots([]);
+    setSelectedDate(null);
     setLoading(true);
 
     try {
@@ -55,22 +59,29 @@ export default function MisReservas() {
     setLoading(false);
   }
 
-  // Función para confirmar la reserva
+  function handleSearchAnother() {
+    setCancelled(false);
+    setReservation(null);
+    setCode("");
+    setEmail("");
+    setMessage("");
+    setError("");
+  }
+
   async function confirmReservation() {
     if (!confirm("¿Confirmar esta reserva? Una vez confirmada no podrás modificarla.")) return;
-    
+
     setConfirmLoading(true);
     setMessage("");
 
     try {
-      // 1. Confirmar la reserva en la base de datos
       const res = await fetch("/api/reservations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          action: "confirm", 
-          code, 
-          email 
+        body: JSON.stringify({
+          action: "confirm",
+          code,
+          email
         })
       });
 
@@ -82,9 +93,8 @@ export default function MisReservas() {
         return;
       }
 
-      // 2. Enviar email de confirmación final
       const timeSlots = reservation.reservation_slots?.[0]?.time_slots || reservation.time_slots;
-      
+
       await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -95,7 +105,7 @@ export default function MisReservas() {
           phone: reservation.phone,
           reservation_code: reservation.reservation_code,
           date: timeSlots?.date,
-          time_range: timeSlots 
+          time_range: timeSlots
             ? `${timeSlots.start_time?.slice(0, 5)} - ${timeSlots.end_time?.slice(0, 5)}`
             : null,
           duration: reservation.num_slots || 1,
@@ -108,15 +118,8 @@ export default function MisReservas() {
         })
       });
 
-      // 3. Actualizar el estado local
-      setReservation(prev => ({
-        ...prev,
-        status: "confirmed"
-      }));
-
+      setReservation(prev => ({ ...prev, status: "confirmed" }));
       setMessage("✅ ¡Reserva confirmada correctamente! Se ha enviado un email de confirmación.");
-      
-      // Limpiar el mensaje después de 5 segundos
       setTimeout(() => setMessage(""), 5000);
 
     } catch (err) {
@@ -136,6 +139,26 @@ export default function MisReservas() {
   );
   const showExtraWarning = people > MINIMUM_BILLED && people > originalPeople;
   const requiredSlots = reservation?.num_slots ?? 1;
+  
+  // ✅ Detectar plan compartido (active=false o nombre contiene "Compartido")
+  const isSharedPlan = 
+    reservation?.plans?.active === false ||
+    reservation?.plans?.name?.toLowerCase().includes("compartido");
+  
+  const effectiveSlotCount = newSlotCount ?? requiredSlots;
+  const slotCountChanged = newSlotCount !== null && newSlotCount !== requiredSlots;
+  const estimatedNewTotal = pricePerPerson * (newSlotCount || requiredSlots) * billablePeople(originalPeople);
+  const estimatedCurrentTotal = reservation?.precio_total ?? 0;
+  const estimatedDiff = Math.abs(estimatedNewTotal - estimatedCurrentTotal);
+  const slotPriceIncreases = (newSlotCount || 0) > requiredSlots;
+
+  // ✅ Obtener los slots actuales de la reserva
+  const currentSlotIds = reservation?.current_slot_ids || [];
+
+  // ✅ Determinar si se debe mostrar el botón de cancelar
+  const showCancelButton = 
+    reservation?.status === "pending" ||
+    (reservation?.status === "confirmed" && isSharedPlan);
 
   async function updatePlayers() {
     if (!people) return;
@@ -197,9 +220,9 @@ export default function MisReservas() {
   }
 
   async function updateSlot() {
-    console.log("selectedSlots al confirmar:", selectedSlots);
     if (selectedSlots.length === 0) return;
     setUpdateLoading(true);
+    setMessage("");
 
     try {
       const res = await fetch("/api/reservations", {
@@ -220,7 +243,12 @@ export default function MisReservas() {
         setUpdateLoading(false);
         return;
       }
-      
+
+      if (data.extra_payment > 0) {
+        setExtraPayment(data.extra_payment);
+        setShowPayment(true);
+      }
+
       await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -237,9 +265,12 @@ export default function MisReservas() {
           new_time_range: selectedSlots.length === 2
             ? `${selectedSlots[0].start_time?.slice(0, 5)} - ${selectedSlots[1].end_time?.slice(0, 5)}`
             : `${selectedSlots[0].start_time?.slice(0, 5)} - ${selectedSlots[0].end_time?.slice(0, 5)}`,
-          plan_name: reservation.plans?.name,
+          plan_name: data.new_plan_id
+            ? `Plan ${effectiveSlotCount} hora${effectiveSlotCount > 1 ? "s" : ""}`
+            : reservation.plans?.name,
           people: reservation.people,
-          total_price: reservation.precio_total
+          total_price: data.new_total ?? reservation.precio_total,
+          extra_payment: data.extra_payment || 0
         })
       });
 
@@ -358,7 +389,6 @@ export default function MisReservas() {
 
       <section className="py-20 bg-tiger-cream min-h-screen">
         <div className="container mx-auto px-4 max-w-3xl">
-
           {/* Pantalla de cancelación exitosa */}
           <AnimatePresence>
             {cancelled && (
@@ -366,7 +396,7 @@ export default function MisReservas() {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0 }}
-                className="bg-white rounded-2xl shadow-xl p-10 text-center"
+                className="bg-white rounded-2xl shadow-xl p-10 text-center mb-8"
               >
                 <div className="inline-flex items-center justify-center w-20 h-20 bg-red-100 rounded-full mb-6">
                   <XCircle className="text-red-500" size={40} />
@@ -376,11 +406,7 @@ export default function MisReservas() {
                   Tu reserva ha sido cancelada correctamente. Si tienes alguna duda, contacta con nosotros.
                 </p>
                 <Button
-                  onClick={() => {
-                    setCancelled(false);
-                    setCode("");
-                    setEmail("");
-                  }}
+                  onClick={handleSearchAnother}
                   className="bg-tiger-green hover:bg-tiger-green/90 text-white"
                 >
                   Consultar otra reserva
@@ -390,77 +416,76 @@ export default function MisReservas() {
           </AnimatePresence>
 
           {/* Buscador */}
-          {!cancelled && !reservation && (
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-            >
-              <form onSubmit={handleSearch} className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-                <div className="text-center mb-8">
-                  <div className="inline-flex items-center justify-center w-16 h-16 bg-tiger-golden/20 rounded-full mb-4">
-                    <Search className="text-tiger-golden" size={28} />
-                  </div>
-                  <h2 className="text-2xl font-bold text-tiger-green">Consultar reserva</h2>
-                  <p className="text-gray-500 mt-2">Ingresa el código y el email con el que reservaste</p>
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="mb-8"
+          >
+            <form onSubmit={handleSearch} className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+              <div className="text-center mb-8">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-tiger-golden/20 rounded-full mb-4">
+                  <Search className="text-tiger-golden" size={28} />
+                </div>
+                <h2 className="text-2xl font-bold text-tiger-green">Consultar reserva</h2>
+                <p className="text-gray-500 mt-2">Ingresa el código y el email con el que reservaste</p>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Código de reserva</label>
+                  <input
+                    type="text"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-tiger-orange focus:border-tiger-orange transition-all"
+                    placeholder="Ej: ABC123XYZ"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-tiger-orange focus:border-tiger-orange transition-all"
+                    placeholder="tu@email.com"
+                    required
+                  />
                 </div>
 
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Código de reserva</label>
-                    <input
-                      type="text"
-                      value={code}
-                      onChange={(e) => setCode(e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-tiger-orange focus:border-tiger-orange transition-all"
-                      placeholder="Ej: ABC123XYZ"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-tiger-orange focus:border-tiger-orange transition-all"
-                      placeholder="tu@email.com"
-                      required
-                    />
-                  </div>
-
-                  <Button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full bg-tiger-orange hover:bg-tiger-orange/90 text-white py-3 text-base font-bold rounded-lg transition-all duration-300"
-                  >
-                    {loading ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <span className="animate-spin">⏳</span>
-                        Buscando...
-                      </span>
-                    ) : (
-                      <span className="flex items-center justify-center gap-2">
-                        Consultar reserva
-                        <ArrowRight size={18} />
-                      </span>
-                    )}
-                  </Button>
-
-                  {error && (
-                    <motion.div
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className="bg-red-50 border border-red-200 text-red-600 text-sm p-3 rounded-lg flex items-center gap-2"
-                    >
-                      <AlertCircle size={16} />
-                      {error}
-                    </motion.div>
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-tiger-orange hover:bg-tiger-orange/90 text-white py-3 text-base font-bold rounded-lg transition-all duration-300"
+                >
+                  {loading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="animate-spin">⏳</span>
+                      Buscando...
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center gap-2">
+                      Consultar reserva
+                      <ArrowRight size={18} />
+                    </span>
                   )}
-                </div>
-              </form>
-            </motion.div>
-          )}
+                </Button>
+
+                {error && (
+                  <motion.div
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="bg-red-50 border border-red-200 text-red-600 text-sm p-3 rounded-lg flex items-center gap-2"
+                  >
+                    <AlertCircle size={16} />
+                    {error}
+                  </motion.div>
+                )}
+              </div>
+            </form>
+          </motion.div>
 
           {/* Detalle de la reserva */}
           <AnimatePresence>
@@ -470,7 +495,6 @@ export default function MisReservas() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -30 }}
                 transition={{ duration: 0.5 }}
-                className="mt-10"
               >
                 <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
                   <div className="bg-gradient-to-r from-tiger-green to-tiger-green-dark px-6 py-4">
@@ -484,6 +508,7 @@ export default function MisReservas() {
                   </div>
 
                   <div className="p-6 space-y-6">
+                    {/* Información básica */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                         <Calendar className="text-tiger-green" size={20} />
@@ -496,7 +521,9 @@ export default function MisReservas() {
                         <Clock className="text-tiger-green" size={20} />
                         <div>
                           <p className="text-xs text-gray-500">Hora</p>
-                          <p className="font-medium">{formatTime(reservation.time_slots?.start_time)+" - "+formatTime(reservation.time_slots?.end_time)}</p>
+                          <p className="font-medium">
+                            {formatTime(reservation.time_slots?.start_time)} - {formatTime(reservation.time_slots?.end_time)}
+                          </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
@@ -515,150 +542,167 @@ export default function MisReservas() {
                       </div>
                     </div>
 
-                    {/* Botón de CONFIRMAR RESERVA - Solo para reservas pendientes */}
-                    {reservation.status === 'pending' && (
-                      <div className="border-t pt-6">
-                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
-                          <p className="text-amber-800 text-sm flex items-start gap-2">
-                            <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
-                            <span>
-                              Tu reserva está pendiente de confirmación. Una vez confirmada, no podrás modificar los datos.
-                              Te recomendamos confirmarla lo antes posible para asegurar tu plaza.
-                            </span>
-                          </p>
-                        </div>
-                        <Button
-                          onClick={confirmReservation}
-                          disabled={confirmLoading}
-                          className="w-full bg-green-600 hover:bg-green-700 text-white py-3 text-base font-bold"
-                        >
-                          {confirmLoading ? (
-                            <span className="flex items-center justify-center gap-2">
-                              <span className="animate-spin">⏳</span>
-                              Confirmando...
-                            </span>
-                          ) : (
-                            <span className="flex items-center justify-center gap-2">
-                              <CheckSquare size={18} />
-                              ✅ Confirmar reserva
-                            </span>
-                          )}
-                        </Button>
-                      </div>
-                    )}
-
-                    {/* Modificar jugadores - Solo para reservas pendientes */}
-                    {reservation.status === 'pending' && (
-                      <div className="border-t pt-6">
-                        <h3 className="font-semibold text-tiger-green mb-4">Modificar número de jugadores</h3>
-                        <div className="flex items-center justify-between flex-wrap gap-4">
-                          <div className="flex items-center gap-3">
-                            <span className="text-gray-600">Jugadores:</span>
-                            <input
-                              type="number"
-                              min={reservation.people}
-                              value={people}
-                              onChange={(e) => setPeople(Number(e.target.value))}
-                              className="border rounded-lg px-3 py-2 w-24 text-center focus:ring-2 focus:ring-tiger-orange"
-                            />
+                    {/* Solo para reservas pendientes y NO compartidas */}
+                    {reservation.status === "pending" && !isSharedPlan && (
+                      <>
+                        <div className="border-t pt-6">
+                          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+                            <p className="text-amber-800 text-sm flex items-start gap-2">
+                              <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
+                              <span>Tu reserva está pendiente de confirmación. Una vez confirmada, no podrás modificar los datos.</span>
+                            </p>
                           </div>
-                          <Button
-                            onClick={updatePlayers}
-                            disabled={updateLoading || people === reservation.people}
-                            className="bg-tiger-green hover:bg-tiger-green/90 text-white"
-                          >
-                            {updateLoading ? "Actualizando..." : "Actualizar jugadores"}
+                          <Button onClick={confirmReservation} disabled={confirmLoading} className="w-full bg-green-600 hover:bg-green-700 text-white py-3 text-base font-bold">
+                            {confirmLoading ? "Confirmando..." : "✅ Confirmar reserva"}
                           </Button>
                         </div>
 
-                        <AnimatePresence>
-                          {showExtraWarning && (
-                            <motion.div
-                              initial={{ opacity: 0, y: -6 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, y: -6 }}
-                              className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg"
-                            >
-                              <p className="text-sm text-amber-800">
-                                💡 Al superar los 10 jugadores se generará un pago adicional de <strong>€{extra}</strong>
-                              </p>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
+                        {/* Modificar jugadores */}
+                        <div className="border-t pt-6">
+                          <h3 className="font-semibold text-tiger-green mb-4">Modificar número de jugadores</h3>
+                          <div className="flex items-center justify-between flex-wrap gap-4">
+                            <div className="flex items-center gap-3">
+                              <span className="text-gray-600">Jugadores:</span>
+                              <input
+                                type="number"
+                                min={reservation.people}
+                                value={people}
+                                onChange={(e) => setPeople(Number(e.target.value))}
+                                className="border rounded-lg px-3 py-2 w-24 text-center focus:ring-2 focus:ring-tiger-orange"
+                              />
+                            </div>
+                            <Button onClick={updatePlayers} disabled={updateLoading || people === reservation.people} className="bg-tiger-green hover:bg-tiger-green/90 text-white">
+                              {updateLoading ? "Actualizando..." : "Actualizar jugadores"}
+                            </Button>
+                          </div>
+                        </div>
 
-                        <AnimatePresence>
-                          {message && message.includes("Jugadores") && (
-                            <motion.div
-                              initial={{ opacity: 0, y: 6 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0 }}
-                              className="mt-4 p-3 bg-green-50 border border-green-200 text-green-700 text-sm rounded-lg flex items-center gap-2"
-                            >
-                              <CheckCircle size={16} />
-                              {message}
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    )}
+                        {/* Cambiar fecha y horario */}
+                        <div className="border-t pt-6">
+                          <h3 className="font-semibold text-tiger-green mb-4">Cambiar fecha y horario</h3>
 
-                    {/* Cambiar horario - Solo para reservas pendientes */}
-                    {reservation.status === 'pending' && (
-                      <div className="border-t pt-6">
-                        <h3 className="font-semibold text-tiger-green mb-4">Cambiar fecha y horario</h3>
-                        <CalendarPicker
-                          initialDate={reservation?.time_slots?.date}
-                          onSelectDate={(date) => {
-                            setSelectedDate(date);
-                            setSelectedSlots([]);
-                          }}
-                        />
-
-                        {selectedDate && (
-                          <>
-                            <p className="text-sm text-gray-500 mt-3 mb-2">
-                              {requiredSlots === 2
-                                ? "⚠️ Tu reserva original era de 2 horas, selecciona 2 horas consecutivas"
-                                : "Selecciona 1 hora disponible"}
+                          {/* Selector de duración */}
+                          <div className="mb-5">
+                            <p className="text-sm text-gray-600 mb-2">
+                              Tu reserva actual es de <strong>{requiredSlots} hora{requiredSlots > 1 ? "s" : ""}</strong>.
+                              ¿Quieres cambiar la duración?
                             </p>
-                            <SlotPickerEdit
-                              key={selectedDate}
-                              date={selectedDate}
-                              people={people}
-                              maxSlots={requiredSlots}
-                              minSlots={requiredSlots}
-                              onSelectSlots={(slots) => setSelectedSlots(slots)}
-                            />
-                          </>
-                        )}
+                            <div className="flex gap-3">
+                              {[1, 2].map((n) => (
+                                <button
+                                  key={n}
+                                  type="button"
+                                  onClick={() => {
+                                    setNewSlotCount(n === requiredSlots ? null : n);
+                                    setSelectedSlots([]);
+                                  }}
+                                  className={`flex-1 py-2 px-4 rounded-lg border-2 text-sm font-medium transition-all ${
+                                    effectiveSlotCount === n
+                                      ? "border-tiger-orange bg-tiger-orange/10 text-tiger-orange"
+                                      : "border-gray-200 text-gray-500 hover:border-gray-300"
+                                  }`}
+                                >
+                                  {n} hora{n > 1 ? "s" : ""}
+                                  {n === requiredSlots && <span className="ml-1 text-xs">(actual)</span>}
+                                </button>
+                              ))}
+                            </div>
 
-                        <AnimatePresence>
-                          {selectedSlots.length === requiredSlots && (
-                            <motion.div
-                              initial={{ opacity: 0, y: 6 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0 }}
-                            >
-                              <Button
-                                onClick={updateSlot}
-                                disabled={updateLoading}
-                                className="w-full mt-4 bg-tiger-orange hover:bg-tiger-orange/90 text-white"
-                              >
-                                {updateLoading ? (
-                                  <span className="flex items-center justify-center gap-2">
-                                    <span className="animate-spin">⏳</span>
-                                    Cambiando...
-                                  </span>
-                                ) : "Confirmar cambio de horario"}
-                              </Button>
-                            </motion.div>
+                            {/* Aviso de diferencia de precio */}
+                            {slotCountChanged && (
+                              <div className={`mt-3 p-3 rounded-lg text-sm border ${
+                                slotPriceIncreases
+                                  ? "bg-amber-50 border-amber-200 text-amber-800"
+                                  : "bg-blue-50 border-blue-200 text-blue-800"
+                              }`}>
+                                {slotPriceIncreases ? (
+                                  <>⚠️ Al pasar a <strong>{newSlotCount} horas</strong> se generará un pago adicional de aproximadamente <strong>€{estimatedDiff}</strong>.</>
+                                ) : (
+                                  <>💡 Al reducir a <strong>{newSlotCount} hora</strong>, el precio bajará aproximadamente <strong>€{estimatedDiff}</strong>.</>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          <CalendarPicker
+                            initialDate={reservation?.time_slots?.date}
+                            onSelectDate={(date) => {
+                              setSelectedDate(date);
+                              setSelectedSlots([]);
+                            }}
+                          />
+
+                          {selectedDate && (
+                            <>
+                              <p className="text-sm text-gray-500 mt-3 mb-2">
+                                {effectiveSlotCount === 2
+                                  ? "Selecciona 2 horas consecutivas"
+                                  : "Selecciona 1 hora disponible"}
+                              </p>
+                              <SlotPickerEdit
+                                key={`${selectedDate}-${effectiveSlotCount}`}
+                                date={selectedDate}
+                                people={people}
+                                maxSlots={effectiveSlotCount}
+                                minSlots={effectiveSlotCount}
+                                currentSlotIds={currentSlotIds}
+                                onSelectSlots={(slots) => setSelectedSlots(slots)}
+                              />
+                            </>
                           )}
-                        </AnimatePresence>
+
+                          {selectedSlots.length === effectiveSlotCount && (
+                            <Button onClick={updateSlot} disabled={updateLoading} className="w-full mt-4 bg-tiger-orange hover:bg-tiger-orange/90 text-white">
+                              {updateLoading ? "Cambiando..." : "Confirmar cambio de horario"}
+                            </Button>
+                          )}
+                        </div>
+                      </>
+                    )}
+
+                    {/* Mensaje para planes compartidos pendientes */}
+                    {reservation.status === "pending" && isSharedPlan && (
+                      <div className="border-t pt-6">
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                          <p className="text-blue-800 text-sm flex items-start gap-2">
+                            <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
+                            <span>
+                              Esta es una reserva de <strong>horario compartido</strong>. No se puede modificar la fecha ni el horario.
+                              Si necesitas cambios, por favor contáctanos.
+                            </span>
+                          </p>
+                        </div>
                       </div>
                     )}
 
-                    {/* Cancelar reserva - Solo para reservas pendientes */}
-                    {reservation.status === 'pending' && (
+                    {/* Reservas confirmadas NO compartidas */}
+                    {reservation.status === "confirmed" && !isSharedPlan && (
+                      <div className="border-t pt-6">
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                          <CheckCircle className="text-green-600 mx-auto mb-2" size={32} />
+                          <p className="text-green-800 font-medium">✅ Reserva confirmada</p>
+                          <p className="text-green-600 text-sm mt-1">
+                            Tu reserva ya está confirmada. Presenta el código el día de tu visita.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Reservas confirmadas compartidas */}
+                    {reservation.status === "confirmed" && isSharedPlan && (
+                      <div className="border-t pt-6">
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4 text-center">
+                          <CheckCircle className="text-green-600 mx-auto mb-2" size={32} />
+                          <p className="text-green-800 font-medium">✅ Reserva confirmada</p>
+                          <p className="text-green-600 text-sm mt-1">
+                            Tu reserva de horario compartido está confirmada.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Botón de cancelar */}
+                    {showCancelButton && (
                       <div className="border-t pt-6">
                         <Button
                           onClick={cancelReservation}
@@ -679,30 +723,15 @@ export default function MisReservas() {
                       </div>
                     )}
 
-                    {/* Mensaje para reservas confirmadas */}
-                    {reservation.status === 'confirmed' && (
-                      <div className="border-t pt-6">
-                        <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-                          <CheckCircle className="text-green-600 mx-auto mb-2" size={32} />
-                          <p className="text-green-800 font-medium">
-                            ✅ Reserva confirmada
-                          </p>
-                          <p className="text-green-600 text-sm mt-1">
-                            Tu reserva ya está confirmada. Presenta el código QR que recibiste por email el día de tu visita.
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
                     {/* Mensajes generales */}
                     <AnimatePresence>
-                      {message && !message.includes("Jugadores") && (
+                      {message && (
                         <motion.div
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0 }}
                           className={`p-4 rounded-lg text-center ${
-                            message.includes("✅") 
+                            message.includes("✅")
                               ? "bg-green-50 text-green-800 border border-green-200"
                               : "bg-blue-50 text-blue-800 border border-blue-200"
                           }`}

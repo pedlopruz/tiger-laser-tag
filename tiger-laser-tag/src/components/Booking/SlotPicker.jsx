@@ -17,12 +17,10 @@ export default function SlotPicker({
   const refreshTimeout = useRef(null);
   const selectedSlotsRef = useRef(selectedSlots);
 
-  // Mantener ref actualizada
   useEffect(() => {
     selectedSlotsRef.current = selectedSlots;
   }, [selectedSlots]);
 
-  // Sincronizar con initialSlots
   useEffect(() => {
     if (initialSlots && initialSlots.length > 0) {
       setSelectedSlots(initialSlots);
@@ -31,7 +29,6 @@ export default function SlotPicker({
     }
   }, [initialSlots]);
 
-  // Helpers
   function formatTime(time) {
     if (!time) return "--:--";
     return time.slice(0, 5);
@@ -45,9 +42,19 @@ export default function SlotPicker({
 
   function areConsecutive(a, b) {
     if (!a?.start_time || !b?.start_time || !a?.end_time) return false;
-    // El slot B empieza exactamente donde termina el slot A
-    return a.end_time.slice(0, 5) === b.start_time.slice(0, 5) ||
-          b.end_time.slice(0, 5) === a.start_time.slice(0, 5);
+
+    const timesMatch =
+      a.end_time.slice(0, 5) === b.start_time.slice(0, 5) ||
+      b.end_time.slice(0, 5) === a.start_time.slice(0, 5);
+
+    if (!timesMatch) return false;
+
+    // Si el primer slot es compartido, el segundo también debe serlo
+    if (a.isShared && !b.isShared) return false;
+    // Si el primer slot es normal, el segundo no puede ser compartido
+    if (!a.isShared && b.isShared) return false;
+
+    return true;
   }
 
   function isFutureSlot(slot) {
@@ -58,23 +65,19 @@ export default function SlotPicker({
   }
 
   function getRemaining(slot) {
+    // Para slots compartidos siempre usar slot.remaining directamente
+    if (slot.isShared) return slot.remaining ?? 0;
     if (slot.remaining !== undefined && slot.remaining > 0) return slot.remaining;
     if (slot.capacity && !slot.reserved) return slot.capacity;
     return 0;
   }
 
-  // ✅ ACTUALIZADO: Verificar si el slot está bloqueado (por reserva O por admin)
   function isSlotBlocked(slot) {
-    // Bloqueado si tiene reservas
-    if (slot.reserved > 0) return true;
-    // Bloqueado si el status es 'blocked' (bloqueado por admin)
     if (slot.status === 'blocked') return true;
-    // Bloqueado si la propiedad isBlocked está activa
-    if (slot.isBlocked === true) return true;
+    if (!slot.isShared && slot.reserved > 0) return true;
     return false;
   }
 
-  // Cargar slots
   const loadSlots = useCallback(async () => {
     if (!date) return;
 
@@ -83,20 +86,18 @@ export default function SlotPicker({
 
     try {
       const res = await fetch(`/api/getSlotsByDate?date=${date}`);
-      
       if (!res.ok) throw new Error("Error loading slots");
       
       const data = await res.json();
-      
       if (!data.slots || !Array.isArray(data.slots)) {
         throw new Error("Invalid slots data");
       }
       
-      const validSlots = data.slots.filter(slot => {
-        return slot.start_time && 
-              slot.start_time.length >= 5 && 
-              !slot.start_time.includes('undefined');
-      });
+      const validSlots = data.slots.filter(slot =>
+        slot.start_time &&
+        slot.start_time.length >= 5 &&
+        !slot.start_time.includes('undefined')
+      );
       
       setSlots(validSlots);
 
@@ -109,12 +110,10 @@ export default function SlotPicker({
     setLoading(false);
   }, [date]);
 
-  // Cargar al cambiar fecha
   useEffect(() => {
     if (date) loadSlots();
   }, [date, loadSlots]);
 
-  // Realtime
   useEffect(() => {
     if (!date) return;
 
@@ -127,21 +126,9 @@ export default function SlotPicker({
 
     const channel = supabase
       .channel("slots-realtime")
-      .on("postgres_changes", { 
-        event: "*", 
-        schema: "public", 
-        table: "reservations" 
-      }, handleRealtimeChange)
-      .on("postgres_changes", { 
-        event: "*", 
-        schema: "public", 
-        table: "reservation_slots" 
-      }, handleRealtimeChange)
-      .on("postgres_changes", { 
-        event: "UPDATE", 
-        schema: "public", 
-        table: "time_slots" 
-      }, handleRealtimeChange) // ✅ Escuchar cambios en time_slots (bloqueos manuales)
+      .on("postgres_changes", { event: "*", schema: "public", table: "reservations" }, handleRealtimeChange)
+      .on("postgres_changes", { event: "*", schema: "public", table: "reservation_slots" }, handleRealtimeChange)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "time_slots" }, handleRealtimeChange)
       .subscribe();
 
     return () => {
@@ -150,14 +137,12 @@ export default function SlotPicker({
     };
   }, [date, loadSlots]);
 
-  // Forzar recarga cuando la ventana recupera foco
   useEffect(() => {
     const handleFocus = () => loadSlots();
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
   }, [loadSlots]);
 
-  // Selección de slots
   const handleSelect = useCallback((slot) => {
     const currentSelected = selectedSlotsRef.current;
 
@@ -165,33 +150,36 @@ export default function SlotPicker({
       alert("Este horario no está disponible");
       return;
     }
-    
-    const remaining = getRemaining(slot);
-    if (remaining < people) {
-      alert(`Solo quedan ${remaining} plazas`);
+
+    // ✅ Para compartidos usar slot.remaining directamente
+    const availablePlaces = slot.isShared
+      ? (slot.remaining ?? 0)
+      : getRemaining(slot);
+
+    if (availablePlaces < people) {
+      alert(`Solo quedan ${availablePlaces} plaza${availablePlaces !== 1 ? 's' : ''}`);
       return;
     }
 
     let newSelection = [];
-    
+
     if (currentSelected.length === 0) {
       newSelection = [slot];
-    } 
+    }
     else if (currentSelected.length === 1) {
       const first = currentSelected[0];
-      
       if (first.id === slot.id) {
         newSelection = [];
       }
       else if (maxSlots > 1 && areConsecutive(first, slot)) {
-        newSelection = [first, slot].sort((a, b) => 
+        newSelection = [first, slot].sort((a, b) =>
           a.start_time.localeCompare(b.start_time)
         );
-      } 
+      }
       else {
         newSelection = [slot];
       }
-    } 
+    }
     else {
       newSelection = [slot];
     }
@@ -200,62 +188,61 @@ export default function SlotPicker({
     if (onSelectSlots) onSelectSlots(newSelection);
   }, [people, onSelectSlots, maxSlots]);
 
-  // UI logic
   function isSelected(slot) {
     return selectedSlots.some(s => s.id === slot.id);
   }
 
   function isDisabled(slot) {
     if (!isFutureSlot(slot)) return true;
-    if (isSlotBlocked(slot)) return true;
-    
-    const remaining = getRemaining(slot);
-    if (remaining < people) return true;
-    
+    if (slot.status === 'blocked') return true;
+    if (!slot.isShared && slot.reserved > 0) return true;
+
+    // ✅ Para compartidos usar slot.remaining directamente
+    if (slot.isShared) {
+      const remaining = slot.remaining ?? 0;
+      if (remaining < people) return true;
+    }
+
+    if (!slot.isShared) {
+      const remaining = getRemaining(slot);
+      if (remaining < people) return true;
+    }
+
     if (selectedSlots.length === 1) {
       const first = selectedSlots[0];
       const isSame = slot.id === first.id;
       const isConsecutive = areConsecutive(first, slot);
       return !(isSame || (maxSlots > 1 && isConsecutive));
     }
-    
+
     if (selectedSlots.length === 2) {
       return !isSelected(slot);
     }
-    
+
     return false;
   }
 
   function getSlotStyle(slot) {
     const selected = isSelected(slot);
     const disabled = isDisabled(slot);
-    const isConsecutivePossible = selectedSlots.length === 1 && 
-                                  !selected && 
+    const isConsecutivePossible = selectedSlots.length === 1 &&
+                                  !selected &&
                                   areConsecutive(selectedSlots[0], slot);
-    
-    if (selected && selectedSlots.length === 2) {
-      return "bg-tiger-green text-white border-tiger-green";
-    }
-    if (selected) {
-      return "bg-tiger-orange text-white border-tiger-orange";
-    }
-    if (disabled) {
-      return "bg-gray-100 text-gray-400 cursor-not-allowed";
-    }
-    if (isConsecutivePossible) {
-      return "bg-green-50 text-green-700 border-green-300 hover:bg-green-100";
-    }
+
+    if (selected && selectedSlots.length === 2) return "bg-tiger-green text-white border-tiger-green";
+    if (selected) return "bg-tiger-orange text-white border-tiger-orange";
+    if (disabled) return "bg-gray-100 text-gray-400 cursor-not-allowed";
+    if (slot.isShared && !disabled) return "bg-blue-50 text-blue-700 border-blue-300 hover:bg-blue-100";
+    if (isConsecutivePossible) return "bg-green-50 text-green-700 border-green-300 hover:bg-green-100";
     return "bg-white hover:bg-gray-50 border-gray-200";
   }
 
   function getSlotStatusText(slot) {
     if (!isFutureSlot(slot)) return "⏰ Pasado";
-    if (isSlotBlocked(slot)) {
-      // ✅ Mensaje específico para slots bloqueados por admin
-      if (slot.status === 'blocked' && slot.reserved === 0) {
-        return "🚫 No disponible";
-      }
-      return "🔒 Reservado";
+    if (slot.status === 'blocked' && !slot.isShared) return "🔒 Reservado";
+    if (slot.isShared) {
+      const remaining = slot.remaining ?? 0;
+      return `🤝 ${remaining} plaza${remaining !== 1 ? 's' : ''}`;
     }
     const remaining = getRemaining(slot);
     if (remaining < people) return `⚠️ ${remaining} plazas`;
