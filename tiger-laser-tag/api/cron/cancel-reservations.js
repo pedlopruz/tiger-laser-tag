@@ -1,38 +1,32 @@
-// tiger-laser-tag/api/cron/cancel-reservations/route.js
+// api/cron/cancel-reservations.js
 import { createClient } from '@supabase/supabase-js';
 
-// ❌ Eliminar esta línea (edge runtime config)
-// export const config = { runtime: 'edge' };
+export default async function handler(req, res) {
+  // Solo permitir GET
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
 
-export async function GET(request) {
   // 🔒 Verificar clave secreta
-  const authHeader = request.headers.get('authorization');
+  const authHeader = req.headers.authorization;
   const cronSecret = process.env.CRON_SECRET;
   
   if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
     console.log('❌ Unauthorized cron attempt');
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
-      status: 401,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return res.status(401).json({ error: 'Unauthorized' });
   }
 
   console.log('🕐 Ejecutando cron job...', new Date().toISOString());
 
-  // Usar las variables correctas
   const supabaseUrl = process.env.SUPABASE_URL;
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !supabaseServiceKey) {
     console.error('❌ Faltan variables de entorno');
-    return new Response(JSON.stringify({ error: 'Missing environment variables' }), { 
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return res.status(500).json({ error: 'Missing environment variables' });
   }
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
   const now = new Date();
   let cancelledCount = 0;
 
@@ -55,8 +49,6 @@ export async function GET(request) {
 
     if (fetchError) throw fetchError;
 
-    console.log(`📊 Encontradas ${reservations?.length || 0} reservas pendientes`);
-
     for (const reservation of reservations || []) {
       const slots = reservation.reservation_slots;
       if (!slots?.length) continue;
@@ -72,43 +64,22 @@ export async function GET(request) {
       if (hoursDiff < 48 && hoursDiff > 0) {
         const slotIds = slots.map(s => s.slot_id);
         
-        // Liberar slots
-        const { error: slotsError } = await supabase
-          .from('time_slots')
-          .update({ status: 'active' })
-          .in('id', slotIds);
-        
-        if (slotsError) throw slotsError;
-        
-        // Cancelar reserva
-        const { error: updateError } = await supabase
-          .from('reservations')
-          .update({ status: 'cancelled' })
-          .eq('id', reservation.id);
-        
-        if (updateError) throw updateError;
+        await supabase.from('time_slots').update({ status: 'active' }).in('id', slotIds);
+        await supabase.from('reservations').update({ status: 'cancelled' }).eq('id', reservation.id);
         
         cancelledCount++;
         console.log(`✅ Cancelada: ${reservation.reservation_code}`);
       }
     }
 
-    console.log(`📊 Total canceladas: ${cancelledCount}`);
-
-    return new Response(JSON.stringify({ 
+    return res.status(200).json({ 
       success: true, 
       cancelled: cancelledCount,
       timestamp: new Date().toISOString()
-    }), { 
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
     });
 
   } catch (error) {
     console.error('❌ Error:', error);
-    return new Response(JSON.stringify({ error: error.message }), { 
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return res.status(500).json({ error: error.message });
   }
 }
