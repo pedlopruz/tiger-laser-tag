@@ -1,4 +1,10 @@
 {
+  "crons": [
+    {
+      "path": "/api/cron/cancel-reservations",
+      "schedule": "0 * * * *"
+    }
+  ],
   "rewrites": [
     { "source": "/(.*)", "destination": "/" }
   ]

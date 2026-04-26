@@ -133,7 +133,7 @@ export default function BookingSummary({
               <p className="font-medium text-amber-800">Reserva dentro de 48 horas</p>
               <p className="text-amber-700 mt-0.5">
                 Esta reserva se <strong>confirmará automáticamente</strong> y no podrás modificarla ni cancelarla desde la web.
-                Si necesitas cambios, contacta con nosotros directamente.
+                Si necesitas más información, contacta con nosotros directamente.
               </p>
             </div>
           </div>
@@ -149,7 +149,8 @@ export default function BookingSummary({
               <p className="font-medium text-blue-800">Reserva con anticipación</p>
               <p className="text-blue-700 mt-0.5">
                 Esta reserva quedará en estado <strong>pendiente</strong>. Podrás modificarla o cancelarla desde 
-                <strong> "Mis Reservas"</strong> hasta 48 horas antes del evento.
+                <strong> "Mis Reservas"</strong> hasta 48 horas antes del evento. Si a menos 48 horas antes no se ha confirmado, la reserva se cancelará automáticamente.
+                Si necesitas más información, contacta con nosotros directamente.
               </p>
             </div>
           </div>
