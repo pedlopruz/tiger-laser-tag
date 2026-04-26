@@ -15,6 +15,23 @@ export default function BookingSummary({
   // ✅ Detectar si es reserva compartida desde los slots seleccionados
   const isShared = slots.some(s => s.isShared);
 
+  // ✅ Calcular si la reserva está dentro de las 48 horas
+  const isWithin48Hours = (() => {
+    if (!date || !slots.length) return false;
+    
+    // Obtener el primer slot
+    const sortedSlots = [...slots].sort((a, b) => a.start_time.localeCompare(b.start_time));
+    const firstSlot = sortedSlots[0];
+    
+    if (!firstSlot?.start_time) return false;
+    
+    const slotDateTime = new Date(`${date}T${firstSlot.start_time}`);
+    const now = new Date();
+    const hoursDiff = (slotDateTime - now) / (1000 * 60 * 60);
+    
+    return hoursDiff < 48;
+  })();
+
   // ✅ Precio según tipo de reserva
   const pricePerPerson = plan?.price || 0;
   const billablePeople = isShared
@@ -106,6 +123,38 @@ export default function BookingSummary({
           </span>
         )}
       </h2>
+
+      {/* ✅ Aviso de 48 horas */}
+      {!showForm && isWithin48Hours && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+          <div className="flex items-start gap-2">
+            <span className="text-amber-600 text-lg">⏰</span>
+            <div className="text-sm">
+              <p className="font-medium text-amber-800">Reserva dentro de 48 horas</p>
+              <p className="text-amber-700 mt-0.5">
+                Esta reserva se <strong>confirmará automáticamente</strong> y no podrás modificarla ni cancelarla desde la web.
+                Si necesitas cambios, contacta con nosotros directamente.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ✅ Aviso de reserva con anticipación (más de 48h) */}
+      {!showForm && !isWithin48Hours && date && slots.length > 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <div className="flex items-start gap-2">
+            <span className="text-blue-600 text-lg">📅</span>
+            <div className="text-sm">
+              <p className="font-medium text-blue-800">Reserva con anticipación</p>
+              <p className="text-blue-700 mt-0.5">
+                Esta reserva quedará en estado <strong>pendiente</strong>. Podrás modificarla o cancelarla desde 
+                <strong> "Mis Reservas"</strong> hasta 48 horas antes del evento.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="space-y-4 text-sm">
         <div className="flex justify-between">
@@ -258,6 +307,13 @@ export default function BookingSummary({
         </div>
       )}
 
+      {/* ✅ Texto adicional antes del botón para reservas dentro de 48h */}
+      {!showForm && isWithin48Hours && (
+        <div className="text-xs text-center text-gray-500 bg-gray-50 p-2 rounded">
+          Al continuar, la reserva se confirmará automáticamente. No podrás modificarla después.
+        </div>
+      )}
+
       {/* Botón */}
       {!showForm && (
         <Button
@@ -269,7 +325,7 @@ export default function BookingSummary({
           }
           onClick={onConfirm}
         >
-          Continuar
+          {isWithin48Hours ? "Confirmar reserva (automática)" : "Continuar"}
         </Button>
       )}
     </div>
