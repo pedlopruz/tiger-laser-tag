@@ -29,29 +29,24 @@ export default function ReservationForm({
     const cleaned = phoneNumber.replace(/[\s\-\(\)\.]/g, '');
     
     const patterns = [
-      /^[679]\d{8}$/,                           // Español: 612345678
-      /^\+34[679]\d{8}$/,                       // Español con +34: +34612345678
-      /^0034[679]\d{8}$/,                       // Español con 0034: 0034612345678
-      /^\+[1-9]\d{1,2}\d{6,12}$/,               // Internacional: +XX XXXXXX...
-      /^00[1-9]\d{1,2}\d{6,12}$/                // Internacional con 00: 00XX XXXXXX...
+      /^[679]\d{8}$/,
+      /^\+34[679]\d{8}$/,
+      /^0034[679]\d{8}$/,
+      /^\+[1-9]\d{1,2}\d{6,12}$/,
+      /^00[1-9]\d{1,2}\d{6,12}$/
     ];
     
     return patterns.some(pattern => pattern.test(cleaned));
   }
 
-  // Función para formatear teléfono mientras escribe
   function formatPhoneInput(value) {
     let cleaned = value.replace(/[\s\-\(\)\.]/g, '');
-    
     if (!cleaned) return '';
-    
     if (cleaned.startsWith('+')) return cleaned;
     if (cleaned.startsWith('00')) return cleaned;
-    
     if (cleaned.length > 0) {
       cleaned = cleaned.replace(/^0+/, '');
     }
-    
     return cleaned;
   }
 
@@ -59,15 +54,14 @@ export default function ReservationForm({
     e.preventDefault();
     setError(null);
 
-    // Validación de campos obligatorios
+    // Validaciones
     if (!name || !email || !phone) {
       setError("Todos los campos son obligatorios");
       return;
     }
 
-    // Validación de teléfono
     if (!isValidPhone(phone)) {
-      setError("Por favor, introduce un número de teléfono válido. Ejemplos: 612345678, +34693786919, +441234567890");
+      setError("Por favor, introduce un número de teléfono válido.");
       return;
     }
 
@@ -94,35 +88,47 @@ export default function ReservationForm({
     setLoading(true);
 
     try {
-      // ✅ Llamar a /api/payments para crear el PaymentIntent
-      const res = await fetch("/api/payments", {
+      // ✅ Llamar a /api/reservations (no a /api/payments directamente)
+      const res = await fetch("/api/reservations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          action: "create-payment-intent",
-          reservationData: {
-            slot_ids: selectedSlots.map(s => s.id),
-            plan_id: plan.id,
-            name,
-            email,
-            phone: phone.trim(),
-            people,
-            menor_edad: menorEdad,
-            personas_electroshock,
-            num_horas: selectedSlots.length
-          }
+          slot_ids: selectedSlots.map(s => s.id),
+          plan_id: plan.id,
+          name,
+          email,
+          phone: phone.trim(),
+          people,
+          menor_edad: menorEdad,
+          personas_electroshock,
+          num_horas: selectedSlots.length
         })
       });
 
       const data = await res.json();
       
       if (!res.ok) {
-        throw new Error(data.error || "Error iniciando el pago");
+        throw new Error(data.error || "Error creando la reserva");
       }
 
-      setReservationCode(data.reservationCode);
-      setClientSecret(data.clientSecret);
-      setRequiresPayment(true);
+      // ✅ Verificar si requiere pago (lo decide el backend)
+      if (data.requires_payment) {
+        // Reserva normal: mostrar pasarela de pago
+        setReservationCode(data.code);
+        setClientSecret(data.clientSecret);
+        setRequiresPayment(true);
+      } else {
+        // Reserva compartida: éxito directo (sin pago)
+        if (onSuccess) {
+          onSuccess({
+            code: data.code,
+            name: name,
+            email: email,
+            phone: phone,
+            menor_edad: menorEdad
+          });
+        }
+      }
 
     } catch (err) {
       console.error(err);
@@ -132,7 +138,6 @@ export default function ReservationForm({
     setLoading(false);
   }
 
-  // Manejar error del pago
   const handlePaymentError = (errorMessage) => {
     setError(`Error de pago: ${errorMessage}`);
     setRequiresPayment(false);
@@ -144,7 +149,7 @@ export default function ReservationForm({
     setPhone(formattedValue);
   };
 
-  // Si requiere pago, mostrar el formulario de Stripe
+  // ✅ Si requiere pago, mostrar el formulario de Stripe (solo reservas normales)
   if (requiresPayment && clientSecret) {
     return (
       <div className="bg-white rounded-xl shadow p-6 mt-6">
@@ -169,7 +174,7 @@ export default function ReservationForm({
     );
   }
 
-  // Formulario de datos personales
+  // ✅ Formulario de datos personales (visible para TODOS los tipos de reserva)
   return (
     <div className="bg-white rounded-xl shadow p-6 mt-6" id="reservation-form">
       <h2 className="text-xl font-bold mb-6">
