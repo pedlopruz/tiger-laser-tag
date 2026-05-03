@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import PaymentForm from "./PaymentForm";
 
 export default function ReservationForm({
   selectedSlots,
@@ -17,13 +18,16 @@ export default function ReservationForm({
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  
+  // Estados para manejar el pago
+  const [requiresPayment, setRequiresPayment] = useState(false);
+  const [clientSecret, setClientSecret] = useState(null);
+  const [reservationCode, setReservationCode] = useState(null);
 
-  // ✅ Función corregida para validar número de teléfono
+  // Función para validar número de teléfono
   function isValidPhone(phoneNumber) {
-    // Eliminar espacios, guiones, paréntesis y puntos
     const cleaned = phoneNumber.replace(/[\s\-\(\)\.]/g, '');
     
-    // Patrones válidos:
     const patterns = [
       /^[679]\d{8}$/,                           // Español: 612345678
       /^\+34[679]\d{8}$/,                       // Español con +34: +34612345678
@@ -35,18 +39,15 @@ export default function ReservationForm({
     return patterns.some(pattern => pattern.test(cleaned));
   }
 
-  // ✅ Función para formatear teléfono mientras escribe
+  // Función para formatear teléfono mientras escribe
   function formatPhoneInput(value) {
-    // Eliminar espacios, guiones, paréntesis y puntos
     let cleaned = value.replace(/[\s\-\(\)\.]/g, '');
     
     if (!cleaned) return '';
     
-    // Mantener prefijos internacionales
     if (cleaned.startsWith('+')) return cleaned;
     if (cleaned.startsWith('00')) return cleaned;
     
-    // Eliminar ceros iniciales para números españoles
     if (cleaned.length > 0) {
       cleaned = cleaned.replace(/^0+/, '');
     }
@@ -64,7 +65,7 @@ export default function ReservationForm({
       return;
     }
 
-    // ✅ Validación de teléfono
+    // Validación de teléfono
     if (!isValidPhone(phone)) {
       setError("Por favor, introduce un número de teléfono válido. Ejemplos: 612345678, +34693786919, +441234567890");
       return;
@@ -90,50 +91,38 @@ export default function ReservationForm({
       return;
     }
 
-    const basePeople = Math.max(people, 10);
-    const precio_total = basePeople * plan.price;
-    const num_horas = selectedSlots.length;
-
     setLoading(true);
 
     try {
-      const res = await fetch("/api/reservations", {
+      // ✅ Llamar a /api/payments para crear el PaymentIntent
+      const res = await fetch("/api/payments", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          action: "create",
-          slot_ids: selectedSlots.map(s => s.id),
-          plan_id: plan.id,
-          name,
-          email,
-          phone: phone.trim(),
-          people,
-          hold_id: holdId,
-          menor_edad: menorEdad,
-          precio_total,
-          personas_electroshock,
-          num_horas
+          action: "create-payment-intent",
+          reservationData: {
+            slot_ids: selectedSlots.map(s => s.id),
+            plan_id: plan.id,
+            name,
+            email,
+            phone: phone.trim(),
+            people,
+            menor_edad: menorEdad,
+            personas_electroshock,
+            num_horas: selectedSlots.length
+          }
         })
       });
 
       const data = await res.json();
-
+      
       if (!res.ok) {
-        throw new Error(data.error || "Error creando reserva");
+        throw new Error(data.error || "Error iniciando el pago");
       }
 
-      if (onSuccess) {
-        onSuccess({
-          code: data.code,
-          reservation_id: data.reservation_id,
-          name: name,
-          email: email,
-          phone: phone,
-          menor_edad: menorEdad
-        });
-      }
+      setReservationCode(data.reservationCode);
+      setClientSecret(data.clientSecret);
+      setRequiresPayment(true);
 
     } catch (err) {
       console.error(err);
@@ -143,12 +132,44 @@ export default function ReservationForm({
     setLoading(false);
   }
 
+  // Manejar error del pago
+  const handlePaymentError = (errorMessage) => {
+    setError(`Error de pago: ${errorMessage}`);
+    setRequiresPayment(false);
+  };
+
   const handlePhoneChange = (e) => {
     const rawValue = e.target.value;
     const formattedValue = formatPhoneInput(rawValue);
     setPhone(formattedValue);
   };
 
+  // Si requiere pago, mostrar el formulario de Stripe
+  if (requiresPayment && clientSecret) {
+    return (
+      <div className="bg-white rounded-xl shadow p-6 mt-6">
+        <h2 className="text-xl font-bold mb-4">Completar pago</h2>
+        <p className="text-sm text-gray-600 mb-4">
+          Para finalizar tu reserva, necesitamos el pago de la fianza de <strong>100€</strong>.
+          Este importe se descontará del precio final.
+        </p>
+        
+        <PaymentForm
+          clientSecret={clientSecret}
+          reservationCode={reservationCode}
+          onError={handlePaymentError}
+        />
+        
+        {error && (
+          <div className="text-red-600 text-sm bg-red-50 p-3 rounded mt-4">
+            ❌ {error}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Formulario de datos personales
   return (
     <div className="bg-white rounded-xl shadow p-6 mt-6" id="reservation-form">
       <h2 className="text-xl font-bold mb-6">

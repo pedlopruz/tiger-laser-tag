@@ -685,31 +685,43 @@ async function createReservation(req, res) {
       });
 
     } else {
-      // ── Reserva normal (existente) ──
-      const { data, error } = await supabaseAdmin.rpc(
-        "create_reservation_blocking",
-        {
-          p_slot_ids: slot_ids,
-          p_plan_id: plan_id,
-          p_name: name,
-          p_email: email,
-          p_phone: phone || null,
-          p_people: players,
-          p_personas_electroshock: electroshock,
-          p_reservation_code: reservation_code,
-          p_menor_edad: menor_edad ?? false
-        }
-      );
+      const reservationData = {
+        slot_ids,
+        plan_id,
+        name,
+        email,
+        phone: phone || null,
+        people: players,
+        personas_electroshock: electroshock,
+        menor_edad: menor_edad ?? false,
+        num_horas: slot_ids.length
+      };
 
-      if (error) {
-        console.error("Error en RPC normal:", error);
-        return res.status(409).json({ error: error.message });
+      const baseUrl = process.env.VERCEL_URL 
+        ? `https://${process.env.VERCEL_URL}`
+        : 'https://www.tigerlasertag.es';
+
+      const paymentResponse = await fetch(`${baseUrl}/api/payments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'create-payment-intent',
+          reservationData
+        })
+      });
+
+      const paymentData = await paymentResponse.json();
+
+      if (!paymentResponse.ok) {
+        return res.status(500).json({ error: paymentData.error });
       }
 
       return res.status(200).json({
         success: true,
-        reservation_id: data.reservation_id,
-        code: reservation_code,
+        requires_payment: true,
+        clientSecret: paymentData.clientSecret,
+        paymentIntentId: paymentData.paymentIntentId,
+        code: paymentData.reservationCode,
         is_shared: false
       });
     }
