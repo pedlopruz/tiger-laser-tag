@@ -586,6 +586,9 @@ async function cancelReservation(req, res, { code, email }) {
   }
 }
 
+// ============================================
+// CONFIRMAR RESERVA (CAMBIAR ESTADO A CONFIRMED)
+// ============================================
 async function createReservation(req, res) {
 
   if (req.method !== "POST") {
@@ -658,7 +661,9 @@ async function createReservation(req, res) {
     const reservation_code = nanoid(12);
 
     if (isShared) {
-      // ── Reserva compartida (sin pago) ──
+      // ── Reserva COMPARTIDA (sin pago, se crea inmediatamente) ──
+      console.log(`📝 Creando reserva COMPARTIDA con código ${reservation_code}`);
+      
       const { data, error } = await supabaseAdmin.rpc(
         "create_shared_reservation",
         {
@@ -688,64 +693,19 @@ async function createReservation(req, res) {
       });
 
     } else {
-      // ── Reserva normal (requiere fianza de 100€) ──
-
-      // 1. Crear PaymentIntent directamente con Stripe
-      let paymentIntent;
-      try {
-        paymentIntent = await stripe.paymentIntents.create({
-          amount: 10000, // 100€ en céntimos
-          currency: 'eur',
-          metadata: {
-            reservationCode: reservation_code,
-            people: players.toString()
-          },
-          description: `Fianza reserva Laser Tag - ${reservation_code}`
-        });
-        console.log(`✅ PaymentIntent creado: ${paymentIntent.id}`);
-      } catch (stripeError) {
-        console.error("Error creando PaymentIntent:", stripeError);
-        return res.status(500).json({ error: "Error al iniciar el proceso de pago" });
-      }
-
-      // 2. Crear la reserva en Supabase
-      const { data, error } = await supabaseAdmin.rpc(
-        "create_reservation_blocking",
-        {
-          p_slot_ids: slot_ids,
-          p_plan_id: plan_id,
-          p_name: name,
-          p_email: email,
-          p_phone: phone || null,
-          p_people: players,
-          p_personas_electroshock: electroshock,
-          p_reservation_code: reservation_code,
-          p_menor_edad: menor_edad ?? false,
-          p_payment_intent_id: paymentIntent.id
-        }
-      );
-
-      if (error) {
-        // Si falla la reserva, cancelar el PaymentIntent para no dejar pagos huérfanos
-        console.error("Error en RPC, cancelando PaymentIntent:", error);
-        try {
-          await stripe.paymentIntents.cancel(paymentIntent.id);
-        } catch (cancelError) {
-          console.error("Error cancelando PaymentIntent:", cancelError);
-        }
-        return res.status(409).json({ error: error.message });
-      }
-
-      console.log(`✅ Reserva creada: ${data.reservation_id}`);
-
-      return res.status(200).json({
-        success: true,
-        reservation_id: data.reservation_id,
-        code: reservation_code,
-        is_shared: false,
-        requires_payment: true,
-        clientSecret: paymentIntent.client_secret,
-        paymentIntentId: paymentIntent.id
+      // ── Reserva NORMAL ──
+      // ✅ Las reservas normales NO se crean aquí
+      // El flujo correcto es:
+      //   1. Frontend → /api/payments (crea PaymentIntent)
+      //   2. Usuario paga
+      //   3. Webhook → crea la reserva en Supabase
+      
+      console.log(`❌ Intento de crear reserva normal desde /api/reservations - Rechazado`);
+      
+      return res.status(400).json({ 
+        error: "Las reservas normales deben procesarse a través del pago con Stripe",
+        action: "redirect_to_payment",
+        message: "Por favor, utiliza el proceso de pago para reservas normales"
       });
     }
 

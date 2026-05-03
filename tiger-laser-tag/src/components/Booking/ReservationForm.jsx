@@ -88,47 +88,37 @@ export default function ReservationForm({
     setLoading(true);
 
     try {
-      // ✅ Llamar a /api/reservations (no a /api/payments directamente)
-      const res = await fetch("/api/reservations", {
+      // ✅ FLUJO CORRECTO: Llamar directamente a /api/payments
+      // No pasa por /api/reservations, solo crea el PaymentIntent
+      const res = await fetch("/api/payments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          slot_ids: selectedSlots.map(s => s.id),
-          plan_id: plan.id,
-          name,
-          email,
-          phone: phone.trim(),
-          people,
-          menor_edad: menorEdad,
-          personas_electroshock,
-          num_horas: selectedSlots.length
+          action: "create-payment-intent",
+          reservationData: {
+            slot_ids: selectedSlots.map(s => s.id),
+            plan_id: plan.id,
+            name,
+            email,
+            phone: phone.trim(),
+            people,
+            menor_edad: menorEdad,
+            personas_electroshock,
+            num_horas: selectedSlots.length
+          }
         })
       });
 
       const data = await res.json();
       
       if (!res.ok) {
-        throw new Error(data.error || "Error creando la reserva");
+        throw new Error(data.error || "Error iniciando el pago");
       }
 
-      // ✅ Verificar si requiere pago (lo decide el backend)
-      if (data.requires_payment) {
-        // Reserva normal: mostrar pasarela de pago
-        setReservationCode(data.code);
-        setClientSecret(data.clientSecret);
-        setRequiresPayment(true);
-      } else {
-        // Reserva compartida: éxito directo (sin pago)
-        if (onSuccess) {
-          onSuccess({
-            code: data.code,
-            name: name,
-            email: email,
-            phone: phone,
-            menor_edad: menorEdad
-          });
-        }
-      }
+      // Guardar datos del pago y mostrar el formulario de Stripe
+      setReservationCode(data.reservationCode);
+      setClientSecret(data.clientSecret);
+      setRequiresPayment(true);
 
     } catch (err) {
       console.error(err);
@@ -149,7 +139,7 @@ export default function ReservationForm({
     setPhone(formattedValue);
   };
 
-  // ✅ Si requiere pago, mostrar el formulario de Stripe (solo reservas normales)
+  // ✅ Si requiere pago, mostrar el formulario de Stripe
   if (requiresPayment && clientSecret) {
     return (
       <div className="bg-white rounded-xl shadow p-6 mt-6">
@@ -174,7 +164,7 @@ export default function ReservationForm({
     );
   }
 
-  // ✅ Formulario de datos personales (visible para TODOS los tipos de reserva)
+  // ✅ Formulario de datos personales
   return (
     <div className="bg-white rounded-xl shadow p-6 mt-6" id="reservation-form">
       <h2 className="text-xl font-bold mb-6">
