@@ -1,6 +1,8 @@
 // /api/reservations.js
 import { supabaseAdmin } from "./supabaseAdmin.js";
 import { nanoid } from "nanoid";
+import Stripe from 'stripe';
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export default async function handler(req, res) {
   console.log("=== API RESERVATIONS CALLED ===");
@@ -584,6 +586,9 @@ async function cancelReservation(req, res, { code, email }) {
   }
 }
 
+// ============================================
+// CONFIRMAR RESERVA (CAMBIAR ESTADO A CONFIRMED)
+// ============================================
 async function createReservation(req, res) {
 
   if (req.method !== "POST") {
@@ -631,10 +636,10 @@ async function createReservation(req, res) {
     return res.status(400).json({ error: "Invalid email" });
   }
 
-  // Validar slots no pasados
+  // Validar slots no pasados y detectar si es compartida
   const { data: slotsData, error: slotsError } = await supabaseAdmin
     .from("time_slots")
-    .select("date, start_time, shared_plan_id")  // ← añadir shared_plan_id
+    .select("date, start_time, shared_plan_id")
     .in("id", slot_ids);
 
   if (slotsError || !slotsData || slotsData.length === 0) {
@@ -649,14 +654,16 @@ async function createReservation(req, res) {
     }
   }
 
-  // ✅ Detectar si es reserva compartida
+  // Detectar si es reserva compartida
   const isShared = slotsData.some(s => s.shared_plan_id !== null);
 
   try {
     const reservation_code = nanoid(12);
 
     if (isShared) {
-      // ── Reserva compartida ──
+      // ── Reserva COMPARTIDA (sin pago, se crea inmediatamente) ──
+      console.log(`📝 Creando reserva COMPARTIDA con código ${reservation_code}`);
+      
       const { data, error } = await supabaseAdmin.rpc(
         "create_shared_reservation",
         {
@@ -681,36 +688,24 @@ async function createReservation(req, res) {
         success: true,
         reservation_id: data.reservation_id,
         code: reservation_code,
-        is_shared: true
+        is_shared: true,
+        requires_payment: false
       });
 
     } else {
-      // ── Reserva normal (existente) ──
-      const { data, error } = await supabaseAdmin.rpc(
-        "create_reservation_blocking",
-        {
-          p_slot_ids: slot_ids,
-          p_plan_id: plan_id,
-          p_name: name,
-          p_email: email,
-          p_phone: phone || null,
-          p_people: players,
-          p_personas_electroshock: electroshock,
-          p_reservation_code: reservation_code,
-          p_menor_edad: menor_edad ?? false
-        }
-      );
-
-      if (error) {
-        console.error("Error en RPC normal:", error);
-        return res.status(409).json({ error: error.message });
-      }
-
-      return res.status(200).json({
-        success: true,
-        reservation_id: data.reservation_id,
-        code: reservation_code,
-        is_shared: false
+      // ── Reserva NORMAL ──
+      // ✅ Las reservas normales NO se crean aquí
+      // El flujo correcto es:
+      //   1. Frontend → /api/payments (crea PaymentIntent)
+      //   2. Usuario paga
+      //   3. Webhook → crea la reserva en Supabase
+      
+      console.log(`❌ Intento de crear reserva normal desde /api/reservations - Rechazado`);
+      
+      return res.status(400).json({ 
+        error: "Las reservas normales deben procesarse a través del pago con Stripe",
+        action: "redirect_to_payment",
+        message: "Por favor, utiliza el proceso de pago para reservas normales"
       });
     }
 
