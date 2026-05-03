@@ -1,6 +1,8 @@
 // /api/reservations.js
 import { supabaseAdmin } from "./supabaseAdmin.js";
 import { nanoid } from "nanoid";
+import Stripe from 'stripe';
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export default async function handler(req, res) {
   console.log("=== API RESERVATIONS CALLED ===");
@@ -631,10 +633,10 @@ async function createReservation(req, res) {
     return res.status(400).json({ error: "Invalid email" });
   }
 
-  // Validar slots no pasados
+  // Validar slots no pasados y detectar si es compartida
   const { data: slotsData, error: slotsError } = await supabaseAdmin
     .from("time_slots")
-    .select("date, start_time, shared_plan_id")  // ← añadir shared_plan_id
+    .select("date, start_time, shared_plan_id")
     .in("id", slot_ids);
 
   if (slotsError || !slotsData || slotsData.length === 0) {
@@ -649,14 +651,14 @@ async function createReservation(req, res) {
     }
   }
 
-  // ✅ Detectar si es reserva compartida
+  // Detectar si es reserva compartida
   const isShared = slotsData.some(s => s.shared_plan_id !== null);
 
   try {
     const reservation_code = nanoid(12);
 
     if (isShared) {
-      // ── Reserva compartida ──
+      // ── Reserva compartida (sin pago) ──
       const { data, error } = await supabaseAdmin.rpc(
         "create_shared_reservation",
         {
@@ -681,48 +683,69 @@ async function createReservation(req, res) {
         success: true,
         reservation_id: data.reservation_id,
         code: reservation_code,
-        is_shared: true
+        is_shared: true,
+        requires_payment: false
       });
 
     } else {
-      const reservationData = {
-        slot_ids,
-        plan_id,
-        name,
-        email,
-        phone: phone || null,
-        people: players,
-        personas_electroshock: electroshock,
-        menor_edad: menor_edad ?? false,
-        num_horas: slot_ids.length
-      };
+      // ── Reserva normal (requiere fianza de 100€) ──
 
-      const baseUrl = process.env.VERCEL_URL 
-        ? `https://${process.env.VERCEL_URL}`
-        : 'https://www.tigerlasertag.es';
-
-      const paymentResponse = await fetch(`${baseUrl}/api/payments`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'create-payment-intent',
-          reservationData
-        })
-      });
-
-      const paymentData = await paymentResponse.json();
-
-      if (!paymentResponse.ok) {
-        return res.status(500).json({ error: paymentData.error });
+      // 1. Crear PaymentIntent directamente con Stripe
+      let paymentIntent;
+      try {
+        paymentIntent = await stripe.paymentIntents.create({
+          amount: 10000, // 100€ en céntimos
+          currency: 'eur',
+          metadata: {
+            reservationCode: reservation_code,
+            people: players.toString()
+          },
+          description: `Fianza reserva Laser Tag - ${reservation_code}`
+        });
+        console.log(`✅ PaymentIntent creado: ${paymentIntent.id}`);
+      } catch (stripeError) {
+        console.error("Error creando PaymentIntent:", stripeError);
+        return res.status(500).json({ error: "Error al iniciar el proceso de pago" });
       }
+
+      // 2. Crear la reserva en Supabase
+      const { data, error } = await supabaseAdmin.rpc(
+        "create_reservation_blocking",
+        {
+          p_slot_ids: slot_ids,
+          p_plan_id: plan_id,
+          p_name: name,
+          p_email: email,
+          p_phone: phone || null,
+          p_people: players,
+          p_personas_electroshock: electroshock,
+          p_reservation_code: reservation_code,
+          p_menor_edad: menor_edad ?? false,
+          p_payment_intent_id: paymentIntent.id
+        }
+      );
+
+      if (error) {
+        // Si falla la reserva, cancelar el PaymentIntent para no dejar pagos huérfanos
+        console.error("Error en RPC, cancelando PaymentIntent:", error);
+        try {
+          await stripe.paymentIntents.cancel(paymentIntent.id);
+        } catch (cancelError) {
+          console.error("Error cancelando PaymentIntent:", cancelError);
+        }
+        return res.status(409).json({ error: error.message });
+      }
+
+      console.log(`✅ Reserva creada: ${data.reservation_id}`);
 
       return res.status(200).json({
         success: true,
+        reservation_id: data.reservation_id,
+        code: reservation_code,
+        is_shared: false,
         requires_payment: true,
-        clientSecret: paymentData.clientSecret,
-        paymentIntentId: paymentData.paymentIntentId,
-        code: paymentData.reservationCode,
-        is_shared: false
+        clientSecret: paymentIntent.client_secret,
+        paymentIntentId: paymentIntent.id
       });
     }
 
