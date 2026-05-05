@@ -19,15 +19,15 @@ export default function ReservationForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   
-  // Estados para manejar el pago
   const [requiresPayment, setRequiresPayment] = useState(false);
   const [clientSecret, setClientSecret] = useState(null);
   const [reservationCode, setReservationCode] = useState(null);
 
-  // Función para validar número de teléfono
+  // ✅ Detectar si es reserva compartida desde los slots
+  const isShared = selectedSlots?.some(s => s.isShared) ?? false;
+
   function isValidPhone(phoneNumber) {
     const cleaned = phoneNumber.replace(/[\s\-\(\)\.]/g, '');
-    
     const patterns = [
       /^[679]\d{8}$/,
       /^\+34[679]\d{8}$/,
@@ -35,7 +35,6 @@ export default function ReservationForm({
       /^\+[1-9]\d{1,2}\d{6,12}$/,
       /^00[1-9]\d{1,2}\d{6,12}$/
     ];
-    
     return patterns.some(pattern => pattern.test(cleaned));
   }
 
@@ -44,9 +43,7 @@ export default function ReservationForm({
     if (!cleaned) return '';
     if (cleaned.startsWith('+')) return cleaned;
     if (cleaned.startsWith('00')) return cleaned;
-    if (cleaned.length > 0) {
-      cleaned = cleaned.replace(/^0+/, '');
-    }
+    if (cleaned.length > 0) cleaned = cleaned.replace(/^0+/, '');
     return cleaned;
   }
 
@@ -54,7 +51,6 @@ export default function ReservationForm({
     e.preventDefault();
     setError(null);
 
-    // Validaciones
     if (!name || !email || !phone) {
       setError("Todos los campos son obligatorios");
       return;
@@ -88,14 +84,12 @@ export default function ReservationForm({
     setLoading(true);
 
     try {
-      // ✅ FLUJO CORRECTO: Llamar directamente a /api/payments
-      // No pasa por /api/reservations, solo crea el PaymentIntent
-      const res = await fetch("/api/payments", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "create-payment-intent",
-          reservationData: {
+      if (isShared) {
+        // ✅ Reserva compartida — va directamente a /api/reservations sin pago
+        const res = await fetch("/api/reservations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
             slot_ids: selectedSlots.map(s => s.id),
             plan_id: plan.id,
             name,
@@ -105,20 +99,50 @@ export default function ReservationForm({
             menor_edad: menorEdad,
             personas_electroshock,
             num_horas: selectedSlots.length
-          }
-        })
-      });
+          })
+        });
 
-      const data = await res.json();
-      
-      if (!res.ok) {
-        throw new Error(data.error || "Error iniciando el pago");
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Error creando reserva");
+
+        if (onSuccess) {
+          onSuccess({
+            code: data.code,
+            name,
+            email,
+            phone,
+            menor_edad: menorEdad
+          });
+        }
+
+      } else {
+        // ✅ Reserva normal — primero PaymentIntent, luego reserva desde webhook
+        const res = await fetch("/api/payments", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "create-payment-intent",
+            reservationData: {
+              slot_ids: selectedSlots.map(s => s.id),
+              plan_id: plan.id,
+              name,
+              email,
+              phone: phone.trim(),
+              people,
+              menor_edad: menorEdad,
+              personas_electroshock,
+              num_horas: selectedSlots.length
+            }
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Error iniciando el pago");
+
+        setReservationCode(data.reservationCode);
+        setClientSecret(data.clientSecret);
+        setRequiresPayment(true);
       }
-
-      // Guardar datos del pago y mostrar el formulario de Stripe
-      setReservationCode(data.reservationCode);
-      setClientSecret(data.clientSecret);
-      setRequiresPayment(true);
 
     } catch (err) {
       console.error(err);
@@ -134,13 +158,11 @@ export default function ReservationForm({
   };
 
   const handlePhoneChange = (e) => {
-    const rawValue = e.target.value;
-    const formattedValue = formatPhoneInput(rawValue);
-    setPhone(formattedValue);
+    setPhone(formatPhoneInput(e.target.value));
   };
 
-  // ✅ Si requiere pago, mostrar el formulario de Stripe
-  if (requiresPayment && clientSecret) {
+  // ✅ Solo mostrar pasarela de pago para reservas normales
+  if (!isShared && requiresPayment && clientSecret) {
     return (
       <div className="bg-white rounded-xl shadow p-6 mt-6">
         <h2 className="text-xl font-bold mb-4">Completar pago</h2>
@@ -148,13 +170,13 @@ export default function ReservationForm({
           Para finalizar tu reserva, necesitamos el pago de la fianza de <strong>100€</strong>.
           Este importe se descontará del precio final.
         </p>
-        
+
         <PaymentForm
           clientSecret={clientSecret}
           reservationCode={reservationCode}
           onError={handlePaymentError}
         />
-        
+
         {error && (
           <div className="text-red-600 text-sm bg-red-50 p-3 rounded mt-4">
             ❌ {error}
@@ -167,9 +189,20 @@ export default function ReservationForm({
   // ✅ Formulario de datos personales
   return (
     <div className="bg-white rounded-xl shadow p-6 mt-6" id="reservation-form">
-      <h2 className="text-xl font-bold mb-6">
-        Datos de la reserva
-      </h2>
+      <h2 className="text-xl font-bold mb-6">Datos de la reserva</h2>
+
+      {/* ✅ Aviso informativo según tipo de reserva */}
+      {isShared ? (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
+          🤝 <strong>Reserva compartida</strong> — No se requiere pago previo.
+          Tu plaza quedará reservada al confirmar.
+        </div>
+      ) : (
+        <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
+          🔒 Se solicitará una fianza de <strong>100€</strong> al confirmar.
+          Este importe se descontará del precio final.
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
@@ -225,7 +258,7 @@ export default function ReservationForm({
             className="mt-1"
           />
           <label className="text-sm text-gray-700">
-            Marque si algún participante es menor de 15 años.  
+            Marque si algún participante es menor de 15 años.
             Será necesario firmar un consentimiento en el recinto.
           </label>
         </div>
@@ -242,8 +275,10 @@ export default function ReservationForm({
           disabled={loading}
         >
           {loading
-            ? "Procesando reserva..."
-            : "Confirmar reserva"}
+            ? "Procesando..."
+            : isShared
+              ? "Confirmar reserva"
+              : "Continuar al pago →"}
         </Button>
       </form>
     </div>
