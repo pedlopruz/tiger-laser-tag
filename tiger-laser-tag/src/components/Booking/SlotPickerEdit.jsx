@@ -7,7 +7,7 @@ export default function SlotPickerEdit({
   onSelectSlots,
   maxSlots = 2,
   minSlots = 1,
-  currentSlotIds = []  // ✅ IDs de slots que el usuario ya tiene reservados
+  currentSlotIds = []  // IDs de slots que el usuario ya tiene reservados
 }) {
 
   const [slots, setSlots] = useState([]);
@@ -17,10 +17,68 @@ export default function SlotPickerEdit({
 
   const refreshTimeout = useRef(null);
   const selectedSlotsRef = useRef([]);
+  const prevMaxSlotsRef = useRef(maxSlots);
+  const prevCurrentSlotIdsRef = useRef(currentSlotIds);
 
   useEffect(() => {
     selectedSlotsRef.current = selectedSlots;
   }, [selectedSlots]);
+
+  // ✅ Cuando cambia maxSlots de 2 a 1, intentar mantener un slot si es posible
+  useEffect(() => {
+    const prevMaxSlots = prevMaxSlotsRef.current;
+    const prevCurrentSlotIds = prevCurrentSlotIdsRef.current;
+    
+    // Si estamos reduciendo de 2 slots a 1 slot
+    if (prevMaxSlots === 2 && maxSlots === 1 && currentSlotIds.length === 2) {
+      console.log("🔄 Reduciendo de 2 slots a 1 slot, intentando mantener selección...");
+      
+      // Intentar mantener el primer slot (o el que tenga más sentido)
+      // Podemos mantener el slot más temprano o el que el usuario tenía seleccionado
+      const sortedSlots = [...currentSlotIds].sort();
+      const slotToKeep = sortedSlots[0]; // Mantener el más temprano
+      
+      // Buscar el slot completo en la lista de slots cargados
+      const keptSlot = slots.find(slot => slot.id === slotToKeep);
+      
+      if (keptSlot) {
+        console.log(`✅ Manteniendo slot: ${keptSlot.start_time}`);
+        setSelectedSlots([keptSlot]);
+        if (onSelectSlots) onSelectSlots([keptSlot]);
+      }
+    }
+    
+    // Si estamos aumentando de 1 slot a 2 slots
+    if (prevMaxSlots === 1 && maxSlots === 2 && currentSlotIds.length === 1) {
+      console.log("🔄 Aumentando de 1 slot a 2 slots...");
+      // Limpiar selección para que el usuario pueda elegir 2 nuevos
+      setSelectedSlots([]);
+      if (onSelectSlots) onSelectSlots([]);
+    }
+    
+    prevMaxSlotsRef.current = maxSlots;
+    prevCurrentSlotIdsRef.current = currentSlotIds;
+  }, [maxSlots, currentSlotIds, slots, onSelectSlots]);
+
+  // ✅ También cuando cambia la fecha, intentar mantener slots si coinciden
+  useEffect(() => {
+    if (slots.length > 0 && currentSlotIds.length > 0) {
+      // Buscar qué slots actuales están disponibles en la nueva fecha
+      const availableCurrentSlots = slots.filter(slot => 
+        currentSlotIds.includes(slot.id)
+      );
+      
+      if (availableCurrentSlots.length > 0 && selectedSlots.length === 0) {
+        // Si hay slots actuales disponibles y no hay selección, preseleccionarlos
+        console.log(`✅ Preseleccionando ${availableCurrentSlots.length} slot(s) disponible(s) de la reserva actual`);
+        
+        // Respetar maxSlots
+        const slotsToPreselect = availableCurrentSlots.slice(0, maxSlots);
+        setSelectedSlots(slotsToPreselect);
+        if (onSelectSlots) onSelectSlots(slotsToPreselect);
+      }
+    }
+  }, [slots, currentSlotIds, maxSlots, onSelectSlots]);
 
   function formatTime(time) {
     if (!time) return "--:--";
@@ -41,7 +99,6 @@ export default function SlotPickerEdit({
   }
 
   function getRemaining(slot) {
-    // ✅ Para slots del usuario, mostrar disponibilidad normal
     if (currentSlotIds.includes(slot.id)) {
       return slot.capacity || slot.remaining || people;
     }
@@ -52,7 +109,6 @@ export default function SlotPickerEdit({
   }
 
   function isSlotBlocked(slot) {
-    // ✅ Los slots del usuario NO están bloqueados para él
     if (currentSlotIds.includes(slot.id)) {
       return false;
     }
@@ -201,7 +257,6 @@ export default function SlotPickerEdit({
     if (selected) return "bg-tiger-orange text-white border-tiger-orange";
     if (disabled && !isCurrentSlot) return "bg-gray-100 text-gray-400 cursor-not-allowed";
     
-    // ✅ Estilo especial para slots que el usuario ya tiene reservados
     if (isCurrentSlot && !selected) {
       return "bg-blue-50 text-blue-700 border-blue-300 hover:bg-blue-100 ring-2 ring-blue-300";
     }
@@ -213,7 +268,6 @@ export default function SlotPickerEdit({
   function getSlotStatusText(slot) {
     if (!isFutureSlot(slot)) return "⏰ Pasado";
     
-    // ✅ Indicar que es su reserva actual
     if (currentSlotIds.includes(slot.id) && !isSelected(slot)) {
       return "📌 Tu reserva actual";
     }
@@ -249,9 +303,15 @@ export default function SlotPickerEdit({
         )}
       </h3>
 
-      {currentSlotIds.length > 0 && (
+      {currentSlotIds.length > 0 && maxSlots === 1 && (
+        <div className="mb-3 p-2 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
+          💡 Vas a cambiar de 2 horas a 1 hora. Puedes conservar una de tus horas actuales (destacada en azul).
+        </div>
+      )}
+
+      {currentSlotIds.length > 0 && maxSlots === 2 && minSlots === 2 && (
         <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
-          💡 Tus horarios actuales aparecen destacados en azul. Puedes cambiarlos o reducirlos seleccionando solo uno.
+          💡 Tus horarios actuales aparecen destacados en azul. Puedes cambiarlos o mantenerlos.
         </div>
       )}
 

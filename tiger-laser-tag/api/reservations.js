@@ -144,6 +144,9 @@ async function accessReservation(req, res, { code, email }) {
     return res.status(500).json({ error: "Error al buscar la reserva", details: error.message });
   }
 }
+// ============================================º
+// CAMBIAR RESERVA
+// ============================================
 // ============================================
 // CAMBIAR RESERVA
 // ============================================
@@ -155,7 +158,7 @@ async function changeReservation(req, res, { code, email, people, newSlotIds }) 
   try {
     console.log("🔍 === INICIO changeReservation ===");
     console.log("📝 newSlotIds recibidos:", newSlotIds);
-    console.log("📝 newSlotIds length:", newSlotIds?.length);
+    console.log("📝 people recibido:", people);
 
     // Obtener la reserva con los datos necesarios
     const { data: reservation, error: fetchError } = await supabaseAdmin
@@ -213,7 +216,47 @@ async function changeReservation(req, res, { code, email, people, newSlotIds }) 
 
     // ─── Caso: Cambiar número de jugadores ───────────────────────────────────
     if (people && people !== reservation.people) {
-      // ... (código existente)
+      console.log(`👥 Cambiando número de jugadores: ${reservation.people} -> ${people}`);
+      
+      const pricePerPerson = reservation.plans.price;
+      
+      // Calcular con facturación mínima de 10 personas
+      const originalTotal = pricePerPerson * billable(reservation.people);
+      const newTotal = pricePerPerson * billable(people);
+      const extraPayment = Math.max(newTotal - originalTotal, 0);
+
+      console.log("💰 Cálculo de cambio de jugadores:", {
+        pricePerPerson,
+        originalPeople: reservation.people,
+        newPeople: people,
+        billableOriginal: billable(reservation.people),
+        billableNew: billable(people),
+        originalTotal,
+        newTotal,
+        extraPayment
+      });
+
+      // Actualizar la reserva
+      const { error: updateError } = await supabaseAdmin
+        .from("reservations")
+        .update({ people: people, precio_total: newTotal })
+        .eq("id", reservation.id);
+
+      if (updateError) {
+        console.log("❌ Error actualizando jugadores:", updateError);
+        throw updateError;
+      }
+
+      console.log(`✅ Jugadores actualizados: ${people} (total: €${newTotal})`);
+
+      return res.status(200).json({
+        success: true,
+        extra_payment: extraPayment,
+        new_total: newTotal,
+        message: extraPayment > 0 
+          ? `Se requiere pago adicional de €${extraPayment}` 
+          : "Jugadores actualizados correctamente"
+      });
     }
 
     // ─── Caso: Cambiar horario ───────────────────────────────────────────────
@@ -238,7 +281,6 @@ async function changeReservation(req, res, { code, email, people, newSlotIds }) 
       }
 
       // ✅ IMPORTANTE: Para cambios que mantienen o reducen slots, permitir usar los slots actuales
-      // No verificar disponibilidad de slots que ya son del usuario
       const newSlotIdsSet = new Set(newSlotIds);
       const oldSlotIdsSet = new Set(oldSlotIds);
       
@@ -251,7 +293,7 @@ async function changeReservation(req, res, { code, email, people, newSlotIds }) 
         trulyNewSlotIds
       });
 
-      // Solo verificar disponibilidad de los slots NUEVOS (que no pertenecían al usuario)
+      // Solo verificar disponibilidad de los slots NUEVOS
       if (trulyNewSlotIds.length > 0) {
         const { data: newSlots, error: slotError } = await supabaseAdmin
           .from("time_slots")
@@ -270,10 +312,9 @@ async function changeReservation(req, res, { code, email, people, newSlotIds }) 
         
         console.log("✅ Todos los slots nuevos están disponibles");
       } else {
-        console.log("✅ No hay slots nuevos que verificar (solo modificando slots existentes o reduciendo)");
+        console.log("✅ No hay slots nuevos que verificar");
       }
 
-      // Recalcular el plan y precio si cambia la cantidad de slots
       const newSlotCount = newSlotIds.length;
 
       if (oldSlotCount !== newSlotCount) {
@@ -281,16 +322,13 @@ async function changeReservation(req, res, { code, email, people, newSlotIds }) 
         
         let newPlan = null;
         
-        // ✅ Usar related_plan_id para encontrar el plan correspondiente
+        // Buscar plan relacionado
         if (oldSlotCount === 2 && newSlotCount === 1) {
-          console.log("🔍 Buscando plan relacionado para reducir de 2 a 1 hora");
           const { data: currentPlan } = await supabaseAdmin
             .from("plans")
             .select("related_plan_id")
             .eq("id", reservation.plan_id)
             .single();
-          
-          console.log("📊 Plan actual:", currentPlan);
           
           if (currentPlan?.related_plan_id) {
             const { data: relatedPlan } = await supabaseAdmin
@@ -299,13 +337,10 @@ async function changeReservation(req, res, { code, email, people, newSlotIds }) 
               .eq("id", currentPlan.related_plan_id)
               .eq("active", true)
               .single();
-            
             newPlan = relatedPlan;
-            console.log("📊 Plan relacionado encontrado:", newPlan);
           }
         } 
         else if (oldSlotCount === 1 && newSlotCount === 2) {
-          console.log("🔍 Buscando plan relacionado para aumentar de 1 a 2 horas");
           const { data: currentPlan } = await supabaseAdmin
             .from("plans")
             .select("related_plan_id")
@@ -319,66 +354,42 @@ async function changeReservation(req, res, { code, email, people, newSlotIds }) 
               .eq("id", currentPlan.related_plan_id)
               .eq("active", true)
               .single();
-            
             newPlan = relatedPlan;
           }
         }
         
-        // ✅ Fallback: si no se encontró por related_plan_id, buscar por num_slots
+        // Fallback
         if (!newPlan) {
-          console.log("🔍 Buscando plan por num_slots como fallback");
           const { data: planBySlots } = await supabaseAdmin
             .from("plans")
             .select("id, price, num_slots")
             .eq("num_slots", newSlotCount)
             .eq("active", true)
             .maybeSingle();
-          
           newPlan = planBySlots;
-          console.log("📊 Plan por num_slots:", newPlan);
         }
         
         if (!newPlan) {
-          console.log("❌ No se encontró plan para", newSlotCount, "hora(s)");
           return res.status(400).json({
             error: `No se encontró un plan disponible para ${newSlotCount} hora(s)`
           });
         }
 
-        // Calcular el nuevo total
         const newTotal = newPlan.price * billable(reservation.people);
         const oldTotal = reservation.plans.price * billable(reservation.people);
         const extraPayment = Math.max(newTotal - oldTotal, 0);
 
-        console.log("💰 Cálculo de cambio de plan:", {
-          oldPlanId: reservation.plan_id,
-          oldPlanPrice: reservation.plans.price,
-          oldSlotCount,
-          newPlanId: newPlan.id,
-          newPlanPrice: newPlan.price,
-          newSlotCount,
-          people: reservation.people,
-          billablePeople: billable(reservation.people),
-          oldTotal,
-          newTotal,
-          extraPayment
-        });
-
-        // Actualizar plan y precio en la reserva
+        // Actualizar plan y precio
         const { error: updateError } = await supabaseAdmin
           .from("reservations")
           .update({ plan_id: newPlan.id, precio_total: newTotal })
           .eq("id", reservation.id);
 
-        if (updateError) {
-          console.log("❌ Error actualizando plan:", updateError);
-          throw updateError;
-        }
+        if (updateError) throw updateError;
 
-        // Liberar slots antiguos (solo los que ya no se usan)
+        // Liberar slots antiguos que ya no se usan
         const slotsToRelease = oldSlotIds.filter(id => !newSlotIdsSet.has(id));
         if (slotsToRelease.length > 0) {
-          console.log("🔓 Liberando slots:", slotsToRelease);
           await supabaseAdmin
             .from("time_slots")
             .update({ status: "active" })
@@ -398,9 +409,8 @@ async function changeReservation(req, res, { code, email, people, newSlotIds }) 
             slot_id: slotId
           })));
 
-        // Bloquear los nuevos slots (solo los que son realmente nuevos)
+        // Bloquear nuevos slots
         if (trulyNewSlotIds.length > 0) {
-          console.log("🔒 Bloqueando nuevos slots:", trulyNewSlotIds);
           await supabaseAdmin
             .from("time_slots")
             .update({ status: "blocked" })
@@ -413,31 +423,27 @@ async function changeReservation(req, res, { code, email, people, newSlotIds }) 
           new_total: newTotal,
           new_plan_id: newPlan.id,
           message: extraPayment > 0
-            ? `Horario y plan actualizados a ${newSlotCount} hora(s). Se requiere pago adicional de €${extraPayment}`
-            : `Horario y plan actualizados correctamente a ${newSlotCount} hora(s)`
+            ? `Horario y plan actualizados. Se requiere pago adicional de €${extraPayment}`
+            : `Horario y plan actualizados correctamente`
         });
       }
 
-      // Sin cambio de cantidad de slots: flujo original
+      // Mismo número de slots
       console.log("🔄 Mismo número de slots, solo cambiando horario");
       
-      // Liberar slots antiguos que ya no se usan
       const slotsToRelease = oldSlotIds.filter(id => !newSlotIdsSet.has(id));
       if (slotsToRelease.length > 0) {
-        console.log("🔓 Liberando slots:", slotsToRelease);
         await supabaseAdmin
           .from("time_slots")
           .update({ status: "active" })
           .in("id", slotsToRelease);
       }
 
-      // Eliminar relaciones antiguas
       await supabaseAdmin
         .from("reservation_slots")
         .delete()
         .eq("reservation_id", reservation.id);
 
-      // Insertar nuevas relaciones
       await supabaseAdmin
         .from("reservation_slots")
         .insert(newSlotIds.map(slotId => ({
@@ -445,9 +451,7 @@ async function changeReservation(req, res, { code, email, people, newSlotIds }) 
           slot_id: slotId
         })));
 
-      // Bloquear los nuevos slots (solo los que son nuevos)
       if (trulyNewSlotIds.length > 0) {
-        console.log("🔒 Bloqueando nuevos slots:", trulyNewSlotIds);
         await supabaseAdmin
           .from("time_slots")
           .update({ status: "blocked" })
@@ -465,124 +469,6 @@ async function changeReservation(req, res, { code, email, people, newSlotIds }) 
   } catch (error) {
     console.error("❌ Error changing reservation:", error);
     return res.status(500).json({ error: "Error modificando la reserva", details: error.message });
-  }
-}
-
-// ============================================
-// CANCELAR RESERVA
-// ============================================
-async function cancelReservation(req, res, { code, email }) {
-  if (!code || !email) {
-    return res.status(400).json({ error: "Campos requeridos faltantes" });
-  }
-
-  try {
-    // Primero obtener la reserva con el plan para saber si es compartida
-    const { data: reservation, error: fetchError } = await supabaseAdmin
-      .from("reservations")
-      .select(`
-        id,
-        people,
-        status,
-        plan_id,
-        plans(active, name),
-        reservation_slots(slot_id)
-      `)
-      .eq("reservation_code", code)
-      .eq("email", email)
-      .in("status", ["pending", "confirmed"])  // Permitir ambos estados inicialmente
-      .single();
-
-    if (fetchError || !reservation) {
-      console.log("❌ Reserva no encontrada:", fetchError);
-      return res.status(404).json({ error: "Reserva no encontrada" });
-    }
-
-    const isSharedPlan = reservation.plans?.active === false;
-    const currentStatus = reservation.status;
-
-    console.log("📊 Cancelación solicitada:", {
-      reservationId: reservation.id,
-      currentStatus,
-      isSharedPlan,
-      planName: reservation.plans?.name
-    });
-
-    // ✅ Reglas de cancelación:
-    // - Reservas normales (active = true): solo se pueden cancelar si están PENDING
-    // - Reservas compartidas (active = false): se pueden cancelar si están PENDING o CONFIRMED
-    if (!isSharedPlan && currentStatus !== "pending") {
-      return res.status(403).json({ 
-        error: "Las reservas normales solo se pueden cancelar mientras están pendientes de confirmación. Una vez confirmadas, contacta con el establecimiento." 
-      });
-    }
-
-    if (isSharedPlan && currentStatus === "cancelled") {
-      return res.status(403).json({ 
-        error: "Esta reserva ya está cancelada." 
-      });
-    }
-
-    const slotIds = reservation.reservation_slots?.map(rs => rs.slot_id) || [];
-
-    // Actualizar estado de la reserva a cancelled
-    const { error: updateError } = await supabaseAdmin
-      .from("reservations")
-      .update({ status: "cancelled" })
-      .eq("id", reservation.id);
-
-    if (updateError) throw updateError;
-
-    // Liberar los slots (ponerlos como active)
-    if (slotIds.length > 0) {
-      console.log("🔓 Liberando slots:", slotIds);
-      const { error: slotError } = await supabaseAdmin
-        .from("time_slots")
-        .update({ status: "active" })
-        .in("id", slotIds);
-
-      if (slotError) throw slotError;
-    }
-
-    // Obtener la reserva actualizada para devolverla
-    const { data: updatedReservation, error: fetchUpdatedError } = await supabaseAdmin
-      .from("reservations")
-      .select(`
-        *,
-        reservation_slots(
-          slot_id,
-          time_slots(date, start_time, end_time)
-        ),
-        plans(name, price, duration_minutes, active)
-      `)
-      .eq("id", reservation.id)
-      .single();
-
-    if (fetchUpdatedError) {
-      console.log("⚠️ No se pudo obtener la reserva actualizada:", fetchUpdatedError);
-      // Aún así, la cancelación fue exitosa
-      return res.status(200).json({
-        success: true,
-        message: "Reserva cancelada correctamente",
-        reservation: { ...reservation, status: "cancelled" }
-      });
-    }
-
-    console.log("✅ Reserva cancelada exitosamente:", {
-      id: updatedReservation.id,
-      status: updatedReservation.status,
-      isShared: updatedReservation.plans?.active === false
-    });
-
-    return res.status(200).json({
-      success: true,
-      message: "Reserva cancelada correctamente",
-      reservation: updatedReservation
-    });
-
-  } catch (error) {
-    console.error("❌ Error cancelling reservation:", error);
-    return res.status(500).json({ error: "Error cancelando la reserva", details: error.message });
   }
 }
 
