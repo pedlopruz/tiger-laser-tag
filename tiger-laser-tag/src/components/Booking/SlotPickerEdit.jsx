@@ -7,7 +7,7 @@ export default function SlotPickerEdit({
   onSelectSlots,
   maxSlots = 2,
   minSlots = 1,
-  currentSlotIds = []  // ✅ IDs de slots que el usuario ya tiene reservados
+  currentSlotIds = []  // IDs de slots que el usuario ya tiene reservados
 }) {
 
   const [slots, setSlots] = useState([]);
@@ -21,6 +21,24 @@ export default function SlotPickerEdit({
   useEffect(() => {
     selectedSlotsRef.current = selectedSlots;
   }, [selectedSlots]);
+
+  // ✅ Cuando cambia maxSlots, preservar la selección actual si es posible
+  useEffect(() => {
+    // Si tenemos slots actuales del usuario y no hay selección, preseleccionar
+    if (currentSlotIds.length > 0 && selectedSlots.length === 0 && slots.length > 0) {
+      const availableCurrentSlots = slots.filter(slot => currentSlotIds.includes(slot.id));
+      
+      if (availableCurrentSlots.length > 0) {
+        // Preseleccionar hasta maxSlots
+        const slotsToPreselect = availableCurrentSlots.slice(0, maxSlots);
+        if (slotsToPreselect.length > 0) {
+          console.log("📌 Preseleccionando slots existentes:", slotsToPreselect.map(s => s.start_time));
+          setSelectedSlots(slotsToPreselect);
+          if (onSelectSlots) onSelectSlots(slotsToPreselect);
+        }
+      }
+    }
+  }, [slots, currentSlotIds, maxSlots, onSelectSlots]);
 
   function formatTime(time) {
     if (!time) return "--:--";
@@ -41,7 +59,6 @@ export default function SlotPickerEdit({
   }
 
   function getRemaining(slot) {
-    // ✅ Para slots del usuario, mostrar disponibilidad normal
     if (currentSlotIds.includes(slot.id)) {
       return slot.capacity || slot.remaining || people;
     }
@@ -52,7 +69,7 @@ export default function SlotPickerEdit({
   }
 
   function isSlotBlocked(slot) {
-    // ✅ Los slots del usuario NO están bloqueados para él
+    // Los slots del usuario NO están bloqueados para él
     if (currentSlotIds.includes(slot.id)) {
       return false;
     }
@@ -126,11 +143,13 @@ export default function SlotPickerEdit({
   const handleSelect = useCallback((slot) => {
     const currentSelected = selectedSlotsRef.current;
 
+    // Verificar si el slot está bloqueado (pero permitir si es del usuario)
     if (isSlotBlocked(slot)) {
       alert("Este horario ya está reservado por otro cliente");
       return;
     }
 
+    // Verificar capacidad
     const remaining = getRemaining(slot);
     if (remaining < people && !currentSlotIds.includes(slot.id)) {
       alert(`Solo quedan ${remaining} plazas`);
@@ -139,25 +158,46 @@ export default function SlotPickerEdit({
 
     let newSelection = [];
 
+    // Caso 1: No hay slots seleccionados
     if (currentSelected.length === 0) {
       newSelection = [slot];
     }
+    // Caso 2: Hay 1 slot seleccionado
     else if (currentSelected.length === 1) {
       const first = currentSelected[0];
+      
+      // Si es el mismo slot, deseleccionar
       if (first.id === slot.id) {
         newSelection = [];
       }
-      else if (maxSlots > 1 && areConsecutive(first, slot)) {
+      // Si queremos 2 slots y son consecutivos
+      else if (maxSlots >= 2 && areConsecutive(first, slot)) {
         newSelection = [first, slot].sort((a, b) =>
           a.start_time.localeCompare(b.start_time)
         );
       }
+      // Reemplazar el actual por el nuevo
       else {
         newSelection = [slot];
       }
     }
-    else {
-      newSelection = [slot];
+    // Caso 3: Hay 2 slots seleccionados
+    else if (currentSelected.length === 2) {
+      const first = currentSelected[0];
+      const second = currentSelected[1];
+      
+      // Si es el mismo que el primero, quedarse solo con el segundo
+      if (first.id === slot.id) {
+        newSelection = [second];
+      }
+      // Si es el mismo que el segundo, quedarse solo con el primero
+      else if (second.id === slot.id) {
+        newSelection = [first];
+      }
+      // Si no, reemplazar toda la selección por el nuevo slot
+      else {
+        newSelection = [slot];
+      }
     }
 
     setSelectedSlots(newSelection);
@@ -169,23 +209,36 @@ export default function SlotPickerEdit({
   }
 
   function isDisabled(slot) {
+    // No permitir slots pasados
     if (!isFutureSlot(slot)) return true;
+    
+    // No permitir slots bloqueados (que no sean del usuario)
     if (isSlotBlocked(slot)) return true;
-
+    
+    // Verificar capacidad (excepto para slots del usuario)
     const remaining = getRemaining(slot);
     if (remaining < people && !currentSlotIds.includes(slot.id)) return true;
 
-    if (selectedSlots.length === 1) {
-      const first = selectedSlots[0];
-      const isSame = slot.id === first.id;
-      const isConsecutive = areConsecutive(first, slot);
-      return !(isSame || (maxSlots > 1 && isConsecutive));
-    }
-
-    if (selectedSlots.length === 2) {
+    const currentSelected = selectedSlotsRef.current;
+    
+    // Si ya tenemos 2 slots seleccionados, deshabilitar todos excepto los seleccionados
+    if (currentSelected.length === 2) {
       return !isSelected(slot);
     }
-
+    
+    // Si tenemos 1 slot seleccionado y maxSlots es 1, solo permitir el seleccionado o deseleccionar
+    if (currentSelected.length === 1 && maxSlots === 1) {
+      return !isSelected(slot);
+    }
+    
+    // Si tenemos 1 slot seleccionado y maxSlots es 2, permitir el seleccionado y sus consecutivos
+    if (currentSelected.length === 1 && maxSlots >= 2) {
+      const first = currentSelected[0];
+      const isConsecutive = areConsecutive(first, slot);
+      // Permitir: el mismo slot (para deseleccionar) o slots consecutivos
+      return !(isSelected(slot) || isConsecutive);
+    }
+    
     return false;
   }
 
@@ -194,6 +247,7 @@ export default function SlotPickerEdit({
     const disabled = isDisabled(slot);
     const isCurrentSlot = currentSlotIds.includes(slot.id);
     const isConsecutivePossible = selectedSlots.length === 1 &&
+                                  maxSlots >= 2 &&
                                   !selected &&
                                   areConsecutive(selectedSlots[0], slot);
 
@@ -201,7 +255,7 @@ export default function SlotPickerEdit({
     if (selected) return "bg-tiger-orange text-white border-tiger-orange";
     if (disabled && !isCurrentSlot) return "bg-gray-100 text-gray-400 cursor-not-allowed";
     
-    // ✅ Estilo especial para slots que el usuario ya tiene reservados
+    // Estilo especial para slots que el usuario ya tiene reservados (pero no seleccionados)
     if (isCurrentSlot && !selected) {
       return "bg-blue-50 text-blue-700 border-blue-300 hover:bg-blue-100 ring-2 ring-blue-300";
     }
@@ -213,7 +267,6 @@ export default function SlotPickerEdit({
   function getSlotStatusText(slot) {
     if (!isFutureSlot(slot)) return "⏰ Pasado";
     
-    // ✅ Indicar que es su reserva actual
     if (currentSlotIds.includes(slot.id) && !isSelected(slot)) {
       return "📌 Tu reserva actual";
     }
@@ -232,12 +285,12 @@ export default function SlotPickerEdit({
           : minSlots === 2
             ? "Selecciona 2 horas consecutivas"
             : "Selecciona 1 o 2 horas consecutivas"}
-        {selectedSlots.length === 1 && maxSlots > 1 && minSlots === 2 && (
+        {selectedSlots.length === 1 && maxSlots >= 2 && minSlots === 2 && (
           <span className="text-sm text-amber-600 ml-2">
             (Selecciona una hora consecutiva)
           </span>
         )}
-        {selectedSlots.length === 1 && maxSlots > 1 && minSlots === 1 && (
+        {selectedSlots.length === 1 && maxSlots >= 2 && minSlots === 1 && (
           <span className="text-sm text-gray-500 ml-2">
             (Puedes seleccionar otra hora consecutiva)
           </span>
@@ -249,9 +302,17 @@ export default function SlotPickerEdit({
         )}
       </h3>
 
-      {currentSlotIds.length > 0 && (
+      {/* Mensaje informativo para usuarios que tienen 2 slots y están cambiando a 1 */}
+      {currentSlotIds.length === 2 && maxSlots === 1 && (
+        <div className="mb-3 p-2 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
+          💡 Tienes 2 horas reservadas. Puedes quedarte con una de ellas (destacada en azul) o elegir una nueva.
+        </div>
+      )}
+
+      {/* Mensaje informativo para usuarios que tienen 2 slots y están cambiando a 2 nuevas */}
+      {currentSlotIds.length === 2 && maxSlots === 2 && minSlots === 2 && (
         <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
-          💡 Tus horarios actuales aparecen destacados en azul. Puedes cambiarlos o reducirlos seleccionando solo uno.
+          💡 Tus horarios actuales aparecen destacados en azul. Puedes mantenerlos o cambiarlos.
         </div>
       )}
 
