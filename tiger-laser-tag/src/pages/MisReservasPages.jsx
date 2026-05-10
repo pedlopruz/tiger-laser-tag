@@ -2,11 +2,13 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Helmet } from "react-helmet";
 import { Search, Calendar, Clock, Users, CreditCard, AlertCircle, CheckCircle, XCircle, ArrowRight, CheckSquare } from "lucide-react";
+import { useTranslation } from 'react-i18next';
 import CalendarPicker from "../components/Booking/CalendarPicker";
 import SlotPickerEdit from "../components/Booking/SlotPickerEdit";
 import { Button } from "@/components/ui/button";
 
 export default function MisReservas() {
+  const { t } = useTranslation();
   const [code, setCode] = useState("");
   const [email, setEmail] = useState("");
   const [reservation, setReservation] = useState(null);
@@ -45,7 +47,7 @@ export default function MisReservas() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "No se encontró la reserva");
+        setError(data.error || t('misReservas.errors.notFound'));
         setLoading(false);
         return;
       }
@@ -54,7 +56,7 @@ export default function MisReservas() {
       setPeople(data.reservation.people);
     } catch (err) {
       console.error(err);
-      setError("Error de conexión");
+      setError(t('misReservas.errors.connection'));
     }
     setLoading(false);
   }
@@ -69,7 +71,7 @@ export default function MisReservas() {
   }
 
   async function confirmReservation() {
-    if (!confirm("¿Confirmar esta reserva? Una vez confirmada no podrás modificarla.")) return;
+    if (!confirm(t('misReservas.confirmDialog'))) return;
 
     setConfirmLoading(true);
     setMessage("");
@@ -88,7 +90,7 @@ export default function MisReservas() {
       const data = await res.json();
 
       if (!res.ok) {
-        setMessage(data.error || "Error al confirmar la reserva");
+        setMessage(data.error || t('misReservas.errors.confirmFailed'));
         setConfirmLoading(false);
         return;
       }
@@ -119,12 +121,12 @@ export default function MisReservas() {
       });
 
       setReservation(prev => ({ ...prev, status: "confirmed" }));
-      setMessage("✅ ¡Reserva confirmada correctamente! Se ha enviado un email de confirmación.");
+      setMessage(t('misReservas.messages.confirmSuccess'));
       setTimeout(() => setMessage(""), 5000);
 
     } catch (err) {
       console.error(err);
-      setMessage("Error confirmando la reserva");
+      setMessage(t('misReservas.errors.confirmError'));
     }
     setConfirmLoading(false);
   }
@@ -210,11 +212,11 @@ export default function MisReservas() {
         people: Number(people),
         precio_total: data.new_total ?? prev.precio_total
       }));
-      setMessage("✅ Jugadores actualizados correctamente");
+      setMessage(t('misReservas.messages.playersUpdated'));
 
     } catch (err) {
       console.error(err);
-      setMessage("Error actualizando jugadores");
+      setMessage(t('misReservas.errors.updatePlayers'));
     }
     setUpdateLoading(false);
   }
@@ -266,7 +268,7 @@ export default function MisReservas() {
             ? `${selectedSlots[0].start_time?.slice(0, 5)} - ${selectedSlots[1].end_time?.slice(0, 5)}`
             : `${selectedSlots[0].start_time?.slice(0, 5)} - ${selectedSlots[0].end_time?.slice(0, 5)}`,
           plan_name: data.new_plan_id
-            ? `Plan ${effectiveSlotCount} hora${effectiveSlotCount > 1 ? "s" : ""}`
+            ? t('misReservas.planHours', { count: effectiveSlotCount })
             : reservation.plans?.name,
           people: reservation.people,
           total_price: data.new_total ?? reservation.precio_total,
@@ -277,13 +279,13 @@ export default function MisReservas() {
       window.location.reload();
     } catch (err) {
       console.error(err);
-      setMessage("Error cambiando horario");
+      setMessage(t('misReservas.errors.updateSlot'));
     }
     setUpdateLoading(false);
   }
 
   async function cancelReservation() {
-    if (!confirm("¿Estás seguro de que quieres cancelar la reserva? Esta acción no se puede deshacer.")) return;
+    if (!confirm(t('misReservas.cancelDialog'))) return;
     setCancelLoading(true);
 
     try {
@@ -327,14 +329,14 @@ export default function MisReservas() {
 
     } catch (err) {
       console.error(err);
-      setMessage("Error cancelando reserva");
+      setMessage(t('misReservas.errors.cancelError'));
     }
     setCancelLoading(false);
   }
 
   function formatDate(date) {
     if (!date) return "-";
-    return new Date(date).toLocaleDateString("es-ES", {
+    return new Date(date).toLocaleDateString(t('misReservas.locale'), {
       weekday: "long", day: "numeric", month: "long", year: "numeric"
     });
   }
@@ -345,9 +347,9 @@ export default function MisReservas() {
 
   function getStatusBadge(status) {
     const statusConfig = {
-      pending: { text: "Pendiente de confirmar", color: "bg-yellow-100 text-yellow-800", icon: AlertCircle },
-      confirmed: { text: "Confirmada", color: "bg-green-100 text-green-800", icon: CheckCircle },
-      cancelled: { text: "Cancelada", color: "bg-red-100 text-red-800", icon: XCircle }
+      pending: { text: t('misReservas.status.pending'), color: "bg-yellow-100 text-yellow-800", icon: AlertCircle },
+      confirmed: { text: t('misReservas.status.confirmed'), color: "bg-green-100 text-green-800", icon: CheckCircle },
+      cancelled: { text: t('misReservas.status.cancelled'), color: "bg-red-100 text-red-800", icon: XCircle }
     };
     const config = statusConfig[status] || statusConfig.pending;
     const Icon = config.icon;
@@ -362,8 +364,8 @@ export default function MisReservas() {
   return (
     <>
       <Helmet>
-        <title>Mis Reservas - Tiger Laser Tag</title>
-        <meta name="description" content="Consulta, modifica o cancela tu reserva de Laser Tag en Marbella." />
+        <title>{t('misReservas.meta.title')}</title>
+        <meta name="description" content={t('misReservas.meta.description')} />
       </Helmet>
 
       <section className="bg-gradient-to-b from-tiger-green to-tiger-green-dark py-20">
@@ -374,7 +376,7 @@ export default function MisReservas() {
             transition={{ duration: 0.8 }}
             className="text-5xl md:text-6xl font-heading font-bold text-tiger-golden mb-4"
           >
-            Mis Reservas
+            {t('misReservas.heroTitle')}
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -382,7 +384,7 @@ export default function MisReservas() {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="text-xl text-tiger-cream max-w-2xl mx-auto"
           >
-            Consulta, modifica o cancela tu reserva de Laser Tag
+            {t('misReservas.heroSubtitle')}
           </motion.p>
         </div>
       </section>
@@ -401,15 +403,15 @@ export default function MisReservas() {
                 <div className="inline-flex items-center justify-center w-20 h-20 bg-red-100 rounded-full mb-6">
                   <XCircle className="text-red-500" size={40} />
                 </div>
-                <h2 className="text-2xl font-bold text-gray-800 mb-2">Reserva cancelada</h2>
+                <h2 className="text-2xl font-bold text-gray-800 mb-2">{t('misReservas.cancelled.title')}</h2>
                 <p className="text-gray-500 mb-6">
-                  Tu reserva ha sido cancelada correctamente. Si tienes alguna duda, contacta con nosotros.
+                  {t('misReservas.cancelled.description')}
                 </p>
                 <Button
                   onClick={handleSearchAnother}
                   className="bg-tiger-green hover:bg-tiger-green/90 text-white"
                 >
-                  Consultar otra reserva
+                  {t('misReservas.cancelled.button')}
                 </Button>
               </motion.div>
             )}
@@ -427,30 +429,30 @@ export default function MisReservas() {
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-tiger-golden/20 rounded-full mb-4">
                   <Search className="text-tiger-golden" size={28} />
                 </div>
-                <h2 className="text-2xl font-bold text-tiger-green">Consultar reserva</h2>
-                <p className="text-gray-500 mt-2">Ingresa el código y el email con el que reservaste</p>
+                <h2 className="text-2xl font-bold text-tiger-green">{t('misReservas.search.title')}</h2>
+                <p className="text-gray-500 mt-2">{t('misReservas.search.subtitle')}</p>
               </div>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Código de reserva</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('misReservas.search.codeLabel')}</label>
                   <input
                     type="text"
                     value={code}
                     onChange={(e) => setCode(e.target.value)}
                     className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-tiger-orange focus:border-tiger-orange transition-all"
-                    placeholder="Ej: ABC123XYZ"
+                    placeholder={t('misReservas.search.codePlaceholder')}
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('misReservas.search.emailLabel')}</label>
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-tiger-orange focus:border-tiger-orange transition-all"
-                    placeholder="tu@email.com"
+                    placeholder={t('misReservas.search.emailPlaceholder')}
                     required
                   />
                 </div>
@@ -463,11 +465,11 @@ export default function MisReservas() {
                   {loading ? (
                     <span className="flex items-center justify-center gap-2">
                       <span className="animate-spin">⏳</span>
-                      Buscando...
+                      {t('misReservas.search.searching')}
                     </span>
                   ) : (
                     <span className="flex items-center justify-center gap-2">
-                      Consultar reserva
+                      {t('misReservas.search.button')}
                       <ArrowRight size={18} />
                     </span>
                   )}
@@ -500,7 +502,7 @@ export default function MisReservas() {
                   <div className="bg-gradient-to-r from-tiger-green to-tiger-green-dark px-6 py-4">
                     <div className="flex justify-between items-center flex-wrap gap-3">
                       <div>
-                        <p className="text-tiger-cream text-sm">Código de reserva</p>
+                        <p className="text-tiger-cream text-sm">{t('misReservas.details.reservationCode')}</p>
                         <p className="text-tiger-golden font-mono text-xl font-bold">{reservation.reservation_code}</p>
                       </div>
                       {getStatusBadge(reservation.status)}
@@ -513,14 +515,14 @@ export default function MisReservas() {
                       <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                         <Calendar className="text-tiger-green" size={20} />
                         <div>
-                          <p className="text-xs text-gray-500">Fecha</p>
+                          <p className="text-xs text-gray-500">{t('misReservas.details.date')}</p>
                           <p className="font-medium">{formatDate(reservation.time_slots?.date)}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                         <Clock className="text-tiger-green" size={20} />
                         <div>
-                          <p className="text-xs text-gray-500">Hora</p>
+                          <p className="text-xs text-gray-500">{t('misReservas.details.time')}</p>
                           <p className="font-medium">
                             {formatTime(reservation.time_slots?.start_time)} - {formatTime(reservation.time_slots?.end_time)}
                           </p>
@@ -529,14 +531,14 @@ export default function MisReservas() {
                       <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                         <Users className="text-tiger-green" size={20} />
                         <div>
-                          <p className="text-xs text-gray-500">Plan</p>
+                          <p className="text-xs text-gray-500">{t('misReservas.details.plan')}</p>
                           <p className="font-medium">{reservation.plans?.name}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                         <CreditCard className="text-tiger-green" size={20} />
                         <div>
-                          <p className="text-xs text-gray-500">Total</p>
+                          <p className="text-xs text-gray-500">{t('misReservas.details.total')}</p>
                           <p className="font-medium text-tiger-orange">€{reservation.precio_total}</p>
                         </div>
                       </div>
@@ -549,20 +551,20 @@ export default function MisReservas() {
                           <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
                             <p className="text-amber-800 text-sm flex items-start gap-2">
                               <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
-                              <span>Tu reserva está pendiente de confirmación. Una vez confirmada, no podrás modificar los datos.</span>
+                              <span>{t('misReservas.pendingNotice')}</span>
                             </p>
                           </div>
                           <Button onClick={confirmReservation} disabled={confirmLoading} className="w-full bg-green-600 hover:bg-green-700 text-white py-3 text-base font-bold">
-                            {confirmLoading ? "Confirmando..." : "✅ Confirmar reserva"}
+                            {confirmLoading ? t('misReservas.confirming') : t('misReservas.confirmButton')}
                           </Button>
                         </div>
 
                         {/* Modificar jugadores */}
                         <div className="border-t pt-6">
-                          <h3 className="font-semibold text-tiger-green mb-4">Modificar número de jugadores</h3>
+                          <h3 className="font-semibold text-tiger-green mb-4">{t('misReservas.modifyPlayers.title')}</h3>
                           <div className="flex items-center justify-between flex-wrap gap-4">
                             <div className="flex items-center gap-3">
-                              <span className="text-gray-600">Jugadores:</span>
+                              <span className="text-gray-600">{t('misReservas.modifyPlayers.label')}</span>
                               <input
                                 type="number"
                                 min={reservation.people}
@@ -572,20 +574,19 @@ export default function MisReservas() {
                               />
                             </div>
                             <Button onClick={updatePlayers} disabled={updateLoading || people === reservation.people} className="bg-tiger-green hover:bg-tiger-green/90 text-white">
-                              {updateLoading ? "Actualizando..." : "Actualizar jugadores"}
+                              {updateLoading ? t('misReservas.updating') : t('misReservas.updatePlayersButton')}
                             </Button>
                           </div>
                         </div>
 
                         {/* Cambiar fecha y horario */}
                         <div className="border-t pt-6">
-                          <h3 className="font-semibold text-tiger-green mb-4">Cambiar fecha y horario</h3>
+                          <h3 className="font-semibold text-tiger-green mb-4">{t('misReservas.modifyDateTime.title')}</h3>
 
                           {/* Selector de duración */}
                           <div className="mb-5">
                             <p className="text-sm text-gray-600 mb-2">
-                              Tu reserva actual es de <strong>{requiredSlots} hora{requiredSlots > 1 ? "s" : ""}</strong>.
-                              ¿Quieres cambiar la duración?
+                              {t('misReservas.modifyDateTime.currentDuration', { count: requiredSlots })}
                             </p>
                             <div className="flex gap-3">
                               {[1, 2].map((n) => (
@@ -602,8 +603,8 @@ export default function MisReservas() {
                                       : "border-gray-200 text-gray-500 hover:border-gray-300"
                                   }`}
                                 >
-                                  {n} hora{n > 1 ? "s" : ""}
-                                  {n === requiredSlots && <span className="ml-1 text-xs">(actual)</span>}
+                                  {n} {t('misReservas.hours', { count: n })}
+                                  {n === requiredSlots && <span className="ml-1 text-xs">({t('misReservas.current')})</span>}
                                 </button>
                               ))}
                             </div>
@@ -616,9 +617,9 @@ export default function MisReservas() {
                                   : "bg-blue-50 border-blue-200 text-blue-800"
                               }`}>
                                 {slotPriceIncreases ? (
-                                  <>⚠️ Al pasar a <strong>{newSlotCount} horas</strong> se generará un pago adicional de aproximadamente <strong>€{estimatedDiff}</strong>.</>
+                                  t('misReservas.modifyDateTime.priceIncrease', { count: newSlotCount, amount: estimatedDiff })
                                 ) : (
-                                  <>💡 Al reducir a <strong>{newSlotCount} hora</strong>, el precio bajará aproximadamente <strong>€{estimatedDiff}</strong>.</>
+                                  t('misReservas.modifyDateTime.priceDecrease', { count: newSlotCount, amount: estimatedDiff })
                                 )}
                               </div>
                             )}
@@ -636,8 +637,8 @@ export default function MisReservas() {
                             <>
                               <p className="text-sm text-gray-500 mt-3 mb-2">
                                 {effectiveSlotCount === 2
-                                  ? "Selecciona 2 horas consecutivas"
-                                  : "Selecciona 1 hora disponible"}
+                                  ? t('misReservas.modifyDateTime.selectTwoHours')
+                                  : t('misReservas.modifyDateTime.selectOneHour')}
                               </p>
                               <SlotPickerEdit
                                 key={`${selectedDate}-${effectiveSlotCount}`}
@@ -653,7 +654,7 @@ export default function MisReservas() {
 
                           {selectedSlots.length === effectiveSlotCount && (
                             <Button onClick={updateSlot} disabled={updateLoading} className="w-full mt-4 bg-tiger-orange hover:bg-tiger-orange/90 text-white">
-                              {updateLoading ? "Cambiando..." : "Confirmar cambio de horario"}
+                              {updateLoading ? t('misReservas.changing') : t('misReservas.confirmChangeButton')}
                             </Button>
                           )}
                         </div>
@@ -667,8 +668,7 @@ export default function MisReservas() {
                           <p className="text-blue-800 text-sm flex items-start gap-2">
                             <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
                             <span>
-                              Esta es una reserva de <strong>horario compartido</strong>. No se puede modificar la fecha ni el horario.
-                              Si necesitas cambios, por favor contáctanos.
+                              {t('misReservas.sharedPlanNotice')}
                             </span>
                           </p>
                         </div>
@@ -680,9 +680,9 @@ export default function MisReservas() {
                       <div className="border-t pt-6">
                         <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
                           <CheckCircle className="text-green-600 mx-auto mb-2" size={32} />
-                          <p className="text-green-800 font-medium">✅ Reserva confirmada</p>
+                          <p className="text-green-800 font-medium">{t('misReservas.confirmedNotice.title')}</p>
                           <p className="text-green-600 text-sm mt-1">
-                            Tu reserva ya está confirmada. Presenta el código el día de tu visita.
+                            {t('misReservas.confirmedNotice.description')}
                           </p>
                         </div>
                       </div>
@@ -693,9 +693,9 @@ export default function MisReservas() {
                       <div className="border-t pt-6">
                         <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4 text-center">
                           <CheckCircle className="text-green-600 mx-auto mb-2" size={32} />
-                          <p className="text-green-800 font-medium">✅ Reserva confirmada</p>
+                          <p className="text-green-800 font-medium">{t('misReservas.confirmedSharedNotice.title')}</p>
                           <p className="text-green-600 text-sm mt-1">
-                            Tu reserva de horario compartido está confirmada.
+                            {t('misReservas.confirmedSharedNotice.description')}
                           </p>
                         </div>
                       </div>
@@ -713,12 +713,12 @@ export default function MisReservas() {
                           {cancelLoading ? (
                             <span className="flex items-center justify-center gap-2">
                               <span className="animate-spin">⏳</span>
-                              Cancelando...
+                              {t('misReservas.cancelling')}
                             </span>
-                          ) : "Cancelar reserva"}
+                          ) : t('misReservas.cancelButton')}
                         </Button>
                         <p className="text-xs text-gray-500 text-center mt-3">
-                          ⚠️ Esta acción no se puede deshacer
+                          ⚠️ {t('misReservas.cancelWarning')}
                         </p>
                       </div>
                     )}
@@ -733,7 +733,9 @@ export default function MisReservas() {
                           className={`p-4 rounded-lg text-center ${
                             message.includes("✅")
                               ? "bg-green-50 text-green-800 border border-green-200"
-                              : "bg-blue-50 text-blue-800 border border-blue-200"
+                              : message.includes("💡") || message.includes("⚠️")
+                                ? "bg-blue-50 text-blue-800 border border-blue-200"
+                                : "bg-blue-50 text-blue-800 border border-blue-200"
                           }`}
                         >
                           {message}

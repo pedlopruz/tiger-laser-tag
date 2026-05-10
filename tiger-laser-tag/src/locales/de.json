@@ -509,5 +509,93 @@
     "log": {
       "paymentError": "Zahlungsfehler:"
     }
+  },
+  "misReservas": {
+    "locale": "de-DE",
+    "meta": {
+      "title": "Meine Reservierungen - Tiger Laser Tag",
+      "description": "Prüfen, ändern oder stornieren Sie Ihre Laser Tag-Reservierung in Marbella."
+    },
+    "heroTitle": "Meine Reservierungen",
+    "heroSubtitle": "Prüfen, ändern oder stornieren Sie Ihre Laser Tag-Reservierung",
+    "hours": "Stunde",
+    "hours_plural": "Stunden",
+    "current": "aktuell",
+    "confirming": "Bestätige...",
+    "updating": "Aktualisiere...",
+    "changing": "Ändere...",
+    "cancelling": "Storniere...",
+    "confirmButton": "✅ Reservierung bestätigen",
+    "updatePlayersButton": "Spieler aktualisieren",
+    "confirmChangeButton": "Zeitänderung bestätigen",
+    "cancelButton": "Reservierung stornieren",
+    "status": {
+      "pending": "Ausstehende Bestätigung",
+      "confirmed": "Bestätigt",
+      "cancelled": "Storniert"
+    },
+    "confirmDialog": "Diese Reservierung bestätigen? Nach der Bestätigung können Sie sie nicht mehr ändern.",
+    "cancelDialog": "Sind Sie sicher, dass Sie die Reservierung stornieren möchten? Diese Aktion kann nicht rückgängig gemacht werden.",
+    "cancelWarning": "Diese Aktion kann nicht rückgängig gemacht werden",
+    "pendingNotice": "Ihre Reservierung wartet auf Bestätigung. Nach der Bestätigung können Sie die Daten nicht mehr ändern.",
+    "sharedPlanNotice": "Dies ist eine Reservierung für ein geteiltes Zeitfenster. Datum und Uhrzeit können nicht geändert werden. Wenn Sie Änderungen benötigen, kontaktieren Sie uns bitte.",
+    "errors": {
+      "notFound": "Reservierung nicht gefunden",
+      "connection": "Verbindungsfehler",
+      "confirmFailed": "Fehler bei der Bestätigung der Reservierung",
+      "confirmError": "Fehler bei der Bestätigung der Reservierung",
+      "updatePlayers": "Fehler beim Aktualisieren der Spieler",
+      "updateSlot": "Fehler beim Ändern des Zeitfensters",
+      "cancelError": "Fehler beim Stornieren der Reservierung"
+    },
+    "messages": {
+      "confirmSuccess": "✅ Reservierung erfolgreich bestätigt! Eine Bestätigungs-E-Mail wurde gesendet.",
+      "playersUpdated": "✅ Spieler erfolgreich aktualisiert"
+    },
+    "planHours": "{{count}}-Stunden-Paket",
+    "planHours_plural": "{{count}}-Stunden-Paket",
+    "search": {
+      "title": "Reservierung prüfen",
+      "subtitle": "Geben Sie den Code und die E-Mail ein, die Sie für die Buchung verwendet haben",
+      "codeLabel": "Reservierungscode",
+      "codePlaceholder": "Z.B.: ABC123XYZ",
+      "emailLabel": "E-Mail",
+      "emailPlaceholder": "ihre@email.com",
+      "searching": "Suche...",
+      "button": "Reservierung prüfen"
+    },
+    "cancelled": {
+      "title": "Reservierung storniert",
+      "description": "Ihre Reservierung wurde erfolgreich storniert. Wenn Sie Fragen haben, kontaktieren Sie uns bitte.",
+      "button": "Andere Reservierung prüfen"
+    },
+    "details": {
+      "reservationCode": "Reservierungscode",
+      "date": "Datum",
+      "time": "Uhrzeit",
+      "plan": "Paket",
+      "total": "Gesamt"
+    },
+    "modifyPlayers": {
+      "title": "Anzahl der Spieler ändern",
+      "label": "Spieler:"
+    },
+    "modifyDateTime": {
+      "title": "Datum und Uhrzeit ändern",
+      "currentDuration": "Ihre aktuelle Reservierung ist für {{count}} Stunde.",
+      "currentDuration_plural": "Ihre aktuelle Reservierung ist für {{count}} Stunden.",
+      "selectTwoHours": "Wählen Sie 2 aufeinanderfolgende Stunden",
+      "selectOneHour": "Wählen Sie 1 verfügbare Stunde",
+      "priceIncrease": "⚠️ Der Wechsel zu {{count}} Stunden generiert eine zusätzliche Zahlung von etwa €{{amount}}.",
+      "priceDecrease": "💡 Durch die Reduzierung auf {{count}} Stunde verringert sich der Preis um etwa €{{amount}}."
+    },
+    "confirmedNotice": {
+      "title": "✅ Reservierung bestätigt",
+      "description": "Ihre Reservierung ist bestätigt. Zeigen Sie den Code am Tag Ihres Besuchs vor."
+    },
+    "confirmedSharedNotice": {
+      "title": "✅ Reservierung bestätigt",
+      "description": "Ihre Reservierung für das geteilte Zeitfenster ist bestätigt."
+    }
   }
 }

@@ -565,5 +565,93 @@
     "log": {
       "paymentError": "Error de pago:"
     }
+  },
+  "misReservas": {
+    "locale": "es-ES",
+    "meta": {
+      "title": "Mis Reservas - Tiger Laser Tag",
+      "description": "Consulta, modifica o cancela tu reserva de Laser Tag en Marbella."
+    },
+    "heroTitle": "Mis Reservas",
+    "heroSubtitle": "Consulta, modifica o cancela tu reserva de Laser Tag",
+    "hours": "hora",
+    "hours_plural": "horas",
+    "current": "actual",
+    "confirming": "Confirmando...",
+    "updating": "Actualizando...",
+    "changing": "Cambiando...",
+    "cancelling": "Cancelando...",
+    "confirmButton": "✅ Confirmar reserva",
+    "updatePlayersButton": "Actualizar jugadores",
+    "confirmChangeButton": "Confirmar cambio de horario",
+    "cancelButton": "Cancelar reserva",
+    "status": {
+      "pending": "Pendiente de confirmar",
+      "confirmed": "Confirmada",
+      "cancelled": "Cancelada"
+    },
+    "confirmDialog": "¿Confirmar esta reserva? Una vez confirmada no podrás modificarla.",
+    "cancelDialog": "¿Estás seguro de que quieres cancelar la reserva? Esta acción no se puede deshacer.",
+    "cancelWarning": "Esta acción no se puede deshacer",
+    "pendingNotice": "Tu reserva está pendiente de confirmación. Una vez confirmada, no podrás modificar los datos.",
+    "sharedPlanNotice": "Esta es una reserva de horario compartido. No se puede modificar la fecha ni el horario. Si necesitas cambios, por favor contáctanos.",
+    "errors": {
+      "notFound": "No se encontró la reserva",
+      "connection": "Error de conexión",
+      "confirmFailed": "Error al confirmar la reserva",
+      "confirmError": "Error confirmando la reserva",
+      "updatePlayers": "Error actualizando jugadores",
+      "updateSlot": "Error cambiando horario",
+      "cancelError": "Error cancelando reserva"
+    },
+    "messages": {
+      "confirmSuccess": "✅ ¡Reserva confirmada correctamente! Se ha enviado un email de confirmación.",
+      "playersUpdated": "✅ Jugadores actualizados correctamente"
+    },
+    "planHours": "Plan {{count}} hora",
+    "planHours_plural": "Plan {{count}} horas",
+    "search": {
+      "title": "Consultar reserva",
+      "subtitle": "Ingresa el código y el email con el que reservaste",
+      "codeLabel": "Código de reserva",
+      "codePlaceholder": "Ej: ABC123XYZ",
+      "emailLabel": "Email",
+      "emailPlaceholder": "tu@email.com",
+      "searching": "Buscando...",
+      "button": "Consultar reserva"
+    },
+    "cancelled": {
+      "title": "Reserva cancelada",
+      "description": "Tu reserva ha sido cancelada correctamente. Si tienes alguna duda, contacta con nosotros.",
+      "button": "Consultar otra reserva"
+    },
+    "details": {
+      "reservationCode": "Código de reserva",
+      "date": "Fecha",
+      "time": "Hora",
+      "plan": "Plan",
+      "total": "Total"
+    },
+    "modifyPlayers": {
+      "title": "Modificar número de jugadores",
+      "label": "Jugadores:"
+    },
+    "modifyDateTime": {
+      "title": "Cambiar fecha y horario",
+      "currentDuration": "Tu reserva actual es de {{count}} hora.",
+      "currentDuration_plural": "Tu reserva actual es de {{count}} horas.",
+      "selectTwoHours": "Selecciona 2 horas consecutivas",
+      "selectOneHour": "Selecciona 1 hora disponible",
+      "priceIncrease": "⚠️ Al pasar a {{count}} horas se generará un pago adicional de aproximadamente €{{amount}}.",
+      "priceDecrease": "💡 Al reducir a {{count}} hora, el precio bajará aproximadamente €{{amount}}."
+    },
+    "confirmedNotice": {
+      "title": "✅ Reserva confirmada",
+      "description": "Tu reserva ya está confirmada. Presenta el código el día de tu visita."
+    },
+    "confirmedSharedNotice": {
+      "title": "✅ Reserva confirmada",
+      "description": "Tu reserva de horario compartido está confirmada."
+    }
   }
 }
