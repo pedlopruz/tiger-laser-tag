@@ -325,5 +325,38 @@
     "heroTitle": "Reserviere dein Spiel",
     "heroSubtitle": "Wähle Datum, Uhrzeit und Anzahl der Spieler aus, um deine Laser-Tag-Erlebnis zu sichern.",
     "checkReservationBtn": "Hast du bereits eine Buchung? Hier kannst du sie einsehen"
+  },
+  "bookingSummary": {
+    "locale": "de-DE",
+    "title": "Ihre Reservierung",
+    "sharedBadge": "🤝 Geteilt",
+    "date": "Datum",
+    "time": "Uhrzeit",
+    "duration": "Dauer",
+    "hours": "Stunde(n)",
+    "plan": "Paket",
+    "players": "Spieler (gesamt)",
+    "playersLower": "Spieler",
+    "electroshockPeople": "Elektroschock-Personen",
+    "canReduce": "(kann reduziert werden)",
+    "availability": "Verfügbarkeit",
+    "total": "Gesamt",
+    "continue": "Fortfahren",
+    "confirmAuto": "Reservierung bestätigen (automatisch)",
+    "min10": "(min. 10)",
+    "minimumPriceWarning": "Der Mindestpreis entspricht 10 Spielern",
+    "onlyRemaining": "⚠️ Nur noch {{remaining}} Plätze in diesem gemeinsamen Zeitfenster verfügbar",
+    "onlyRemainingSpots": "🔥 Nur noch {{remaining}} Plätze verfügbar",
+    "freeSpots": "{{remaining}} freie Plätze",
+    "electroshockNotParticipating": "💡 {{count}} Person(en) nehmen nicht am Elektroschock teil",
+    "automaticConfirmationNotice": "Wenn Sie fortfahren, wird die Reservierung automatisch bestätigt. Sie können sie später nicht mehr ändern.",
+    "within48h": {
+      "title": "Reservierung innerhalb von 48 Stunden",
+      "description": "Diese Reservierung wird automatisch bestätigt und kann nicht mehr von der Website aus geändert oder storniert werden. Wenn Sie weitere Informationen benötigen, kontaktieren Sie uns bitte direkt."
+    },
+    "advanceNotice": {
+      "title": "Vorab-Reservierung",
+      "description": "Diese Reservierung ist vorläufig. Sie können sie bis zu 48 Stunden vor dem Event unter \"Meine Reservierungen\" ändern oder stornieren. Wenn sie nicht innerhalb von 48 Stunden bestätigt wird, wird die Reservierung automatisch storniert. Wenn Sie weitere Informationen benötigen, kontaktieren Sie uns bitte direkt."
+    }
   }
 }

@@ -325,5 +325,38 @@
     "heroTitle": "Book your game",
     "heroSubtitle": "Choose the date, time and number of players to secure your Laser Tag experience.",
     "checkReservationBtn": "Already have a reservation? Check it here"
+  },
+  "bookingSummary": {
+    "locale": "en-US",
+    "title": "Your reservation",
+    "sharedBadge": "🤝 Shared",
+    "date": "Date",
+    "time": "Time",
+    "duration": "Duration",
+    "hours": "hour(s)",
+    "plan": "Plan",
+    "players": "Players (total)",
+    "playersLower": "players",
+    "electroshockPeople": "Electroshock Players",
+    "canReduce": "(can be reduced)",
+    "availability": "Availability",
+    "total": "Total",
+    "continue": "Continue to confirmation",
+    "confirmAuto": "Confirmation will be automatically confirmed",
+    "min10": "(min. 10)",
+    "minimumPriceWarning": "The minimum price is equivalent to 10 players",
+    "onlyRemaining": "⚠️ Only {{remaining}} spots available in this shared time slot",
+    "onlyRemainingSpots": "🔥 Only {{remaining}} spots left",
+    "freeSpots": "{{remaining}} free spots",
+    "electroshockNotParticipating": "💡 {{count}} person(s) will not be taking part in Electroshock",
+    "automaticConfirmationNotice": "Once you continue, your booking will be confirmed automatically. You will not be able to change it afterwards. If you need to make any changes or have any questions, please contact us directly.",
+    "within48h": {
+      "title": "Book within 48 hours",
+      "description": "This reservation will be automatically confirmed and you will not be able to modify or cancel it from the website. If you need more information, please contact us directly."
+    },
+    "advanceNotice": {
+      "title": "Book in advance",
+      "description": "This reservation will remain pending. You can modify or cancel it from \"My Reservations\" up to 48 hours before the event. If it is not confirmed within 48 hours, the reservation will be automatically canceled. If you need more information, please contact us directly."
+    }
   }
 }

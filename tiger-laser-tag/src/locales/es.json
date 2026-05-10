@@ -381,6 +381,39 @@
     "heroTitle": "Reserva tu partida",
     "heroSubtitle": "Elige fecha, horario y número de jugadores para asegurar tu experiencia de Laser Tag.",
     "checkReservationBtn": "¿Ya tienes una reserva? Consultarla aquí"
+  },
+  "bookingSummary": {
+    "locale": "es-ES",
+    "title": "Tu reserva",
+    "sharedBadge": "🤝 Compartida",
+    "date": "Fecha",
+    "time": "Hora",
+    "duration": "Duración",
+    "hours": "hora(s)",
+    "plan": "Plan",
+    "players": "Jugadores (total)",
+    "playersLower": "jugadores",
+    "electroshockPeople": "Personas Electroshock",
+    "canReduce": "(puede reducirse)",
+    "availability": "Disponibilidad",
+    "total": "Total",
+    "continue": "Continuar",
+    "confirmAuto": "Confirmar reserva (automática)",
+    "min10": "(mín. 10)",
+    "minimumPriceWarning": "El precio mínimo es equivalente a 10 jugadores",
+    "onlyRemaining": "⚠️ Solo quedan {{remaining}} plazas disponibles en este horario compartido",
+    "onlyRemainingSpots": "🔥 Solo quedan {{remaining}} plazas",
+    "freeSpots": "{{remaining}} plazas libres",
+    "electroshockNotParticipating": "💡 {{count}} persona(s) no participarán en Electroshock",
+    "automaticConfirmationNotice": "Al continuar, la reserva se confirmará automáticamente. No podrás modificarla después. Si necesitas más información, contacta con nosotros directamente.",
+    "within48h": {
+      "title": "Reserva dentro de 48 horas",
+      "description": "Esta reserva se confirmará automáticamente y no podrás modificarla ni cancelarla desde la web. Si necesitas más información, contacta con nosotros directamente."
+    },
+    "advanceNotice": {
+      "title": "Reserva con anticipación",
+      "description": "Esta reserva quedará en estado pendiente. Podrás modificarla o cancelarla desde \"Mis Reservas\" hasta 48 horas antes del evento. Si a menos 48 horas antes no se ha confirmado, la reserva se cancelará automáticamente. Si necesitas más información, contacta con nosotros directamente."
+    }
   }
   
 }

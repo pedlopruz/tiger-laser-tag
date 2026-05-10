@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
+import { useTranslation } from 'react-i18next';
 
 export default function BookingSummary({
   date,
@@ -11,6 +12,7 @@ export default function BookingSummary({
   showForm,
   onElectroshockChange
 }) {
+  const { t } = useTranslation();
 
   // ✅ Detectar si es reserva compartida desde los slots seleccionados
   const isShared = slots.some(s => s.isShared);
@@ -64,7 +66,7 @@ export default function BookingSummary({
   function formatDate(dateStr) {
     if (!dateStr) return "-";
     const d = new Date(dateStr);
-    return d.toLocaleDateString("es-ES", {
+    return d.toLocaleDateString(t('bookingSummary.locale'), {
       weekday: "long",
       day: "numeric",
       month: "long"
@@ -116,10 +118,10 @@ export default function BookingSummary({
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-bold text-tiger-green">
-        Tu reserva
+        {t('bookingSummary.title')}
         {isShared && (
           <span className="ml-2 text-xs font-normal bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
-            🤝 Compartida
+            {t('bookingSummary.sharedBadge')}
           </span>
         )}
       </h2>
@@ -130,10 +132,9 @@ export default function BookingSummary({
           <div className="flex items-start gap-2">
             <span className="text-amber-600 text-lg">⏰</span>
             <div className="text-sm">
-              <p className="font-medium text-amber-800">Reserva dentro de 48 horas</p>
+              <p className="font-medium text-amber-800">{t('bookingSummary.within48h.title')}</p>
               <p className="text-amber-700 mt-0.5">
-                Esta reserva se <strong>confirmará automáticamente</strong> y no podrás modificarla ni cancelarla desde la web.
-                Si necesitas más información, contacta con nosotros directamente.
+                {t('bookingSummary.within48h.description')}
               </p>
             </div>
           </div>
@@ -146,11 +147,9 @@ export default function BookingSummary({
           <div className="flex items-start gap-2">
             <span className="text-blue-600 text-lg">📅</span>
             <div className="text-sm">
-              <p className="font-medium text-blue-800">Reserva con anticipación</p>
+              <p className="font-medium text-blue-800">{t('bookingSummary.advanceNotice.title')}</p>
               <p className="text-blue-700 mt-0.5">
-                Esta reserva quedará en estado <strong>pendiente</strong>. Podrás modificarla o cancelarla desde 
-                <strong> "Mis Reservas"</strong> hasta 48 horas antes del evento. Si a menos 48 horas antes no se ha confirmado, la reserva se cancelará automáticamente.
-                Si necesitas más información, contacta con nosotros directamente.
+                {t('bookingSummary.advanceNotice.description')}
               </p>
             </div>
           </div>
@@ -159,28 +158,28 @@ export default function BookingSummary({
 
       <div className="space-y-4 text-sm">
         <div className="flex justify-between">
-          <span className="text-gray-500">Fecha</span>
+          <span className="text-gray-500">{t('bookingSummary.date')}</span>
           <span className="font-medium">{formatDate(date)}</span>
         </div>
 
         <div className="flex justify-between">
-          <span className="text-gray-500">Hora</span>
+          <span className="text-gray-500">{t('bookingSummary.time')}</span>
           <span className="font-medium">{getTimeRange()}</span>
         </div>
 
         <div className="flex justify-between">
-          <span className="text-gray-500">Duración</span>
-          <span className="font-medium">{slots.length || 0} hora(s)</span>
+          <span className="text-gray-500">{t('bookingSummary.duration')}</span>
+          <span className="font-medium">{slots.length || 0} {t('bookingSummary.hours')}</span>
         </div>
 
         <div className="flex justify-between">
-          <span className="text-gray-500">Plan</span>
+          <span className="text-gray-500">{t('bookingSummary.plan')}</span>
           <span className="font-medium">{plan?.name || "-"}</span>
         </div>
 
         {/* Jugadores */}
         <div className="flex items-center justify-between">
-          <span className="text-gray-500">Jugadores (total)</span>
+          <span className="text-gray-500">{t('bookingSummary.players')}</span>
           <div className="flex items-center gap-2">
             <button
               onClick={() => people > 1 && setPeople(people - 1)}
@@ -212,15 +211,15 @@ export default function BookingSummary({
         {/* ✅ Validación de plazas disponibles para reserva compartida */}
         {isShared && remaining !== null && people > remaining && (
           <div className="text-xs text-red-600 bg-red-50 p-2 rounded">
-            ⚠️ Solo quedan {remaining} plazas disponibles en este horario compartido
+            ⚠️ {t('bookingSummary.onlyRemaining', { remaining })}
           </div>
         )}
 
         {/* Personas Electroshock */}
         <div className="flex items-center justify-between border-t pt-3 mt-2">
           <span className="text-gray-500">
-            Personas Electroshock
-            <span className="text-xs text-gray-400 ml-1">(puede reducirse)</span>
+            {t('bookingSummary.electroshockPeople')}
+            <span className="text-xs text-gray-400 ml-1">{t('bookingSummary.canReduce')}</span>
           </span>
           <div className="flex items-center gap-2">
             <button
@@ -252,27 +251,27 @@ export default function BookingSummary({
 
         {electroshock < people && (
           <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded">
-            💡 {people - electroshock} persona(s) no participarán en Electroshock
+            💡 {t('bookingSummary.electroshockNotParticipating', { count: people - electroshock })}
           </div>
         )}
 
         {/* ✅ Aviso mínimo solo para reservas normales */}
         {!isShared && people < 10 && plan && (
           <div className="text-xs text-orange-600 bg-orange-50 p-2 rounded">
-            ⚠️ El precio mínimo es equivalente a 10 jugadores
+            ⚠️ {t('bookingSummary.minimumPriceWarning')}
           </div>
         )}
 
         {/* Disponibilidad */}
         {remaining !== null && (
           <div className="flex justify-between text-sm">
-            <span className="text-gray-500">Disponibilidad</span>
+            <span className="text-gray-500">{t('bookingSummary.availability')}</span>
             {remaining <= 5 ? (
               <span className="text-red-500 font-medium">
-                🔥 Solo quedan {remaining} plazas
+                🔥 {t('bookingSummary.onlyRemainingSpots', { remaining })}
               </span>
             ) : (
-              <span className="text-gray-600">{remaining} plazas libres</span>
+              <span className="text-gray-600">{t('bookingSummary.freeSpots', { remaining })}</span>
             )}
           </div>
         )}
@@ -284,7 +283,7 @@ export default function BookingSummary({
           {isShared ? (
             // ✅ Compartida: precio real por personas reservadas
             <div className="flex justify-between text-sm mb-2">
-              <span>{pricePerPerson}€ × {people} jugadores</span>
+              <span>{pricePerPerson}€ × {people} {t('bookingSummary.playersLower')}</span>
               <span>{total}€</span>
             </div>
           ) : (
@@ -292,9 +291,9 @@ export default function BookingSummary({
             <>
               <div className="flex justify-between text-sm mb-2">
                 <span>
-                  {pricePerPerson}€ × {billablePeople} jugadores
+                  {pricePerPerson}€ × {billablePeople} {t('bookingSummary.playersLower')}
                   {people < 10 && (
-                    <span className="text-xs text-gray-400 ml-1">(mín. 10)</span>
+                    <span className="text-xs text-gray-400 ml-1">{t('bookingSummary.min10')}</span>
                   )}
                 </span>
                 <span>{total}€</span>
@@ -302,7 +301,7 @@ export default function BookingSummary({
             </>
           )}
           <div className="flex justify-between font-bold text-lg">
-            <span>Total</span>
+            <span>{t('bookingSummary.total')}</span>
             <span className="text-tiger-orange">{total}€</span>
           </div>
         </div>
@@ -311,7 +310,7 @@ export default function BookingSummary({
       {/* ✅ Texto adicional antes del botón para reservas dentro de 48h */}
       {!showForm && isWithin48Hours && (
         <div className="text-xs text-center text-gray-500 bg-gray-50 p-2 rounded">
-          Al continuar, la reserva se confirmará automáticamente. No podrás modificarla después.
+          {t('bookingSummary.automaticConfirmationNotice')}
         </div>
       )}
 
@@ -326,7 +325,7 @@ export default function BookingSummary({
           }
           onClick={onConfirm}
         >
-          {isWithin48Hours ? "Confirmar reserva (automática)" : "Continuar"}
+          {isWithin48Hours ? t('bookingSummary.confirmAuto') : t('bookingSummary.continue')}
         </Button>
       )}
     </div>

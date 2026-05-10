@@ -322,6 +322,38 @@
     "heroTitle": "Réservez votre partie",
     "heroSubtitle": "Choisissez la date, l'heure et le nombre de joueurs pour garantir votre expérience de laser tag.",
     "checkReservationBtn": "Vous avez déjà une réservation ? Consultez-la ici"
+  },
+  "bookingSummary": {
+    "locale": "fr-FR",
+    "title": "Votre réservation",
+    "sharedBadge": "🤝 Partagée",
+    "date": "Date",
+    "time": "Heure",
+    "duration": "Durée",
+    "hours": "heure(s)",
+    "plan": "Forfait",
+    "players": "Joueurs (total)",
+    "playersLower": "joueurs",
+    "electroshockPeople": "Personnes Electrochoc",
+    "canReduce": "(peut être réduit)",
+    "availability": "Disponibilité",
+    "total": "Total",
+    "continue": "Continuer",
+    "confirmAuto": "Confirmer la réservation (automatique)",
+    "min10": "(min. 10)",
+    "minimumPriceWarning": "Le prix minimum équivaut à 10 joueurs",
+    "onlyRemaining": "⚠️ Il ne reste que {{remaining}} places disponibles dans ce créneau partagé",
+    "onlyRemainingSpots": "🔥 Il ne reste que {{remaining}} places",
+    "freeSpots": "{{remaining}} places libres",
+    "electroshockNotParticipating": "💡 {{count}} personne(s) ne participeront pas à l'Electrochoc",
+    "automaticConfirmationNotice": "En continuant, la réservation sera automatiquement confirmée. Vous ne pourrez plus la modifier par la suite.",
+    "within48h": {
+      "title": "Réservation dans les 48 heures",
+      "description": "Cette réservation sera automatiquement confirmée et ne pourra pas être modifiée ou annulée depuis le site web. Si vous avez besoin de plus d'informations, contactez-nous directement."
+    },
+    "advanceNotice": {
+      "title": "Réservation anticipée",
+      "description": "Cette réservation sera en attente. Vous pouvez la modifier ou l'annuler depuis \"Mes Réservations\" jusqu'à 48 heures avant l'événement. Si elle n'est pas confirmée dans les 48 heures, la réservation sera automatiquement annulée. Si vous avez besoin de plus d'informations, contactez-nous directement."
+    }
   }
-
 }
