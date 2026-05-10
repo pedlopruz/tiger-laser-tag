@@ -387,5 +387,34 @@
       "errorLoading": "Error loading availability",
       "errorFetching": "Error fetching availability:"
     }
+  },
+  "slotPicker": {
+    "errorMessage": "Ошибка загрузки расписания",
+    "loading": "Загрузка расписания...",
+    "noSlots": "Нет доступных слотов на этот день",
+    "selectedTime": "Выбранное время",
+    "title": {
+      "singleHour": "Выберите 1 час",
+      "consecutiveHours": "Выберите 1 или 2 последовательных часа",
+      "selectConsecutiveHint": "(Выберите другой последовательный час)",
+      "twoHoursSelected": "2 часа выбрано"
+    },
+    "status": {
+      "past": "⏰ Прошлое",
+      "booked": "🔒 Забронировано",
+      "sharedRemaining": "🤝 {{remaining}} место{{plural}}",
+      "limitedRemaining": "⚠️ {{remaining}} мест",
+      "availableRemaining": "✅ {{remaining}} мест"
+    },
+    "alerts": {
+      "notAvailable": "Этот временной слот недоступен",
+      "onlyRemaining": "Осталось только {{remaining}} мест"
+    },
+    "log": {
+      "errorLoading": "Error loading slots",
+      "invalidData": "Invalid slots data",
+      "errorLoadingSlots": "Error loading slots"
+    },
+    "clickConsecutiveHint": "(Нажмите на последовательный час, чтобы забронировать 2 часа)"
   }
 }

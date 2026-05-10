@@ -442,5 +442,34 @@
       "errorLoading": "Error loading availability",
       "errorFetching": "Error fetching availability:"
     }
+  },
+  "slotPicker": {
+    "errorMessage": "Error al cargar los horarios",
+    "loading": "Cargando horarios...",
+    "noSlots": "No hay horarios disponibles para este día",
+    "selectedTime": "Horario seleccionado",
+    "title": {
+      "singleHour": "Selecciona 1 hora",
+      "consecutiveHours": "Selecciona 1 o 2 horas consecutivas",
+      "selectConsecutiveHint": "(Selecciona otra hora consecutiva)",
+      "twoHoursSelected": "2 horas seleccionadas"
+    },
+    "status": {
+      "past": "⏰ Pasado",
+      "booked": "🔒 Reservado",
+      "sharedRemaining": "🤝 {{remaining}} plaza{{plural}}",
+      "limitedRemaining": "⚠️ {{remaining}} plazas",
+      "availableRemaining": "✅ {{remaining}} plazas"
+    },
+    "alerts": {
+      "notAvailable": "Este horario no está disponible",
+      "onlyRemaining": "Solo quedan {{remaining}} plazas"
+    },
+    "log": {
+      "errorLoading": "Error loading slots",
+      "invalidData": "Invalid slots data",
+      "errorLoadingSlots": "Error loading slots"
+    },
+    "clickConsecutiveHint": "(Haz clic en una hora consecutiva para reservar 2 horas)"
   }
 }

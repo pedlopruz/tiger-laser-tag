@@ -386,5 +386,34 @@
       "errorLoading": "Error loading availability",
       "errorFetching": "Error fetching availability:"
     }
+  },
+  "slotPicker": {
+    "errorMessage": "Error loading schedules",
+    "loading": "Loading schedules...",
+    "noSlots": "No schedules available for this day",
+    "selectedTime": "Selected time",
+    "title": {
+      "singleHour": "Select 1 hour",
+      "consecutiveHours": "Select 1 or 2 consecutive hours",
+      "selectConsecutiveHint": "(Select another consecutive hour)",
+      "twoHoursSelected": "2 hours selected"
+    },
+    "status": {
+      "past": "⏰ Past",
+      "booked": "🔒 Booked",
+      "sharedRemaining": "🤝 {{remaining}} spot{{plural}}",
+      "limitedRemaining": "⚠️ {{remaining}} spots",
+      "availableRemaining": "✅ {{remaining}} spots"
+    },
+    "alerts": {
+      "notAvailable": "This time slot is not available",
+      "onlyRemaining": "Only {{remaining}} spots left"
+    },
+    "log": {
+      "errorLoading": "Error loading slots",
+      "invalidData": "Invalid slots data",
+      "errorLoadingSlots": "Error loading slots"
+    },
+    "clickConsecutiveHint": "(Click on a consecutive hour to book 2 hours)"
   }
 }
