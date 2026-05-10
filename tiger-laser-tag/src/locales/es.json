@@ -554,5 +554,16 @@
       "depositNotice": "Este importe se descontará del precio final."
     },
     "electroshockNotParticipating": "💡 {{count}} persona(s) no participarán en Electroshock"
+  },
+  "paymentForm": {
+    "securePayment": "Pago seguro de",
+    "deposit": "fianza",
+    "willBeCharged": "Se cargará a tu tarjeta al confirmar la reserva.",
+    "processing": "Procesando pago...",
+    "payButton": "Pagar 100€ y confirmar reserva",
+    "errorMessage": "Error: No se pudo iniciar el pago",
+    "log": {
+      "paymentError": "Error de pago:"
+    }
   }
 }

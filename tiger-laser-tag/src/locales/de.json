@@ -498,5 +498,16 @@
       "depositNotice": "Dieser Betrag wird vom Endpreis abgezogen."
     },
     "electroshockNotParticipating": "💡 {{count}} Person(en) nehmen nicht am Elektroschock teil"
+  },
+  "paymentForm": {
+    "securePayment": "Sichere Zahlung von",
+    "deposit": "Anzahlung",
+    "willBeCharged": "Wird bei Bestätigung der Reservierung von Ihrer Karte abgebucht.",
+    "processing": "Zahlung wird verarbeitet...",
+    "payButton": "100€ zahlen und Reservierung bestätigen",
+    "errorMessage": "Fehler: Zahlung konnte nicht initiiert werden",
+    "log": {
+      "paymentError": "Zahlungsfehler:"
+    }
   }
 }

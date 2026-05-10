@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { Button } from '@/components/ui/button';
+import { useTranslation } from 'react-i18next';
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 function PaymentFormContent({ reservationCode, onError }) {
+  const { t } = useTranslation();
   const stripe = useStripe();
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -25,7 +27,7 @@ function PaymentFormContent({ reservationCode, onError }) {
     });
 
     if (error) {
-      console.error('Error de pago:', error);
+      console.error(t('paymentForm.log.paymentError'), error);
       onError?.(error.message);
     }
     
@@ -36,8 +38,8 @@ function PaymentFormContent({ reservationCode, onError }) {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
         <p className="text-sm text-blue-800">
-          🔒 Pago seguro de <strong>100€</strong> (fianza). 
-          Se cargará a tu tarjeta al confirmar la reserva.
+          🔒 {t('paymentForm.securePayment')} <strong>100€</strong> ({t('paymentForm.deposit')}). 
+          {t('paymentForm.willBeCharged')}
         </p>
       </div>
       
@@ -48,15 +50,17 @@ function PaymentFormContent({ reservationCode, onError }) {
         disabled={!stripe || isProcessing}
         className="w-full bg-tiger-orange hover:bg-tiger-orange/90 text-white py-3 text-lg font-bold"
       >
-        {isProcessing ? "Procesando pago..." : "Pagar 100€ y confirmar reserva"}
+        {isProcessing ? t('paymentForm.processing') : t('paymentForm.payButton')}
       </Button>
     </form>
   );
 }
 
 export default function PaymentForm({ clientSecret, reservationCode, onError }) {
+  const { t } = useTranslation();
+
   if (!clientSecret) {
-    return <div className="text-red-500">Error: No se pudo iniciar el pago</div>;
+    return <div className="text-red-500">{t('paymentForm.errorMessage')}</div>;
   }
 
   return (

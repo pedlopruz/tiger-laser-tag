@@ -495,5 +495,16 @@
       "depositNotice": "Ce montant sera déduit du prix final."
     },
     "electroshockNotParticipating": "💡 {{count}} personne(s) ne participeront pas à l'Electrochoc"
+  },
+  "paymentForm": {
+    "securePayment": "Paiement sécurisé de",
+    "deposit": "acompte",
+    "willBeCharged": "Serra débité de votre carte lors de la confirmation de la réservation.",
+    "processing": "Traitement du paiement...",
+    "payButton": "Payer 100€ et confirmer la réservation",
+    "errorMessage": "Erreur : Impossible d'initier le paiement",
+    "log": {
+      "paymentError": "Erreur de paiement :"
+    }
   }
 }

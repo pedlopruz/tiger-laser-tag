@@ -498,5 +498,16 @@
       "depositNotice": "This amount will be deducted from the final price."
     },
     "electroshockNotParticipating": "💡 {{count}} person(s) will not participate in Electroshock"
+  },
+  "paymentForm": {
+    "securePayment": "Secure payment of",
+    "deposit": "deposit",
+    "willBeCharged": "Will be charged to your card upon reservation confirmation.",
+    "processing": "Processing payment...",
+    "payButton": "Pay €100 and confirm reservation",
+    "errorMessage": "Error: Could not initiate payment",
+    "log": {
+      "paymentError": "Payment error:"
+    }
   }
 }
