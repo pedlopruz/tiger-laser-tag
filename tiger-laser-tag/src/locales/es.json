@@ -653,5 +653,22 @@
       "title": "✅ Reserva confirmada",
       "description": "Tu reserva de horario compartido está confirmada."
     }
+  },
+  "reservaConfirmada": {
+    "meta": {
+      "title": "Reserva confirmada - Tiger Laser Tag",
+      "description": "Tu reserva de Laser Tag ha sido confirmada. Guarda tu código para gestionar tu partida."
+    },
+    "title": "¡Reserva confirmada!",
+    "subtitle": "Tu partida de Laser Tag ha sido reservada correctamente.",
+    "reservationCode": "Tu código de reserva",
+    "saveCodeMessage": "Guárdalo o revisa tu email para consultar o modificar tu reserva.",
+    "arrivalNotice": "Llega",
+    "arrivalTime": "15 minutos antes",
+    "arrivalNoticeEnd": "de tu partida para preparar el equipo.",
+    "modificationNotice": "Si necesitas modificar tu reserva, puedes hacerlo hasta",
+    "modificationDeadline": "48 horas antes",
+    "manageButton": "Gestionar mi reserva",
+    "backButton": "Volver al inicio"
   }
 }

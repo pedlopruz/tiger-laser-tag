@@ -594,5 +594,22 @@
       "title": "✅ Réservation confirmée",
       "description": "Votre réservation de créneau partagé est confirmée."
     }
+  },
+  "reservaConfirmada": {
+    "meta": {
+      "title": "Réservation confirmée - Tiger Laser Tag",
+      "description": "Votre réservation de Laser Tag a été confirmée. Conservez votre code pour gérer votre partie."
+    },
+    "title": "Réservation confirmée !",
+    "subtitle": "Votre partie de Laser Tag a été réservée avec succès.",
+    "reservationCode": "Votre code de réservation",
+    "saveCodeMessage": "Conservez-le ou consultez votre email pour consulter ou modifier votre réservation.",
+    "arrivalNotice": "Arrivez",
+    "arrivalTime": "15 minutes avant",
+    "arrivalNoticeEnd": "votre partie pour préparer votre équipement.",
+    "modificationNotice": "Si vous devez modifier votre réservation, vous pouvez le faire jusqu'à",
+    "modificationDeadline": "48 heures avant",
+    "manageButton": "Gérer ma réservation",
+    "backButton": "Retour à l'accueil"
   }
 }

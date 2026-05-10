@@ -597,5 +597,22 @@
       "title": "✅ Reservation confirmed",
       "description": "Your shared time slot reservation is confirmed."
     }
+  },
+  "reservaConfirmada": {
+    "meta": {
+      "title": "Reservation confirmed - Tiger Laser Tag",
+      "description": "Your Laser Tag reservation has been confirmed. Save your code to manage your game."
+    },
+    "title": "Reservation confirmed!",
+    "subtitle": "Your Laser Tag game has been successfully booked.",
+    "reservationCode": "Your reservation code",
+    "saveCodeMessage": "Save it or check your email to view or modify your reservation.",
+    "arrivalNotice": "Arrive",
+    "arrivalTime": "15 minutes before",
+    "arrivalNoticeEnd": "your game to prepare your equipment.",
+    "modificationNotice": "If you need to modify your reservation, you can do so up to",
+    "modificationDeadline": "48 hours before",
+    "manageButton": "Manage my reservation",
+    "backButton": "Back to home"
   }
 }
