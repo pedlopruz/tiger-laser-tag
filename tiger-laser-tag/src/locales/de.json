@@ -455,5 +455,48 @@
       "errorLoadingPlans": "Error loading plans",
       "errorLoading": "Error loading plans"
     }
+  },
+  "reservationForm": {
+    "title": "Reservierungsdetails",
+    "processing": "Wird verarbeitet...",
+    "confirmButton": "Reservierung bestätigen",
+    "paymentButton": "Weiter zur Zahlung →",
+    "phoneExamples": "Beispiele: 612345678, +34693786919, +441234567890",
+    "underageConsent": "Aktivieren Sie, wenn ein Teilnehmer unter 15 Jahre alt ist. Eine Einverständniserklärung muss vor Ort unterschrieben werden.",
+    "fields": {
+      "name": "Vollständiger Name",
+      "email": "E-Mail",
+      "phone": "Telefon"
+    },
+    "placeholders": {
+      "name": "Vollständiger Name",
+      "email": "beispiel@email.com",
+      "phone": "612345678 oder +34693786919"
+    },
+    "errors": {
+      "requiredFields": "Alle Felder sind erforderlich",
+      "invalidPhone": "Bitte geben Sie eine gültige Telefonnummer ein.",
+      "noSlots": "Sie müssen mindestens ein Zeitfenster auswählen",
+      "noPlan": "Sie müssen ein Paket auswählen",
+      "electroshockExceeds": "Die Anzahl der Elektroschock-Teilnehmer darf die Gesamtzahl der Spieler nicht überschreiten",
+      "minElectroshock": "Es muss mindestens 1 Person für Elektroschock geben",
+      "createReservation": "Fehler beim Erstellen der Reservierung",
+      "paymentInit": "Fehler beim Initiieren der Zahlung",
+      "paymentError": "Zahlungsfehler: {{error}}"
+    },
+    "sharedAlert": {
+      "title": "Geteilte Reservierung",
+      "description": "Keine Vorauszahlung erforderlich. Ihr Platz wird nach Bestätigung reserviert."
+    },
+    "depositAlert": {
+      "description": "Eine Anzahlung von",
+      "notice": "Dieser Betrag wird vom Endpreis abgezogen."
+    },
+    "payment": {
+      "title": "Zahlung abschließen",
+      "description": "Um Ihre Reservierung abzuschließen, benötigen wir die Anzahlung von",
+      "depositNotice": "Dieser Betrag wird vom Endpreis abgezogen."
+    },
+    "electroshockNotParticipating": "💡 {{count}} Person(en) nehmen nicht am Elektroschock teil"
   }
 }

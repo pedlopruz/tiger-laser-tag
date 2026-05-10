@@ -455,5 +455,48 @@
       "errorLoadingPlans": "Error loading plans",
       "errorLoading": "Error loading plans"
     }
+  },
+  "reservationForm": {
+    "title": "Reservation details",
+    "processing": "Processing...",
+    "confirmButton": "Confirm reservation",
+    "paymentButton": "Continue to payment →",
+    "phoneExamples": "Examples: 612345678, +34693786919, +441234567890",
+    "underageConsent": "Check if any participant is under 15 years old. A consent form must be signed at the venue.",
+    "fields": {
+      "name": "Full name",
+      "email": "Email",
+      "phone": "Phone"
+    },
+    "placeholders": {
+      "name": "Full name",
+      "email": "example@email.com",
+      "phone": "612345678 or +34693786919"
+    },
+    "errors": {
+      "requiredFields": "All fields are required",
+      "invalidPhone": "Please enter a valid phone number.",
+      "noSlots": "You must select at least one time slot",
+      "noPlan": "You must select a plan",
+      "electroshockExceeds": "Number of electroshock participants cannot exceed total players",
+      "minElectroshock": "There must be at least 1 person for electroshock",
+      "createReservation": "Error creating reservation",
+      "paymentInit": "Error initiating payment",
+      "paymentError": "Payment error: {{error}}"
+    },
+    "sharedAlert": {
+      "title": "Shared reservation",
+      "description": "No advance payment required. Your spot will be reserved upon confirmation."
+    },
+    "depositAlert": {
+      "description": "A deposit of",
+      "notice": "This amount will be deducted from the final price."
+    },
+    "payment": {
+      "title": "Complete payment",
+      "description": "To complete your reservation, we need the deposit payment of",
+      "depositNotice": "This amount will be deducted from the final price."
+    },
+    "electroshockNotParticipating": "💡 {{count}} person(s) will not participate in Electroshock"
   }
 }

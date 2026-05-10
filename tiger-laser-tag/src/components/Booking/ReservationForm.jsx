@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from 'react-i18next';
 import { Button } from "@/components/ui/button";
 import PaymentForm from "./PaymentForm";
 
@@ -10,6 +11,7 @@ export default function ReservationForm({
   holdId,
   onSuccess
 }) {
+  const { t } = useTranslation();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -52,32 +54,32 @@ export default function ReservationForm({
     setError(null);
 
     if (!name || !email || !phone) {
-      setError("Todos los campos son obligatorios");
+      setError(t('reservationForm.errors.requiredFields'));
       return;
     }
 
     if (!isValidPhone(phone)) {
-      setError("Por favor, introduce un número de teléfono válido.");
+      setError(t('reservationForm.errors.invalidPhone'));
       return;
     }
 
     if (!selectedSlots || selectedSlots.length === 0) {
-      setError("Debes seleccionar al menos un horario");
+      setError(t('reservationForm.errors.noSlots'));
       return;
     }
 
     if (!plan) {
-      setError("Debes seleccionar un plan");
+      setError(t('reservationForm.errors.noPlan'));
       return;
     }
 
     if (personas_electroshock > people) {
-      setError("El número de personas para electroshock no puede ser mayor que el total de jugadores");
+      setError(t('reservationForm.errors.electroshockExceeds'));
       return;
     }
 
     if (personas_electroshock < 1) {
-      setError("Debe haber al menos 1 persona para electroshock");
+      setError(t('reservationForm.errors.minElectroshock'));
       return;
     }
 
@@ -103,7 +105,7 @@ export default function ReservationForm({
         });
 
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Error creando reserva");
+        if (!res.ok) throw new Error(data.error || t('reservationForm.errors.createReservation'));
 
         if (onSuccess) {
           onSuccess({
@@ -137,7 +139,7 @@ export default function ReservationForm({
         });
 
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Error iniciando el pago");
+        if (!res.ok) throw new Error(data.error || t('reservationForm.errors.paymentInit'));
 
         setReservationCode(data.reservationCode);
         setClientSecret(data.clientSecret);
@@ -153,7 +155,7 @@ export default function ReservationForm({
   }
 
   const handlePaymentError = (errorMessage) => {
-    setError(`Error de pago: ${errorMessage}`);
+    setError(t('reservationForm.errors.paymentError', { error: errorMessage }));
     setRequiresPayment(false);
   };
 
@@ -165,10 +167,10 @@ export default function ReservationForm({
   if (!isShared && requiresPayment && clientSecret) {
     return (
       <div className="bg-white rounded-xl shadow p-6 mt-6">
-        <h2 className="text-xl font-bold mb-4">Completar pago</h2>
+        <h2 className="text-xl font-bold mb-4">{t('reservationForm.payment.title')}</h2>
         <p className="text-sm text-gray-600 mb-4">
-          Para finalizar tu reserva, necesitamos el pago de la fianza de <strong>100€</strong>.
-          Este importe se descontará del precio final.
+          {t('reservationForm.payment.description')} <strong>100€</strong>.
+          {t('reservationForm.payment.depositNotice')}
         </p>
 
         <PaymentForm
@@ -189,64 +191,63 @@ export default function ReservationForm({
   // ✅ Formulario de datos personales
   return (
     <div className="bg-white rounded-xl shadow p-6 mt-6" id="reservation-form">
-      <h2 className="text-xl font-bold mb-6">Datos de la reserva</h2>
+      <h2 className="text-xl font-bold mb-6">{t('reservationForm.title')}</h2>
 
       {/* ✅ Aviso informativo según tipo de reserva */}
       {isShared ? (
         <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
-          🤝 <strong>Reserva compartida</strong> — No se requiere pago previo.
-          Tu plaza quedará reservada al confirmar.
+          🤝 <strong>{t('reservationForm.sharedAlert.title')}</strong> — {t('reservationForm.sharedAlert.description')}
         </div>
       ) : (
         <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
-          🔒 Se solicitará una fianza de <strong>100€</strong> al confirmar.
-          Este importe se descontará del precio final.
+          🔒 {t('reservationForm.depositAlert.description')} <strong>100€</strong>.
+          {t('reservationForm.depositAlert.notice')}
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="text-sm font-medium">Nombre *</label>
+          <label className="text-sm font-medium">{t('reservationForm.fields.name')} *</label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             className="w-full border rounded-lg px-3 py-2 mt-1"
             required
-            placeholder="Nombre completo"
+            placeholder={t('reservationForm.placeholders.name')}
           />
         </div>
 
         <div>
-          <label className="text-sm font-medium">Email *</label>
+          <label className="text-sm font-medium">{t('reservationForm.fields.email')} *</label>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="w-full border rounded-lg px-3 py-2 mt-1"
             required
-            placeholder="ejemplo@correo.com"
+            placeholder={t('reservationForm.placeholders.email')}
           />
         </div>
 
         <div>
-          <label className="text-sm font-medium">Teléfono *</label>
+          <label className="text-sm font-medium">{t('reservationForm.fields.phone')} *</label>
           <input
             type="tel"
             value={phone}
             onChange={handlePhoneChange}
             className="w-full border rounded-lg px-3 py-2 mt-1"
             required
-            placeholder="612345678 o +34693786919"
+            placeholder={t('reservationForm.placeholders.phone')}
           />
           <p className="text-xs text-gray-500 mt-1">
-            📱 Ejemplos: 612345678, +34693786919, +441234567890
+            📱 {t('reservationForm.phoneExamples')}
           </p>
         </div>
 
         {personas_electroshock < people && (
           <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded">
-            💡 {people - personas_electroshock} persona(s) no participarán en Electroshock
+            💡 {t('reservationForm.electroshockNotParticipating', { count: people - personas_electroshock })}
           </div>
         )}
 
@@ -258,8 +259,7 @@ export default function ReservationForm({
             className="mt-1"
           />
           <label className="text-sm text-gray-700">
-            Marque si algún participante es menor de 15 años.
-            Será necesario firmar un consentimiento en el recinto.
+            {t('reservationForm.underageConsent')}
           </label>
         </div>
 
@@ -275,10 +275,10 @@ export default function ReservationForm({
           disabled={loading}
         >
           {loading
-            ? "Procesando..."
+            ? t('reservationForm.processing')
             : isShared
-              ? "Confirmar reserva"
-              : "Continuar al pago →"}
+              ? t('reservationForm.confirmButton')
+              : t('reservationForm.paymentButton')}
         </Button>
       </form>
     </div>

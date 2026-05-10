@@ -511,5 +511,48 @@
       "errorLoadingPlans": "Error loading plans",
       "errorLoading": "Error loading plans"
     }
+  },
+  "reservationForm": {
+    "title": "Datos de la reserva",
+    "processing": "Procesando...",
+    "confirmButton": "Confirmar reserva",
+    "paymentButton": "Continuar al pago →",
+    "phoneExamples": "Ejemplos: 612345678, +34693786919, +441234567890",
+    "underageConsent": "Marque si algún participante es menor de 15 años. Será necesario firmar un consentimiento en el recinto.",
+    "fields": {
+      "name": "Nombre",
+      "email": "Email",
+      "phone": "Teléfono"
+    },
+    "placeholders": {
+      "name": "Nombre completo",
+      "email": "ejemplo@correo.com",
+      "phone": "612345678 o +34693786919"
+    },
+    "errors": {
+      "requiredFields": "Todos los campos son obligatorios",
+      "invalidPhone": "Por favor, introduce un número de teléfono válido.",
+      "noSlots": "Debes seleccionar al menos un horario",
+      "noPlan": "Debes seleccionar un plan",
+      "electroshockExceeds": "El número de personas para electroshock no puede ser mayor que el total de jugadores",
+      "minElectroshock": "Debe haber al menos 1 persona para electroshock",
+      "createReservation": "Error creando reserva",
+      "paymentInit": "Error iniciando el pago",
+      "paymentError": "Error de pago: {{error}}"
+    },
+    "sharedAlert": {
+      "title": "Reserva compartida",
+      "description": "No se requiere pago previo. Tu plaza quedará reservada al confirmar."
+    },
+    "depositAlert": {
+      "description": "Se solicitará una fianza de",
+      "notice": "Este importe se descontará del precio final."
+    },
+    "payment": {
+      "title": "Completar pago",
+      "description": "Para finalizar tu reserva, necesitamos el pago de la fianza de",
+      "depositNotice": "Este importe se descontará del precio final."
+    },
+    "electroshockNotParticipating": "💡 {{count}} persona(s) no participarán en Electroshock"
   }
 }

@@ -452,5 +452,48 @@
       "errorLoadingPlans": "Error loading plans",
       "errorLoading": "Error loading plans"
     }
+  },
+  "reservationForm": {
+    "title": "Détails de la réservation",
+    "processing": "Traitement en cours...",
+    "confirmButton": "Confirmer la réservation",
+    "paymentButton": "Continuer vers le paiement →",
+    "phoneExamples": "Exemples: 612345678, +34693786919, +441234567890",
+    "underageConsent": "Cochez si un participant a moins de 15 ans. Un consentement devra être signé sur place.",
+    "fields": {
+      "name": "Nom complet",
+      "email": "Email",
+      "phone": "Téléphone"
+    },
+    "placeholders": {
+      "name": "Nom complet",
+      "email": "exemple@email.com",
+      "phone": "612345678 ou +34693786919"
+    },
+    "errors": {
+      "requiredFields": "Tous les champs sont obligatoires",
+      "invalidPhone": "Veuillez entrer un numéro de téléphone valide.",
+      "noSlots": "Vous devez sélectionner au moins un créneau horaire",
+      "noPlan": "Vous devez sélectionner un forfait",
+      "electroshockExceeds": "Le nombre de participants à l'Electrochoc ne peut pas dépasser le total des joueurs",
+      "minElectroshock": "Il doit y avoir au moins 1 personne pour l'Electrochoc",
+      "createReservation": "Erreur lors de la création de la réservation",
+      "paymentInit": "Erreur lors de l'initiation du paiement",
+      "paymentError": "Erreur de paiement: {{error}}"
+    },
+    "sharedAlert": {
+      "title": "Réservation partagée",
+      "description": "Aucun paiement anticipé requis. Votre place sera réservée après confirmation."
+    },
+    "depositAlert": {
+      "description": "Un acompte de",
+      "notice": "Ce montant sera déduit du prix final."
+    },
+    "payment": {
+      "title": "Compléter le paiement",
+      "description": "Pour finaliser votre réservation, nous avons besoin du paiement de l'acompte de",
+      "depositNotice": "Ce montant sera déduit du prix final."
+    },
+    "electroshockNotParticipating": "💡 {{count}} personne(s) ne participeront pas à l'Electrochoc"
   }
 }
