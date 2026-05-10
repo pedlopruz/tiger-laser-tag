@@ -308,6 +308,298 @@
     "processing": "Procesando...",
     "warning": "La reserva no es definitiva hasta recibir confirmación por email o teléfono.",
     "successTitle": "¡Solicitud recibida!",
-    "successDesc": "Gracias {{name}}, hemos recibido tu solicitud."
+    "successDesc": "Gracias {{name}}, hemos recibido tu solicitud.",
+    "log": {
+      "slotsSelected": "BookingLayout - slots seleccionados:",
+      "reservationSuccess": "Reserva exitosa:",
+      "sendingEmail": "Enviando email de confirmación:",
+      "emailError": "Error sending confirmation email:",
+      "emailSuccess": "✅ Email de confirmación enviado exitosamente",
+      "emailErrorDetail": "❌ Error sending confirmation email:"
+    }
+  },
+  "reservar": {
+    "meta": {
+      "title": "Забронируйте игру — Tiger Laser Tag Marbella",
+      "description": "Забронируйте игру в лазертаг в Марбелье. Выберите дату, время и количество игроков."
+    },
+    "heroTitle": "Забронируйте игру",
+    "heroSubtitle": "Выберите дату, время и количество игроков для бронирования вашей игры в Laser Tag.",
+    "checkReservationBtn": "У вас уже есть бронирование? Проверьте его здесь"
+  },
+  "bookingSummary": {
+    "locale": "ru-RU",
+    "title": "Ваше бронирование",
+    "sharedBadge": "🤝 Общий",
+    "date": "Дата",
+    "time": "Время",
+    "duration": "Продолжительность",
+    "hours": "час(ов)",
+    "plan": "План",
+    "players": "Игроки (всего)",
+    "playersLower": "игроков",
+    "electroshockPeople": "Участники электрошока",
+    "canReduce": "(можно уменьшить)",
+    "availability": "Доступность",
+    "total": "Итого",
+    "continue": "Продолжить",
+    "confirmAuto": "Подтвердить бронирование (автоматически)",
+    "min10": "(мин. 10)",
+    "minimumPriceWarning": "Минимальная цена эквивалентна 10 игрокам",
+    "onlyRemaining": "⚠️ Осталось только {{remaining}} мест в этом общем временном слоте",
+    "onlyRemainingSpots": "🔥 Осталось только {{remaining}} мест",
+    "freeSpots": "{{remaining}} свободных мест",
+    "electroshockNotParticipating": "💡 {{count}} человек(а) не будут участвовать в электрошоке",
+    "automaticConfirmationNotice": "Продолжая, бронирование будет автоматически подтверждено. Вы не сможете изменить его позже.",
+    "within48h": {
+      "title": "Бронирование в течение 48 часов",
+      "description": "Это бронирование будет автоматически подтверждено, и вы не сможете изменить или отменить его на сайте. Если вам нужна дополнительная информация, пожалуйста, свяжитесь с нами напрямую."
+    },
+    "advanceNotice": {
+      "title": "Предварительное бронирование",
+      "description": "Это бронирование будет в статусе ожидания. Вы можете изменить или отменить его в разделе \"Мои бронирования\" за 48 часов до мероприятия. Если оно не будет подтверждено за 48 часов, бронирование будет автоматически отменено. Если вам нужна дополнительная информация, пожалуйста, свяжитесь с нами напрямую."
+    }
+  },
+  "calendarPicker": {
+    "locale": "ru-RU",
+    "errorMessage": "Ошибка загрузки доступности",
+    "loading": "Загрузка доступности...",
+    "weekdays": {
+      "mon": "П",
+      "tue": "В",
+      "wed": "С",
+      "thu": "Ч",
+      "fri": "П",
+      "sat": "С",
+      "sun": "В"
+    },
+    "tooltips": {
+      "pastDay": "Прошедший день",
+      "notAvailable": "Недоступно",
+      "available": "Доступно"
+    },
+    "legend": {
+      "available": "Доступно",
+      "notAvailable": "Недоступно",
+      "pastDay": "Прошедший день"
+    },
+    "log": {
+      "errorLoading": "Error loading availability",
+      "errorFetching": "Error fetching availability:"
+    }
+  },
+  "slotPicker": {
+    "errorMessage": "Ошибка загрузки расписания",
+    "loading": "Загрузка расписания...",
+    "noSlots": "Нет доступных слотов на этот день",
+    "selectedTime": "Выбранное время",
+    "title": {
+      "singleHour": "Выберите 1 час",
+      "consecutiveHours": "Выберите 1 или 2 последовательных часа",
+      "selectConsecutiveHint": "(Выберите другой последовательный час)",
+      "twoHoursSelected": "2 часа выбрано"
+    },
+    "status": {
+      "past": "⏰ Прошлое",
+      "booked": "🔒 Забронировано",
+      "sharedRemaining": "🤝 {{remaining}} место{{plural}}",
+      "limitedRemaining": "⚠️ {{remaining}} мест",
+      "availableRemaining": "✅ {{remaining}} мест"
+    },
+    "alerts": {
+      "notAvailable": "Этот временной слот недоступен",
+      "onlyRemaining": "Осталось только {{remaining}} мест"
+    },
+    "log": {
+      "errorLoading": "Error loading slots",
+      "invalidData": "Invalid slots data",
+      "errorLoadingSlots": "Error loading slots"
+    },
+    "clickConsecutiveHint": "(Нажмите на последовательный час, чтобы забронировать 2 часа)"
+  },
+  "planPicker": {
+    "errorMessage": "Ошибка загрузки планов",
+    "loading": "Загрузка планов...",
+    "minutes": "мин",
+    "players": "игроков",
+    "upTo": "до",
+    "perPerson": "за человека",
+    "total": "всего",
+    "sharedBadge": "Общий",
+    "selectedBadge": "Выбран",
+    "noMinimum": "Без минимального количества в группе",
+    "title": {
+      "shared": "Общее бронирование",
+      "select": "Выберите ваш план"
+    },
+    "slot": "слот",
+    "slot_plural": "слотов",
+    "sharedInfo": {
+      "title": "Этот временной слот для общего бронирования",
+      "description": "Вы платите только за людей в вашей группе. Другие группы могут присоединиться до достижения максимальной вместимости. Цена за человека без минимального количества в группе."
+    },
+    "noSharedPlan": {
+      "title": "Общий план не найден для этого временного слота",
+      "planId": "ID плана",
+      "verify": "Убедитесь, что план существует в базе данных с active=false"
+    },
+    "noPlans": {
+      "title": "Нет доступных планов для {{count}} слота длительностью {{duration}} мин (всего {{totalDuration}} мин)",
+      "title_plural": "Нет доступных планов для {{count}} слотов длительностью {{duration}} мин (всего {{totalDuration}} мин)",
+      "selectOther": "Пожалуйста, выберите другую комбинацию временных слотов"
+    },
+    "selectSlotsFirst": "Выберите один или два временных слота, чтобы увидеть доступные планы",
+    "noSharedPlanForSlots": "Нет общего плана для {{count}} слота",
+    "noSharedPlanForSlots_plural": "Нет общего плана для {{count}} слотов",
+    "sharedPlanTwoSlotsWarning": "Для этого общего временного слота не настроен план на 2 слота. Выберите только 1 слот или свяжитесь с администратором.",
+    "log": {
+      "errorLoadingPlans": "Error loading plans",
+      "errorLoading": "Error loading plans"
+    }
+  },
+  "reservationForm": {
+    "title": "Детали бронирования",
+    "processing": "Обработка...",
+    "confirmButton": "Подтвердить бронирование",
+    "paymentButton": "Перейти к оплате →",
+    "phoneExamples": "Примеры: 612345678, +34693786919, +441234567890",
+    "underageConsent": "Отметьте, если участнику меньше 15 лет. Потребуется подписать согласие на месте.",
+    "fields": {
+      "name": "Полное имя",
+      "email": "Email",
+      "phone": "Телефон"
+    },
+    "placeholders": {
+      "name": "Полное имя",
+      "email": "example@email.com",
+      "phone": "612345678 или +34693786919"
+    },
+    "errors": {
+      "requiredFields": "Все поля обязательны для заполнения",
+      "invalidPhone": "Пожалуйста, введите действительный номер телефона.",
+      "noSlots": "Вы должны выбрать хотя бы один временной слот",
+      "noPlan": "Вы должны выбрать план",
+      "electroshockExceeds": "Количество участников электрошока не может превышать общее количество игроков",
+      "minElectroshock": "Должен быть хотя бы 1 человек для электрошока",
+      "createReservation": "Ошибка создания бронирования",
+      "paymentInit": "Ошибка инициализации платежа",
+      "paymentError": "Ошибка платежа: {{error}}"
+    },
+    "sharedAlert": {
+      "title": "Общее бронирование",
+      "description": "Предварительная оплата не требуется. Ваше место будет зарезервировано после подтверждения."
+    },
+    "depositAlert": {
+      "description": "Потребуется залог в размере",
+      "notice": "Эта сумма будет вычтена из итоговой цены."
+    },
+    "payment": {
+      "title": "Завершить оплату",
+      "description": "Для завершения бронирования нам нужен залог в размере",
+      "depositNotice": "Эта сумма будет вычтена из итоговой цены."
+    },
+    "electroshockNotParticipating": "💡 {{count}} человек(а) не будут участвовать в электрошоке"
+  },
+  "paymentForm": {
+    "securePayment": "Безопасный платёж",
+    "deposit": "залог",
+    "willBeCharged": "Будет списано с вашей карты при подтверждении бронирования.",
+    "processing": "Обработка платежа...",
+    "payButton": "Оплатить 100€ и подтвердить бронирование",
+    "errorMessage": "Ошибка: Не удалось инициировать платёж",
+    "log": {
+      "paymentError": "Ошибка платежа:"
+    }
+  },
+  "misReservas": {
+    "locale": "ru-RU",
+    "meta": {
+      "title": "Мои бронирования - Tiger Laser Tag",
+      "description": "Проверьте, измените или отмените бронирование Laser Tag в Марбелье."
+    },
+    "heroTitle": "Мои бронирования",
+    "heroSubtitle": "Проверьте, измените или отмените бронирование Laser Tag",
+    "hours": "час",
+    "hours_plural": "часа",
+    "hours_plural_2": "часов",
+    "current": "текущий",
+    "confirming": "Подтверждение...",
+    "updating": "Обновление...",
+    "changing": "Изменение...",
+    "cancelling": "Отмена...",
+    "confirmButton": "✅ Подтвердить бронирование",
+    "updatePlayersButton": "Обновить количество игроков",
+    "confirmChangeButton": "Подтвердить изменение времени",
+    "cancelButton": "Отменить бронирование",
+    "status": {
+      "pending": "Ожидает подтверждения",
+      "confirmed": "Подтверждено",
+      "cancelled": "Отменено"
+    },
+    "confirmDialog": "Подтвердить это бронирование? После подтверждения вы не сможете его изменить.",
+    "cancelDialog": "Вы уверены, что хотите отменить бронирование? Это действие нельзя отменить.",
+    "cancelWarning": "Это действие нельзя отменить",
+    "pendingNotice": "Ваше бронирование ожидает подтверждения. После подтверждения вы не сможете изменить данные.",
+    "sharedPlanNotice": "Это бронирование общего временного слота. Дату и время изменить нельзя. Если вам нужны изменения, пожалуйста, свяжитесь с нами.",
+    "errors": {
+      "notFound": "Бронирование не найдено",
+      "connection": "Ошибка соединения",
+      "confirmFailed": "Ошибка подтверждения бронирования",
+      "confirmError": "Ошибка подтверждения бронирования",
+      "updatePlayers": "Ошибка обновления количества игроков",
+      "updateSlot": "Ошибка изменения временного слота",
+      "cancelError": "Ошибка отмены бронирования"
+    },
+    "messages": {
+      "confirmSuccess": "✅ Бронирование успешно подтверждено! Отправлено письмо с подтверждением.",
+      "playersUpdated": "✅ Количество игроков успешно обновлено"
+    },
+    "planHours": "План на {{count}} час",
+    "planHours_plural": "План на {{count}} часа",
+    "planHours_plural_2": "План на {{count}} часов",
+    "search": {
+      "title": "Проверить бронирование",
+      "subtitle": "Введите код и email, которые вы использовали для бронирования",
+      "codeLabel": "Код бронирования",
+      "codePlaceholder": "Например: ABC123XYZ",
+      "emailLabel": "Email",
+      "emailPlaceholder": "your@email.com",
+      "searching": "Поиск...",
+      "button": "Проверить бронирование"
+    },
+    "cancelled": {
+      "title": "Бронирование отменено",
+      "description": "Ваше бронирование успешно отменено. Если у вас есть вопросы, пожалуйста, свяжитесь с нами.",
+      "button": "Проверить другое бронирование"
+    },
+    "details": {
+      "reservationCode": "Код бронирования",
+      "date": "Дата",
+      "time": "Время",
+      "plan": "План",
+      "total": "Итого"
+    },
+    "modifyPlayers": {
+      "title": "Изменить количество игроков",
+      "label": "Игроки:"
+    },
+    "modifyDateTime": {
+      "title": "Изменить дату и время",
+      "currentDuration": "Ваше текущее бронирование на {{count}} час.",
+      "currentDuration_plural": "Ваше текущее бронирование на {{count}} часа.",
+      "currentDuration_plural_2": "Ваше текущее бронирование на {{count}} часов.",
+      "selectTwoHours": "Выберите 2 последовательных часа",
+      "selectOneHour": "Выберите 1 доступный час",
+      "priceIncrease": "⚠️ При переходе на {{count}} часов потребуется дополнительная оплата примерно €{{amount}}.",
+      "priceDecrease": "💡 При уменьшении до {{count}} часа цена снизится примерно на €{{amount}}."
+    },
+    "confirmedNotice": {
+      "title": "✅ Бронирование подтверждено",
+      "description": "Ваше бронирование подтверждено. Покажите код в день вашего визита."
+    },
+    "confirmedSharedNotice": {
+      "title": "✅ Бронирование подтверждено",
+      "description": "Ваше бронирование общего временного слота подтверждено."
+    }
   }
 }

@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from "react";
+import { useTranslation } from 'react-i18next';
 import { supabase } from "../../lib/supabaseClient";
 
 export default function SlotPicker({
@@ -8,6 +9,7 @@ export default function SlotPicker({
   initialSlots = [],
   maxSlots = 2
 }) {
+  const { t } = useTranslation();
 
   const [slots, setSlots] = useState([]);
   const [selectedSlots, setSelectedSlots] = useState(initialSlots);
@@ -86,11 +88,11 @@ export default function SlotPicker({
 
     try {
       const res = await fetch(`/api/getSlotsByDate?date=${date}`);
-      if (!res.ok) throw new Error("Error loading slots");
+      if (!res.ok) throw new Error(t('slotPicker.log.errorLoading'));
       
       const data = await res.json();
       if (!data.slots || !Array.isArray(data.slots)) {
-        throw new Error("Invalid slots data");
+        throw new Error(t('slotPicker.log.invalidData'));
       }
       
       const validSlots = data.slots.filter(slot =>
@@ -102,13 +104,13 @@ export default function SlotPicker({
       setSlots(validSlots);
 
     } catch (err) {
-      console.error("Error loading slots", err);
-      setError("Error al cargar los horarios");
+      console.error(t('slotPicker.log.errorLoadingSlots'), err);
+      setError(t('slotPicker.errorMessage'));
       setSlots([]);
     }
 
     setLoading(false);
-  }, [date]);
+  }, [date, t]);
 
   useEffect(() => {
     if (date) loadSlots();
@@ -147,7 +149,7 @@ export default function SlotPicker({
     const currentSelected = selectedSlotsRef.current;
 
     if (isSlotBlocked(slot)) {
-      alert("Este horario no está disponible");
+      alert(t('slotPicker.alerts.notAvailable'));
       return;
     }
 
@@ -157,7 +159,7 @@ export default function SlotPicker({
       : getRemaining(slot);
 
     if (availablePlaces < people) {
-      alert(`Solo quedan ${availablePlaces} plaza${availablePlaces !== 1 ? 's' : ''}`);
+      alert(t('slotPicker.alerts.onlyRemaining', { remaining: availablePlaces }));
       return;
     }
 
@@ -186,7 +188,7 @@ export default function SlotPicker({
 
     setSelectedSlots(newSelection);
     if (onSelectSlots) onSelectSlots(newSelection);
-  }, [people, onSelectSlots, maxSlots]);
+  }, [people, onSelectSlots, maxSlots, t]);
 
   function isSelected(slot) {
     return selectedSlots.some(s => s.id === slot.id);
@@ -238,36 +240,38 @@ export default function SlotPicker({
   }
 
   function getSlotStatusText(slot) {
-    if (!isFutureSlot(slot)) return "⏰ Pasado";
-    if (slot.status === 'blocked' && !slot.isShared) return "🔒 Reservado";
+    if (!isFutureSlot(slot)) return t('slotPicker.status.past');
+    if (slot.status === 'blocked' && !slot.isShared) return t('slotPicker.status.booked');
     if (slot.isShared) {
       const remaining = slot.remaining ?? 0;
-      return `🤝 ${remaining} plaza${remaining !== 1 ? 's' : ''}`;
+      return t('slotPicker.status.sharedRemaining', { remaining, plural: remaining !== 1 ? 's' : '' });
     }
     const remaining = getRemaining(slot);
-    if (remaining < people) return `⚠️ ${remaining} plazas`;
-    return `✅ ${remaining} plazas`;
+    if (remaining < people) return t('slotPicker.status.limitedRemaining', { remaining });
+    return t('slotPicker.status.availableRemaining', { remaining });
   }
 
   return (
     <div className="mt-8">
       <h3 className="font-semibold mb-4">
-        {maxSlots === 1 ? "Selecciona 1 hora" : "Selecciona 1 o 2 horas consecutivas"}
+        {maxSlots === 1 
+          ? t('slotPicker.title.singleHour') 
+          : t('slotPicker.title.consecutiveHours')}
         {selectedSlots.length === 1 && maxSlots > 1 && (
           <span className="text-sm text-gray-500 ml-2">
-            (Selecciona otra hora consecutiva)
+            {t('slotPicker.title.selectConsecutiveHint')}
           </span>
         )}
         {selectedSlots.length === 2 && (
           <span className="text-sm text-green-600 ml-2">
-            ✓ 2 horas seleccionadas
+            ✓ {t('slotPicker.title.twoHoursSelected')}
           </span>
         )}
       </h3>
 
       {loading && (
         <div className="text-sm text-gray-500 animate-pulse">
-          Cargando horarios...
+          {t('slotPicker.loading')}
         </div>
       )}
 
@@ -279,7 +283,7 @@ export default function SlotPicker({
 
       {!loading && !error && slots.length === 0 && (
         <div className="text-sm text-gray-500 bg-gray-50 p-4 rounded text-center">
-          No hay horarios disponibles para este día
+          {t('slotPicker.noSlots')}
         </div>
       )}
 
@@ -308,7 +312,7 @@ export default function SlotPicker({
 
       {selectedSlots.length > 0 && (
         <div className="mt-4 p-3 bg-gray-50 rounded-lg text-sm">
-          <span className="font-medium">Horario seleccionado: </span>
+          <span className="font-medium">{t('slotPicker.selectedTime')}: </span>
           {selectedSlots.map((slot, idx) => (
             <span key={slot.id}>
               <span className="font-mono">{formatTime(slot.start_time)}</span>
@@ -317,7 +321,7 @@ export default function SlotPicker({
           ))}
           {selectedSlots.length === 1 && maxSlots > 1 && (
             <span className="text-gray-500 ml-2">
-              (Haz clic en una hora consecutiva para reservar 2 horas)
+              {t('slotPicker.clickConsecutiveHint')}
             </span>
           )}
         </div>

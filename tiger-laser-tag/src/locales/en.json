@@ -307,6 +307,295 @@
     "processing": "Processing...",
     "warning": "Booking is not final until confirmed by email or phone.",
     "successTitle": "Request received!",
-    "successDesc": "Thanks {{name}}, we have received your request."
+    "successDesc": "Thanks {{name}}, we have received your request.",
+    "log": {
+      "slotsSelected": "BookingLayout - slots seleccionados:",
+      "reservationSuccess": "Reserva exitosa:",
+      "sendingEmail": "Enviando email de confirmación:",
+      "emailError": "Error sending confirmation email:",
+      "emailSuccess": "✅ Email de confirmación enviado exitosamente",
+      "emailErrorDetail": "❌ Error sending confirmation email:"
+    }
+  },
+  "reservar": {
+    "meta": {
+      "title": "Book your game - Tiger Laser Tag Marbella",
+      "description": "Book your Laser Tag session in Marbella. Choose the date, time and number of players."
+    },
+    "heroTitle": "Book your game",
+    "heroSubtitle": "Choose the date, time and number of players to secure your Laser Tag experience.",
+    "checkReservationBtn": "Already have a reservation? Check it here"
+  },
+  "bookingSummary": {
+    "locale": "en-US",
+    "title": "Your reservation",
+    "sharedBadge": "🤝 Shared",
+    "date": "Date",
+    "time": "Time",
+    "duration": "Duration",
+    "hours": "hour(s)",
+    "plan": "Plan",
+    "players": "Players (total)",
+    "playersLower": "players",
+    "electroshockPeople": "Electroshock Players",
+    "canReduce": "(can be reduced)",
+    "availability": "Availability",
+    "total": "Total",
+    "continue": "Continue to confirmation",
+    "confirmAuto": "Confirmation will be automatically confirmed",
+    "min10": "(min. 10)",
+    "minimumPriceWarning": "The minimum price is equivalent to 10 players",
+    "onlyRemaining": "⚠️ Only {{remaining}} spots available in this shared time slot",
+    "onlyRemainingSpots": "🔥 Only {{remaining}} spots left",
+    "freeSpots": "{{remaining}} free spots",
+    "electroshockNotParticipating": "💡 {{count}} person(s) will not be taking part in Electroshock",
+    "automaticConfirmationNotice": "Once you continue, your booking will be confirmed automatically. You will not be able to change it afterwards. If you need to make any changes or have any questions, please contact us directly.",
+    "within48h": {
+      "title": "Book within 48 hours",
+      "description": "This reservation will be automatically confirmed and you will not be able to modify or cancel it from the website. If you need more information, please contact us directly."
+    },
+    "advanceNotice": {
+      "title": "Book in advance",
+      "description": "This reservation will remain pending. You can modify or cancel it from \"My Reservations\" up to 48 hours before the event. If it is not confirmed within 48 hours, the reservation will be automatically canceled. If you need more information, please contact us directly."
+    }
+  },
+  "calendarPicker": {
+    "locale": "en-US",
+    "errorMessage": "Error loading availability",
+    "loading": "Loading availability...",
+    "weekdays": {
+      "mon": "M",
+      "tue": "T",
+      "wed": "W",
+      "thu": "T",
+      "fri": "F",
+      "sat": "S",
+      "sun": "S"
+    },
+    "tooltips": {
+      "pastDay": "Past day",
+      "notAvailable": "Not available",
+      "available": "Available"
+    },
+    "legend": {
+      "available": "Available",
+      "notAvailable": "Not available",
+      "pastDay": "Past day"
+    },
+    "log": {
+      "errorLoading": "Error loading availability",
+      "errorFetching": "Error fetching availability:"
+    }
+  },
+  "slotPicker": {
+    "errorMessage": "Error loading schedules",
+    "loading": "Loading schedules...",
+    "noSlots": "No schedules available for this day",
+    "selectedTime": "Selected time",
+    "title": {
+      "singleHour": "Select 1 hour",
+      "consecutiveHours": "Select 1 or 2 consecutive hours",
+      "selectConsecutiveHint": "(Select another consecutive hour)",
+      "twoHoursSelected": "2 hours selected"
+    },
+    "status": {
+      "past": "⏰ Past",
+      "booked": "🔒 Booked",
+      "sharedRemaining": "🤝 {{remaining}} spot{{plural}}",
+      "limitedRemaining": "⚠️ {{remaining}} spots",
+      "availableRemaining": "✅ {{remaining}} spots"
+    },
+    "alerts": {
+      "notAvailable": "This time slot is not available",
+      "onlyRemaining": "Only {{remaining}} spots left"
+    },
+    "log": {
+      "errorLoading": "Error loading slots",
+      "invalidData": "Invalid slots data",
+      "errorLoadingSlots": "Error loading slots"
+    },
+    "clickConsecutiveHint": "(Click on a consecutive hour to book 2 hours)"
+  },
+  "planPicker": {
+    "errorMessage": "Error loading plans",
+    "loading": "Loading plans...",
+    "minutes": "min",
+    "players": "players",
+    "upTo": "up to",
+    "perPerson": "per person",
+    "total": "total",
+    "sharedBadge": "Shared",
+    "selectedBadge": "Selected",
+    "noMinimum": "No group minimum",
+    "title": {
+      "shared": "Shared reservation",
+      "select": "Select your plan"
+    },
+    "slot": "slot",
+    "slot_plural": "slots",
+    "sharedInfo": {
+      "title": "This time slot is for shared reservation",
+      "description": "You only pay for the people in your group. Other groups can join until capacity is reached. Price is per person with no group minimum."
+    },
+    "noSharedPlan": {
+      "title": "Shared plan not found for this time slot",
+      "planId": "Plan ID",
+      "verify": "Verify that the plan exists in the database with active=false"
+    },
+    "noPlans": {
+      "title": "No plans available for {{count}} slot of {{duration}} min ({{totalDuration}} min total)",
+      "title_plural": "No plans available for {{count}} slots of {{duration}} min ({{totalDuration}} min total)",
+      "selectOther": "Please select another combination of time slots"
+    },
+    "selectSlotsFirst": "Select one or two time slots to see available plans",
+    "noSharedPlanForSlots": "No shared plan available for {{count}} slot",
+    "noSharedPlanForSlots_plural": "No shared plan available for {{count}} slots",
+    "sharedPlanTwoSlotsWarning": "This shared time slot does not have a 2-slot plan configured. Select only 1 slot or contact the administrator.",
+    "log": {
+      "errorLoadingPlans": "Error loading plans",
+      "errorLoading": "Error loading plans"
+    }
+  },
+  "reservationForm": {
+    "title": "Reservation details",
+    "processing": "Processing...",
+    "confirmButton": "Confirm reservation",
+    "paymentButton": "Continue to payment →",
+    "phoneExamples": "Examples: 612345678, +34693786919, +441234567890",
+    "underageConsent": "Check if any participant is under 15 years old. A consent form must be signed at the venue.",
+    "fields": {
+      "name": "Full name",
+      "email": "Email",
+      "phone": "Phone"
+    },
+    "placeholders": {
+      "name": "Full name",
+      "email": "example@email.com",
+      "phone": "612345678 or +34693786919"
+    },
+    "errors": {
+      "requiredFields": "All fields are required",
+      "invalidPhone": "Please enter a valid phone number.",
+      "noSlots": "You must select at least one time slot",
+      "noPlan": "You must select a plan",
+      "electroshockExceeds": "Number of electroshock participants cannot exceed total players",
+      "minElectroshock": "There must be at least 1 person for electroshock",
+      "createReservation": "Error creating reservation",
+      "paymentInit": "Error initiating payment",
+      "paymentError": "Payment error: {{error}}"
+    },
+    "sharedAlert": {
+      "title": "Shared reservation",
+      "description": "No advance payment required. Your spot will be reserved upon confirmation."
+    },
+    "depositAlert": {
+      "description": "A deposit of",
+      "notice": "This amount will be deducted from the final price."
+    },
+    "payment": {
+      "title": "Complete payment",
+      "description": "To complete your reservation, we need the deposit payment of",
+      "depositNotice": "This amount will be deducted from the final price."
+    },
+    "electroshockNotParticipating": "💡 {{count}} person(s) will not participate in Electroshock"
+  },
+  "paymentForm": {
+    "securePayment": "Secure payment of",
+    "deposit": "deposit",
+    "willBeCharged": "Will be charged to your card upon reservation confirmation.",
+    "processing": "Processing payment...",
+    "payButton": "Pay €100 and confirm reservation",
+    "errorMessage": "Error: Could not initiate payment",
+    "log": {
+      "paymentError": "Payment error:"
+    }
+  },
+  "misReservas": {
+    "locale": "en-US",
+    "meta": {
+      "title": "My Reservations - Tiger Laser Tag",
+      "description": "Check, modify or cancel your Laser Tag reservation in Marbella."
+    },
+    "heroTitle": "My Reservations",
+    "heroSubtitle": "Check, modify or cancel your Laser Tag reservation",
+    "hours": "hour",
+    "hours_plural": "hours",
+    "current": "current",
+    "confirming": "Confirming...",
+    "updating": "Updating...",
+    "changing": "Changing...",
+    "cancelling": "Cancelling...",
+    "confirmButton": "✅ Confirm reservation",
+    "updatePlayersButton": "Update players",
+    "confirmChangeButton": "Confirm time change",
+    "cancelButton": "Cancel reservation",
+    "status": {
+      "pending": "Pending confirmation",
+      "confirmed": "Confirmed",
+      "cancelled": "Cancelled"
+    },
+    "confirmDialog": "Confirm this reservation? Once confirmed, you will not be able to modify it.",
+    "cancelDialog": "Are you sure you want to cancel the reservation? This action cannot be undone.",
+    "cancelWarning": "This action cannot be undone",
+    "pendingNotice": "Your reservation is pending confirmation. Once confirmed, you will not be able to modify the details.",
+    "sharedPlanNotice": "This is a shared time slot reservation. Date and time cannot be changed. If you need changes, please contact us.",
+    "errors": {
+      "notFound": "Reservation not found",
+      "connection": "Connection error",
+      "confirmFailed": "Error confirming reservation",
+      "confirmError": "Error confirming reservation",
+      "updatePlayers": "Error updating players",
+      "updateSlot": "Error changing time slot",
+      "cancelError": "Error cancelling reservation"
+    },
+    "messages": {
+      "confirmSuccess": "✅ Reservation confirmed successfully! A confirmation email has been sent.",
+      "playersUpdated": "✅ Players updated successfully"
+    },
+    "planHours": "{{count}} hour plan",
+    "planHours_plural": "{{count}} hour plan",
+    "search": {
+      "title": "Check reservation",
+      "subtitle": "Enter the code and email you used to book",
+      "codeLabel": "Reservation code",
+      "codePlaceholder": "Eg: ABC123XYZ",
+      "emailLabel": "Email",
+      "emailPlaceholder": "your@email.com",
+      "searching": "Searching...",
+      "button": "Check reservation"
+    },
+    "cancelled": {
+      "title": "Reservation cancelled",
+      "description": "Your reservation has been successfully cancelled. If you have any questions, please contact us.",
+      "button": "Check another reservation"
+    },
+    "details": {
+      "reservationCode": "Reservation code",
+      "date": "Date",
+      "time": "Time",
+      "plan": "Plan",
+      "total": "Total"
+    },
+    "modifyPlayers": {
+      "title": "Modify number of players",
+      "label": "Players:"
+    },
+    "modifyDateTime": {
+      "title": "Change date and time",
+      "currentDuration": "Your current reservation is for {{count}} hour.",
+      "currentDuration_plural": "Your current reservation is for {{count}} hours.",
+      "selectTwoHours": "Select 2 consecutive hours",
+      "selectOneHour": "Select 1 available hour",
+      "priceIncrease": "⚠️ Switching to {{count}} hours will generate an additional payment of approximately €{{amount}}.",
+      "priceDecrease": "💡 By reducing to {{count}} hour, the price will decrease by approximately €{{amount}}."
+    },
+    "confirmedNotice": {
+      "title": "✅ Reservation confirmed",
+      "description": "Your reservation is confirmed. Show the code on the day of your visit."
+    },
+    "confirmedSharedNotice": {
+      "title": "✅ Reservation confirmed",
+      "description": "Your shared time slot reservation is confirmed."
+    }
   }
 }
