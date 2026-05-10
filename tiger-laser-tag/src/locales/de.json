@@ -415,5 +415,45 @@
       "errorLoadingSlots": "Error loading slots"
     },
     "clickConsecutiveHint": "(Klicken Sie auf eine aufeinanderfolgende Stunde, um 2 Stunden zu buchen)"
+  },
+  "planPicker": {
+    "errorMessage": "Fehler beim Laden der Pakete",
+    "loading": "Pakete werden geladen...",
+    "minutes": "min",
+    "players": "Spieler",
+    "upTo": "bis zu",
+    "perPerson": "pro Person",
+    "total": "gesamt",
+    "sharedBadge": "Geteilt",
+    "selectedBadge": "Ausgewählt",
+    "noMinimum": "Keine Mindestgruppengröße",
+    "title": {
+      "shared": "Geteilte Reservierung",
+      "select": "Wählen Sie Ihr Paket"
+    },
+    "slot": "Zeitfenster",
+    "slot_plural": "Zeitfenster",
+    "sharedInfo": {
+      "title": "Dieses Zeitfenster ist für geteilte Reservierungen",
+      "description": "Sie zahlen nur für die Personen Ihrer Gruppe. Andere Gruppen können sich anschließen, bis die Kapazität erreicht ist. Der Preis gilt pro Person ohne Mindestgruppengröße."
+    },
+    "noSharedPlan": {
+      "title": "Geteiltes Paket für dieses Zeitfenster nicht gefunden",
+      "planId": "Paket-ID",
+      "verify": "Überprüfen Sie, ob das Paket in der Datenbank mit active=false existiert"
+    },
+    "noPlans": {
+      "title": "Keine Pakete verfügbar für {{count}} Zeitfenster von {{duration}} min ({{totalDuration}} min insgesamt)",
+      "title_plural": "Keine Pakete verfügbar für {{count}} Zeitfenster von {{duration}} min ({{totalDuration}} min insgesamt)",
+      "selectOther": "Bitte wählen Sie eine andere Kombination von Zeitfenstern"
+    },
+    "selectSlotsFirst": "Wählen Sie ein oder zwei Zeitfenster aus, um verfügbare Pakete zu sehen",
+    "noSharedPlanForSlots": "Kein geteiltes Paket verfügbar für {{count}} Zeitfenster",
+    "noSharedPlanForSlots_plural": "Kein geteiltes Paket verfügbar für {{count}} Zeitfenster",
+    "sharedPlanTwoSlotsWarning": "Dieses geteilte Zeitfenster hat kein konfiguriertes Paket für 2 Zeitfenster. Wählen Sie nur 1 Zeitfenster oder kontaktieren Sie den Administrator.",
+    "log": {
+      "errorLoadingPlans": "Error loading plans",
+      "errorLoading": "Error loading plans"
+    }
   }
 }

@@ -416,5 +416,45 @@
       "errorLoadingSlots": "Error loading slots"
     },
     "clickConsecutiveHint": "(Нажмите на последовательный час, чтобы забронировать 2 часа)"
+  },
+  "planPicker": {
+    "errorMessage": "Ошибка загрузки планов",
+    "loading": "Загрузка планов...",
+    "minutes": "мин",
+    "players": "игроков",
+    "upTo": "до",
+    "perPerson": "за человека",
+    "total": "всего",
+    "sharedBadge": "Общий",
+    "selectedBadge": "Выбран",
+    "noMinimum": "Без минимального количества в группе",
+    "title": {
+      "shared": "Общее бронирование",
+      "select": "Выберите ваш план"
+    },
+    "slot": "слот",
+    "slot_plural": "слотов",
+    "sharedInfo": {
+      "title": "Этот временной слот для общего бронирования",
+      "description": "Вы платите только за людей в вашей группе. Другие группы могут присоединиться до достижения максимальной вместимости. Цена за человека без минимального количества в группе."
+    },
+    "noSharedPlan": {
+      "title": "Общий план не найден для этого временного слота",
+      "planId": "ID плана",
+      "verify": "Убедитесь, что план существует в базе данных с active=false"
+    },
+    "noPlans": {
+      "title": "Нет доступных планов для {{count}} слота длительностью {{duration}} мин (всего {{totalDuration}} мин)",
+      "title_plural": "Нет доступных планов для {{count}} слотов длительностью {{duration}} мин (всего {{totalDuration}} мин)",
+      "selectOther": "Пожалуйста, выберите другую комбинацию временных слотов"
+    },
+    "selectSlotsFirst": "Выберите один или два временных слота, чтобы увидеть доступные планы",
+    "noSharedPlanForSlots": "Нет общего плана для {{count}} слота",
+    "noSharedPlanForSlots_plural": "Нет общего плана для {{count}} слотов",
+    "sharedPlanTwoSlotsWarning": "Для этого общего временного слота не настроен план на 2 слота. Выберите только 1 слот или свяжитесь с администратором.",
+    "log": {
+      "errorLoadingPlans": "Error loading plans",
+      "errorLoading": "Error loading plans"
+    }
   }
 }

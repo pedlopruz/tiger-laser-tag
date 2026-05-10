@@ -1,6 +1,8 @@
 import { useEffect, useState, useMemo } from "react";
+import { useTranslation } from 'react-i18next';
 
 export default function PlanPicker({ selectedSlots, onSelectPlan }) {
+  const { t } = useTranslation();
   const [plans, setPlans] = useState([]);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -50,12 +52,12 @@ export default function PlanPicker({ selectedSlots, onSelectPlan }) {
     setError(null);
     try {
       const res = await fetch("/api/getPlans");
-      if (!res.ok) throw new Error("Error loading plans");
+      if (!res.ok) throw new Error(t('planPicker.log.errorLoadingPlans'));
       const data = await res.json();
       setPlans(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error("Error loading plans", err);
-      setError("Error al cargar los planes");
+      console.error(t('planPicker.log.errorLoading'), err);
+      setError(t('planPicker.errorMessage'));
       setPlans([]);
     }
     setLoading(false);
@@ -89,10 +91,10 @@ export default function PlanPicker({ selectedSlots, onSelectPlan }) {
   return (
     <div className="mt-10">
       <h3 className="font-semibold mb-5">
-        {isSharedSlot ? "Reserva compartida" : "Selecciona tu plan"}
+        {isSharedSlot ? t('planPicker.title.shared') : t('planPicker.title.select')}
         {slotCount > 0 && !isSharedSlot && (
           <span className="text-sm text-gray-500 ml-2">
-            ({slotCount} slot{slotCount > 1 ? 's' : ''} · {requiredDuration} min)
+            ({slotCount} {t('planPicker.slot', { count: slotCount })} · {requiredDuration} {t('planPicker.minutes')})
           </span>
         )}
       </h3>
@@ -100,17 +102,16 @@ export default function PlanPicker({ selectedSlots, onSelectPlan }) {
       {isSharedSlot && (
         <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-700">
           <div className="flex items-center gap-2 font-semibold mb-1">
-            🤝 Este horario es de reserva compartida
+            🤝 {t('planPicker.sharedInfo.title')}
           </div>
           <p>
-            Pagarás solo por las personas de tu grupo. Otros grupos pueden unirse
-            hasta completar el aforo. El precio es por persona sin mínimo de grupo.
+            {t('planPicker.sharedInfo.description')}
           </p>
         </div>
       )}
 
       {loading && (
-        <div className="text-sm text-gray-500">Cargando planes...</div>
+        <div className="text-sm text-gray-500">{t('planPicker.loading')}</div>
       )}
 
       {error && (
@@ -121,16 +122,16 @@ export default function PlanPicker({ selectedSlots, onSelectPlan }) {
         <div className="text-sm text-gray-500 bg-gray-50 p-4 rounded text-center">
           {isSharedSlot ? (
             <div>
-              <p>No se encontró el plan compartido para este horario</p>
-              <p className="text-xs mt-1">ID del plan: {sharedPlanId}</p>
+              <p>{t('planPicker.noSharedPlan.title')}</p>
+              <p className="text-xs mt-1">{t('planPicker.noSharedPlan.planId')}: {sharedPlanId}</p>
               <p className="text-xs mt-1 text-gray-400">
-                Verifica que el plan exista en la base de datos con active=false
+                {t('planPicker.noSharedPlan.verify')}
               </p>
             </div>
           ) : (
             <div>
-              <p>No hay planes disponibles para {slotCount} slot{slotCount > 1 ? 's' : ''} de {singleSlotDuration} min ({requiredDuration} min en total)</p>
-              <p className="text-xs mt-1">Por favor, selecciona otra combinación de horarios</p>
+              <p>{t('planPicker.noPlans.title', { count: slotCount, duration: singleSlotDuration, totalDuration: requiredDuration })}</p>
+              <p className="text-xs mt-1">{t('planPicker.noPlans.selectOther')}</p>
             </div>
           )}
         </div>
@@ -138,7 +139,7 @@ export default function PlanPicker({ selectedSlots, onSelectPlan }) {
 
       {!loading && !error && slotCount === 0 && (
         <div className="text-sm text-gray-500 bg-gray-50 p-4 rounded text-center">
-          Selecciona uno o dos horarios para ver los planes disponibles
+          {t('planPicker.selectSlotsFirst')}
         </div>
       )}
 
@@ -146,18 +147,17 @@ export default function PlanPicker({ selectedSlots, onSelectPlan }) {
         <div className="text-sm text-gray-500 bg-gray-50 p-4 rounded text-center">
           {isSharedSlot ? (
             <div>
-              <p>No hay plan compartido disponible para {slotCount} slot{slotCount > 1 ? 's' : ''}</p>
+              <p>{t('planPicker.noSharedPlanForSlots', { count: slotCount })}</p>
               {slotCount === 2 && (
                 <p className="text-xs mt-1 text-amber-600">
-                  ⚠️ Este horario compartido no tiene configurado un plan de 2 slots.
-                  Selecciona solo 1 slot o contacta con el administrador.
+                  ⚠️ {t('planPicker.sharedPlanTwoSlotsWarning')}
                 </p>
               )}
             </div>
           ) : (
             <div>
-              <p>No hay planes disponibles para {slotCount} slot{slotCount > 1 ? 's' : ''} de {singleSlotDuration} min ({requiredDuration} min en total)</p>
-              <p className="text-xs mt-1">Por favor, selecciona otra combinación de horarios</p>
+              <p>{t('planPicker.noPlans.title', { count: slotCount, duration: singleSlotDuration, totalDuration: requiredDuration })}</p>
+              <p className="text-xs mt-1">{t('planPicker.noPlans.selectOther')}</p>
             </div>
           )}
         </div>
@@ -188,12 +188,12 @@ export default function PlanPicker({ selectedSlots, onSelectPlan }) {
                     <span className="font-semibold text-lg">{plan.name}</span>
                     {isSharedPlan && (
                       <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
-                        Compartido
+                        {t('planPicker.sharedBadge')}
                       </span>
                     )}
                     {!isSharedPlan && isSelected && (
                       <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
-                        Seleccionado
+                        {t('planPicker.selectedBadge')}
                       </span>
                     )}
                   </div>
@@ -201,9 +201,9 @@ export default function PlanPicker({ selectedSlots, onSelectPlan }) {
                     <div className="text-sm text-gray-600 mt-1">{plan.description}</div>
                   )}
                   <div className="text-xs text-gray-500 mt-2">
-                    {plan.duration_minutes} min · hasta {plan.max_players} jugadores
+                    {plan.duration_minutes} {t('planPicker.minutes')} · {t('planPicker.upTo')} {plan.max_players} {t('planPicker.players')}
                     {isSharedPlan && (
-                      <span className="ml-2 text-blue-600">· Sin mínimo de grupo</span>
+                      <span className="ml-2 text-blue-600">· {t('planPicker.noMinimum')}</span>
                     )}
                   </div>
                 </div>
@@ -212,7 +212,7 @@ export default function PlanPicker({ selectedSlots, onSelectPlan }) {
                     €{plan.price}
                   </div>
                   <div className="text-xs text-gray-500">
-                    {isSharedPlan ? "por persona" : "total"}
+                    {isSharedPlan ? t('planPicker.perPerson') : t('planPicker.total')}
                   </div>
                 </div>
               </div>

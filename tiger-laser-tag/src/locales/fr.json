@@ -412,5 +412,45 @@
       "errorLoadingSlots": "Error loading slots"
     },
     "clickConsecutiveHint": "(Cliquez sur une heure consécutive pour réserver 2 heures)"
+  },
+  "planPicker": {
+    "errorMessage": "Erreur lors du chargement des forfaits",
+    "loading": "Chargement des forfaits...",
+    "minutes": "min",
+    "players": "joueurs",
+    "upTo": "jusqu'à",
+    "perPerson": "par personne",
+    "total": "total",
+    "sharedBadge": "Partagé",
+    "selectedBadge": "Sélectionné",
+    "noMinimum": "Sans minimum de groupe",
+    "title": {
+      "shared": "Réservation partagée",
+      "select": "Sélectionnez votre forfait"
+    },
+    "slot": "créneau",
+    "slot_plural": "créneaux",
+    "sharedInfo": {
+      "title": "Ce créneau horaire est pour réservation partagée",
+      "description": "Vous ne payez que pour les personnes de votre groupe. D'autres groupes peuvent se joindre jusqu'à ce que la capacité soit atteinte. Le prix est par personne sans minimum de groupe."
+    },
+    "noSharedPlan": {
+      "title": "Forfait partagé non trouvé pour ce créneau",
+      "planId": "ID du forfait",
+      "verify": "Vérifiez que le forfait existe dans la base de données avec active=false"
+    },
+    "noPlans": {
+      "title": "Aucun forfait disponible pour {{count}} créneau de {{duration}} min ({{totalDuration}} min au total)",
+      "title_plural": "Aucun forfait disponible pour {{count}} créneaux de {{duration}} min ({{totalDuration}} min au total)",
+      "selectOther": "Veuillez sélectionner une autre combinaison de créneaux"
+    },
+    "selectSlotsFirst": "Sélectionnez un ou deux créneaux pour voir les forfaits disponibles",
+    "noSharedPlanForSlots": "Aucun forfait partagé disponible pour {{count}} créneau",
+    "noSharedPlanForSlots_plural": "Aucun forfait partagé disponible pour {{count}} créneaux",
+    "sharedPlanTwoSlotsWarning": "Ce créneau partagé n'a pas de forfait configuré pour 2 créneaux. Sélectionnez 1 seul créneau ou contactez l'administrateur.",
+    "log": {
+      "errorLoadingPlans": "Error loading plans",
+      "errorLoading": "Error loading plans"
+    }
   }
 }

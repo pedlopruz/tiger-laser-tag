@@ -471,5 +471,45 @@
       "errorLoadingSlots": "Error loading slots"
     },
     "clickConsecutiveHint": "(Haz clic en una hora consecutiva para reservar 2 horas)"
+  },
+  "planPicker": {
+    "errorMessage": "Error al cargar los planes",
+    "loading": "Cargando planes...",
+    "minutes": "min",
+    "players": "jugadores",
+    "upTo": "hasta",
+    "perPerson": "por persona",
+    "total": "total",
+    "sharedBadge": "Compartido",
+    "selectedBadge": "Seleccionado",
+    "noMinimum": "Sin mínimo de grupo",
+    "title": {
+      "shared": "Reserva compartida",
+      "select": "Selecciona tu plan"
+    },
+    "slot": "slot",
+    "slot_plural": "slots",
+    "sharedInfo": {
+      "title": "Este horario es de reserva compartida",
+      "description": "Pagarás solo por las personas de tu grupo. Otros grupos pueden unirse hasta completar el aforo. El precio es por persona sin mínimo de grupo."
+    },
+    "noSharedPlan": {
+      "title": "No se encontró el plan compartido para este horario",
+      "planId": "ID del plan",
+      "verify": "Verifica que el plan exista en la base de datos con active=false"
+    },
+    "noPlans": {
+      "title": "No hay planes disponibles para {{count}} slot de {{duration}} min ({{totalDuration}} min en total)",
+      "title_plural": "No hay planes disponibles para {{count}} slots de {{duration}} min ({{totalDuration}} min en total)",
+      "selectOther": "Por favor, selecciona otra combinación de horarios"
+    },
+    "selectSlotsFirst": "Selecciona uno o dos horarios para ver los planes disponibles",
+    "noSharedPlanForSlots": "No hay plan compartido disponible para {{count}} slot",
+    "noSharedPlanForSlots_plural": "No hay plan compartido disponible para {{count}} slots",
+    "sharedPlanTwoSlotsWarning": "Este horario compartido no tiene configurado un plan de 2 slots. Selecciona solo 1 slot o contacta con el administrador.",
+    "log": {
+      "errorLoadingPlans": "Error loading plans",
+      "errorLoading": "Error loading plans"
+    }
   }
 }
