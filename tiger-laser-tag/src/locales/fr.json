@@ -355,5 +355,33 @@
       "title": "Réservation anticipée",
       "description": "Cette réservation sera en attente. Vous pouvez la modifier ou l'annuler depuis \"Mes Réservations\" jusqu'à 48 heures avant l'événement. Si elle n'est pas confirmée dans les 48 heures, la réservation sera automatiquement annulée. Si vous avez besoin de plus d'informations, contactez-nous directement."
     }
+  },
+  "calendarPicker": {
+    "locale": "fr-FR",
+    "errorMessage": "Erreur lors du chargement des disponibilités",
+    "loading": "Chargement des disponibilités...",
+    "weekdays": {
+      "mon": "L",
+      "tue": "M",
+      "wed": "M",
+      "thu": "J",
+      "fri": "V",
+      "sat": "S",
+      "sun": "D"
+    },
+    "tooltips": {
+      "pastDay": "Jour passé",
+      "notAvailable": "Non disponible",
+      "available": "Disponible"
+    },
+    "legend": {
+      "available": "Disponible",
+      "notAvailable": "Non disponible",
+      "pastDay": "Jour passé"
+    },
+    "log": {
+      "errorLoading": "Error loading availability",
+      "errorFetching": "Error fetching availability:"
+    }
   }
 }

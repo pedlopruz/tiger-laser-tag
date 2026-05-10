@@ -414,6 +414,33 @@
       "title": "Reserva con anticipación",
       "description": "Esta reserva quedará en estado pendiente. Podrás modificarla o cancelarla desde \"Mis Reservas\" hasta 48 horas antes del evento. Si a menos 48 horas antes no se ha confirmado, la reserva se cancelará automáticamente. Si necesitas más información, contacta con nosotros directamente."
     }
+  },
+  "calendarPicker": {
+    "locale": "es-ES",
+    "errorMessage": "Error cargando disponibilidad",
+    "loading": "Cargando disponibilidad...",
+    "weekdays": {
+      "mon": "L",
+      "tue": "M",
+      "wed": "X",
+      "thu": "J",
+      "fri": "V",
+      "sat": "S",
+      "sun": "D"
+    },
+    "tooltips": {
+      "pastDay": "Día pasado",
+      "notAvailable": "No disponible",
+      "available": "Disponible"
+    },
+    "legend": {
+      "available": "Disponible",
+      "notAvailable": "No disponible",
+      "pastDay": "Día pasado"
+    },
+    "log": {
+      "errorLoading": "Error loading availability",
+      "errorFetching": "Error fetching availability:"
+    }
   }
-  
 }

@@ -358,5 +358,33 @@
       "title": "Vorab-Reservierung",
       "description": "Diese Reservierung ist vorläufig. Sie können sie bis zu 48 Stunden vor dem Event unter \"Meine Reservierungen\" ändern oder stornieren. Wenn sie nicht innerhalb von 48 Stunden bestätigt wird, wird die Reservierung automatisch storniert. Wenn Sie weitere Informationen benötigen, kontaktieren Sie uns bitte direkt."
     }
+  },
+  "calendarPicker": {
+    "locale": "de-DE",
+    "errorMessage": "Fehler beim Laden der Verfügbarkeit",
+    "loading": "Verfügbarkeit wird geladen...",
+    "weekdays": {
+      "mon": "M",
+      "tue": "D",
+      "wed": "M",
+      "thu": "D",
+      "fri": "F",
+      "sat": "S",
+      "sun": "S"
+    },
+    "tooltips": {
+      "pastDay": "Vergangener Tag",
+      "notAvailable": "Nicht verfügbar",
+      "available": "Verfügbar"
+    },
+    "legend": {
+      "available": "Verfügbar",
+      "notAvailable": "Nicht verfügbar",
+      "pastDay": "Vergangener Tag"
+    },
+    "log": {
+      "errorLoading": "Error loading availability",
+      "errorFetching": "Error fetching availability:"
+    }
   }
 }

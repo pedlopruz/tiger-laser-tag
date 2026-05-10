@@ -358,5 +358,33 @@
       "title": "Book in advance",
       "description": "This reservation will remain pending. You can modify or cancel it from \"My Reservations\" up to 48 hours before the event. If it is not confirmed within 48 hours, the reservation will be automatically canceled. If you need more information, please contact us directly."
     }
+  },
+  "calendarPicker": {
+    "locale": "en-US",
+    "errorMessage": "Error loading availability",
+    "loading": "Loading availability...",
+    "weekdays": {
+      "mon": "M",
+      "tue": "T",
+      "wed": "W",
+      "thu": "T",
+      "fri": "F",
+      "sat": "S",
+      "sun": "S"
+    },
+    "tooltips": {
+      "pastDay": "Past day",
+      "notAvailable": "Not available",
+      "available": "Available"
+    },
+    "legend": {
+      "available": "Available",
+      "notAvailable": "Not available",
+      "pastDay": "Past day"
+    },
+    "log": {
+      "errorLoading": "Error loading availability",
+      "errorFetching": "Error fetching availability:"
+    }
   }
 }

@@ -1,6 +1,8 @@
 import { useEffect, useState, useMemo } from "react";
+import { useTranslation } from 'react-i18next';
 
 export default function CalendarPicker({ onSelectDate, initialDate }) {
+  const { t } = useTranslation();
 
   /* --------------------------
      HOY con zona horaria de España
@@ -76,7 +78,7 @@ export default function CalendarPicker({ onSelectDate, initialDate }) {
       const res = await fetch(`/api/getAvailability?month=${month}`);
 
       if (!res.ok) {
-        console.error("Error loading availability");
+        console.error(t('calendarPicker.log.errorLoading'));
         setAvailableDays([]);
         return;
       }
@@ -85,8 +87,8 @@ export default function CalendarPicker({ onSelectDate, initialDate }) {
       setAvailableDays(data.availableDays || []);
 
     } catch (err) {
-      console.error("Error fetching availability:", err);
-      setError("Error cargando disponibilidad");
+      console.error(t('calendarPicker.log.errorFetching'), err);
+      setError(t('calendarPicker.errorMessage'));
       setAvailableDays([]);
     } finally {
       setLoading(false);
@@ -162,7 +164,7 @@ export default function CalendarPicker({ onSelectDate, initialDate }) {
 
   const totalDays = daysInMonth(currentMonth);
   const startOffset = startDay(currentMonth);
-  const monthName = currentMonth.toLocaleString("es-ES", {
+  const monthName = currentMonth.toLocaleString(t('calendarPicker.locale'), {
     month: "long",
     year: "numeric"
   });
@@ -176,6 +178,17 @@ export default function CalendarPicker({ onSelectDate, initialDate }) {
   for (let d = 1; d <= totalDays; d++) {
     cells.push(d);
   }
+
+  // Días de la semana traducidos
+  const weekDays = [
+    t('calendarPicker.weekdays.mon'),
+    t('calendarPicker.weekdays.tue'),
+    t('calendarPicker.weekdays.wed'),
+    t('calendarPicker.weekdays.thu'),
+    t('calendarPicker.weekdays.fri'),
+    t('calendarPicker.weekdays.sat'),
+    t('calendarPicker.weekdays.sun')
+  ];
 
   if (error) {
     return (
@@ -214,13 +227,9 @@ export default function CalendarPicker({ onSelectDate, initialDate }) {
 
       {/* days header */}
       <div className="grid grid-cols-7 text-center text-sm text-gray-500 mb-2">
-        <div>L</div>
-        <div>M</div>
-        <div>X</div>
-        <div>J</div>
-        <div>V</div>
-        <div>S</div>
-        <div>D</div>
+        {weekDays.map((day, idx) => (
+          <div key={idx}>{day}</div>
+        ))}
       </div>
 
       {/* calendar */}
@@ -233,12 +242,18 @@ export default function CalendarPicker({ onSelectDate, initialDate }) {
           const isAvailableDay = isDayAvailable(day);
           const isSelected = selectedDate === dateStr;
 
+          // Tooltip traducido
+          let tooltip = "";
+          if (isPast) tooltip = t('calendarPicker.tooltips.pastDay');
+          else if (!isAvailableDay) tooltip = t('calendarPicker.tooltips.notAvailable');
+          else tooltip = t('calendarPicker.tooltips.available');
+
           return (
             <button
               key={index}
               onClick={() => handleSelect(day)}
               disabled={!isAvailableDay}
-              title={isPast ? "Día pasado" : (!isAvailableDay ? "No disponible" : "Disponible")}
+              title={tooltip}
               className={`
                 h-10 rounded-lg text-sm font-medium transition-all duration-200
                 ${isSelected
@@ -258,7 +273,7 @@ export default function CalendarPicker({ onSelectDate, initialDate }) {
 
       {loading && (
         <div className="text-center text-sm text-gray-500 mt-4">
-          Cargando disponibilidad...
+          {t('calendarPicker.loading')}
         </div>
       )}
 
@@ -266,15 +281,15 @@ export default function CalendarPicker({ onSelectDate, initialDate }) {
       <div className="flex gap-6 text-xs mt-4 text-gray-600">
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 bg-tiger-green rounded"></div>
-          Disponible
+          {t('calendarPicker.legend.available')}
         </div>
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 bg-gray-200 rounded"></div>
-          No disponible
+          {t('calendarPicker.legend.notAvailable')}
         </div>
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 bg-gray-300 rounded line-through"></div>
-          Día pasado
+          {t('calendarPicker.legend.pastDay')}
         </div>
       </div>
     </div>
