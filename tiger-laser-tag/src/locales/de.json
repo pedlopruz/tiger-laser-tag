@@ -307,6 +307,14 @@
     "processing": "Verarbeitung...",
     "warning": "Die Buchung ist erst nach Bestätigung per E-Mail oder Telefon endgültig.",
     "successTitle": "Anfrage erhalten!",
-    "successDesc": "Danke {{name}}, wir haben Ihre Anfrage erhalten."
+    "successDesc": "Danke {{name}}, wir haben Ihre Anfrage erhalten.",
+    "log": {
+      "slotsSelected": "BookingLayout - slots seleccionados:",
+      "reservationSuccess": "Reserva exitosa:",
+      "sendingEmail": "Enviando email de confirmación:",
+      "emailError": "Error sending confirmation email:",
+      "emailSuccess": "✅ Email de confirmación enviado exitosamente",
+      "emailErrorDetail": "❌ Error sending confirmation email:"
+    }
   }
 }

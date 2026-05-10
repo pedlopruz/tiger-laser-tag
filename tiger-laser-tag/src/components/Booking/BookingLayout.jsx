@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from 'react-i18next';
 
 import CalendarPicker from "./CalendarPicker";
 import SlotPicker from "./SlotPicker";
@@ -8,7 +9,7 @@ import BookingSummary from "./BookingSummary";
 import ReservationForm from "./ReservationForm";
 
 export default function BookingLayout() {
-
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const [date, setDate] = useState(null);
@@ -19,9 +20,9 @@ export default function BookingLayout() {
   const [showForm, setShowForm] = useState(false);
 
   const handleSelectSlots = useCallback((slots) => {
-    console.log("BookingLayout - slots seleccionados:", slots.map(s => s.start_time));
+    console.log(t('reserva.log.slotsSelected'), slots.map(s => s.start_time));
     setSelectedSlots(slots);
-  }, []);
+  }, [t]);
 
   const handleElectroshockChange = useCallback((value) => {
     setPersonasElectroshock(value);
@@ -43,7 +44,7 @@ export default function BookingLayout() {
 
   // ✅ Función auxiliar para obtener el rango de horas
   const getTimeRange = useCallback(() => {
-    if (!selectedSlots.length) return "-";
+    if (!selectedSlots.length) return t('reserva.noTimeSelected');
     if (selectedSlots.length === 1) {
       return selectedSlots[0].start_time?.slice(0, 5);
     }
@@ -51,11 +52,11 @@ export default function BookingLayout() {
       (a, b) => a.start_time.localeCompare(b.start_time)
     );
     return `${sorted[0].start_time?.slice(0, 5)} - ${sorted[sorted.length - 1].end_time?.slice(0, 5)}`;
-  }, [selectedSlots]);
+  }, [selectedSlots, t]);
 
   // ✅ handleReservationSuccess actualizado
   const handleReservationSuccess = useCallback(async (reservationData) => {
-    console.log("Reserva exitosa:", reservationData);
+    console.log(t('reserva.log.reservationSuccess'), reservationData);
     
     // Primero navegar a la página de confirmación
     navigate(`/reserva-confirmada?code=${reservationData.code}`);
@@ -82,7 +83,7 @@ export default function BookingLayout() {
         menor_edad: reservationData.menor_edad || false
       };
       
-      console.log("Enviando email de confirmación:", emailData);
+      console.log(t('reserva.log.sendingEmail'), emailData);
       
       const emailRes = await fetch("/api/contact", {
         method: "POST",
@@ -94,15 +95,15 @@ export default function BookingLayout() {
       
       if (!emailRes.ok) {
         const errorText = await emailRes.text();
-        console.error("Error sending confirmation email:", errorText);
+        console.error(t('reserva.log.emailError'), errorText);
       } else {
-        console.log("✅ Email de confirmación enviado exitosamente");
+        console.log(t('reserva.log.emailSuccess'));
       }
       
     } catch (emailError) {
-      console.error("❌ Error sending confirmation email:", emailError);
+      console.error(t('reserva.log.emailErrorDetail'), emailError);
     }
-  }, [navigate, people, plan, date, selectedSlots, personasElectroshock, getTimeRange]);
+  }, [navigate, people, plan, date, selectedSlots, personasElectroshock, getTimeRange, t]);
 
   return (
     <div className="grid lg:grid-cols-2 gap-10">
