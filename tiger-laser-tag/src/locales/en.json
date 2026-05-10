@@ -316,5 +316,14 @@
       "emailSuccess": "✅ Email de confirmación enviado exitosamente",
       "emailErrorDetail": "❌ Error sending confirmation email:"
     }
+  },
+  "reservar": {
+    "meta": {
+      "title": "Book your game - Tiger Laser Tag Marbella",
+      "description": "Book your Laser Tag session in Marbella. Choose the date, time and number of players."
+    },
+    "heroTitle": "Book your game",
+    "heroSubtitle": "Choose the date, time and number of players to secure your Laser Tag experience.",
+    "checkReservationBtn": "Already have a reservation? Check it here"
   }
 }

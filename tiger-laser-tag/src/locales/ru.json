@@ -317,5 +317,14 @@
       "emailSuccess": "✅ Email de confirmación enviado exitosamente",
       "emailErrorDetail": "❌ Error sending confirmation email:"
     }
+  },
+  "reservar": {
+    "meta": {
+      "title": "Забронируйте игру — Tiger Laser Tag Marbella",
+      "description": "Забронируйте игру в лазертаг в Марбелье. Выберите дату, время и количество игроков."
+    },
+    "heroTitle": "Забронируйте игру",
+    "heroSubtitle": "Выберите дату, время и количество игроков для бронирования вашей игры в Laser Tag.",
+    "checkReservationBtn": "У вас уже есть бронирование? Проверьте его здесь"
   }
 }

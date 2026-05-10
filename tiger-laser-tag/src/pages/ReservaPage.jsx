@@ -2,17 +2,20 @@ import React from "react";
 import { Helmet } from "react-helmet";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import { useTranslation } from 'react-i18next';
 
 import BookingLayout from "../components/Booking/BookingLayout";
 
 export default function Reservar() {
+  const { t } = useTranslation();
+
   return (
     <>
       <Helmet>
-        <title>Reserva tu partida - Tiger Laser Tag</title>
+        <title>{t('reservar.meta.title')}</title>
         <meta
           name="description"
-          content="Reserva tu partida de Laser Tag en Marbella. Elige fecha, horario y número de jugadores."
+          content={t('reservar.meta.description')}
         />
       </Helmet>
 
@@ -27,7 +30,7 @@ export default function Reservar() {
             transition={{ duration: 0.8 }}
             className="text-5xl md:text-6xl font-heading font-bold text-tiger-golden mb-4"
           >
-            Reserva tu partida
+            {t('reservar.heroTitle')}
           </motion.h1>
 
           <motion.p
@@ -36,8 +39,7 @@ export default function Reservar() {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="text-xl text-tiger-cream max-w-2xl mx-auto"
           >
-            Elige fecha, horario y número de jugadores para asegurar tu
-            experiencia de Laser Tag.
+            {t('reservar.heroSubtitle')}
           </motion.p>
 
           {/* BOTÓN CONSULTAR RESERVA */}
@@ -52,7 +54,7 @@ export default function Reservar() {
               to="/mis-reservas"
               className="inline-block bg-tiger-golden text-tiger-green font-semibold px-6 py-3 rounded-lg shadow hover:opacity-90 transition"
             >
-              ¿Ya tienes una reserva? Consultarla aquí
+              {t('reservar.checkReservationBtn')}
             </Link>
           </motion.div>
 

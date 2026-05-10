@@ -372,6 +372,15 @@
       "emailSuccess": "✅ Email de confirmación enviado exitosamente",
       "emailErrorDetail": "❌ Error sending confirmation email:"
     }
+  },
+  "reservar": {
+    "meta": {
+      "title": "Reserva tu partida - Tiger Laser Tag",
+      "description": "Reserva tu partida de Laser Tag en Marbella. Elige fecha, horario y número de jugadores."
+    },
+    "heroTitle": "Reserva tu partida",
+    "heroSubtitle": "Elige fecha, horario y número de jugadores para asegurar tu experiencia de Laser Tag.",
+    "checkReservationBtn": "¿Ya tienes una reserva? Consultarla aquí"
   }
   
 }
