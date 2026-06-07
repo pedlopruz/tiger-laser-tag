@@ -471,9 +471,205 @@ async function changeReservation(req, res, { code, email, people, newSlotIds }) 
     return res.status(500).json({ error: "Error modificando la reserva", details: error.message });
   }
 }
+// ============================================
+// CONFIRMAR RESERVA (MANUAL)
+// ============================================
+async function confirmReservation(req, res, { code, email }) {
+  if (!code || !email) {
+    return res.status(400).json({ error: "Campos requeridos faltantes" });
+  }
+
+  try {
+    console.log("🔍 === confirmReservation ===");
+    console.log("📝 Código:", code);
+    console.log("📝 Email:", email);
+
+    // Obtener la reserva para verificar que existe y está pendiente
+    const { data: reservation, error: fetchError } = await supabaseAdmin
+      .from("reservations")
+      .select(`
+        id,
+        people,
+        status,
+        plan_id,
+        reservation_slots(slot_id)
+      `)
+      .eq("reservation_code", code)
+      .eq("email", email)
+      .eq("status", "pending")
+      .single();
+
+    if (fetchError || !reservation) {
+      console.log("❌ Reserva no encontrada o no está pendiente:", fetchError);
+      return res.status(404).json({ error: "Reserva no encontrada o ya está confirmada" });
+    }
+
+    console.log("✅ Reserva encontrada:", {
+      id: reservation.id,
+      status: reservation.status
+    });
+
+    // Actualizar estado a 'confirmed'
+    const { error: updateError } = await supabaseAdmin
+      .from("reservations")
+      .update({ status: "confirmed" })
+      .eq("id", reservation.id);
+
+    if (updateError) throw updateError;
+
+    console.log(`✅ Reserva ${code} confirmada manualmente`);
+
+    // Obtener la reserva actualizada para devolver
+    const { data: updatedReservation, error: fetchUpdatedError } = await supabaseAdmin
+      .from("reservations")
+      .select(`
+        *,
+        reservation_slots(
+          time_slots(date, start_time, end_time)
+        ),
+        plans(name, price, duration_minutes)
+      `)
+      .eq("id", reservation.id)
+      .single();
+
+    if (fetchUpdatedError) {
+      // Si no se puede obtener, al menos devolvemos éxito
+      return res.status(200).json({
+        success: true,
+        message: "Reserva confirmada correctamente"
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Reserva confirmada correctamente",
+      reservation: updatedReservation
+    });
+
+  } catch (error) {
+    console.error("❌ Error confirming reservation:", error);
+    return res.status(500).json({ error: "Error confirmando la reserva", details: error.message });
+  }
+}
 
 // ============================================
-// CONFIRMAR RESERVA (CAMBIAR ESTADO A CONFIRMED)
+// CANCELAR RESERVA
+// ============================================
+async function cancelReservation(req, res, { code, email }) {
+  if (!code || !email) {
+    return res.status(400).json({ error: "Campos requeridos faltantes" });
+  }
+
+  try {
+    // Primero obtener la reserva con el plan para saber si es compartida
+    const { data: reservation, error: fetchError } = await supabaseAdmin
+      .from("reservations")
+      .select(`
+        id,
+        people,
+        status,
+        plan_id,
+        plans(active, name),
+        reservation_slots(slot_id)
+      `)
+      .eq("reservation_code", code)
+      .eq("email", email)
+      .in("status", ["pending", "confirmed"])
+      .single();
+
+    if (fetchError || !reservation) {
+      console.log("❌ Reserva no encontrada:", fetchError);
+      return res.status(404).json({ error: "Reserva no encontrada" });
+    }
+
+    const isSharedPlan = reservation.plans?.active === false;
+    const currentStatus = reservation.status;
+
+    console.log("📊 Cancelación solicitada:", {
+      reservationId: reservation.id,
+      currentStatus,
+      isSharedPlan,
+      planName: reservation.plans?.name
+    });
+
+    // ✅ Reglas de cancelación:
+    // - Reservas normales (active = true): solo se pueden cancelar si están PENDING
+    // - Reservas compartidas (active = false): se pueden cancelar si están PENDING o CONFIRMED
+    if (!isSharedPlan && currentStatus !== "pending") {
+      return res.status(403).json({ 
+        error: "Las reservas normales solo se pueden cancelar mientras están pendientes de confirmación. Una vez confirmadas, contacta con el establecimiento." 
+      });
+    }
+
+    if (isSharedPlan && currentStatus === "cancelled") {
+      return res.status(403).json({ 
+        error: "Esta reserva ya está cancelada." 
+      });
+    }
+
+    const slotIds = reservation.reservation_slots?.map(rs => rs.slot_id) || [];
+
+    // Actualizar estado de la reserva a cancelled
+    const { error: updateError } = await supabaseAdmin
+      .from("reservations")
+      .update({ status: "cancelled" })
+      .eq("id", reservation.id);
+
+    if (updateError) throw updateError;
+
+    // Liberar los slots (ponerlos como active)
+    if (slotIds.length > 0) {
+      console.log("🔓 Liberando slots:", slotIds);
+      const { error: slotError } = await supabaseAdmin
+        .from("time_slots")
+        .update({ status: "active" })
+        .in("id", slotIds);
+
+      if (slotError) throw slotError;
+    }
+
+    // Obtener la reserva actualizada para devolverla
+    const { data: updatedReservation, error: fetchUpdatedError } = await supabaseAdmin
+      .from("reservations")
+      .select(`
+        *,
+        reservation_slots(
+          slot_id,
+          time_slots(date, start_time, end_time)
+        ),
+        plans(name, price, duration_minutes, active)
+      `)
+      .eq("id", reservation.id)
+      .single();
+
+    if (fetchUpdatedError) {
+      console.log("⚠️ No se pudo obtener la reserva actualizada:", fetchUpdatedError);
+      return res.status(200).json({
+        success: true,
+        message: "Reserva cancelada correctamente",
+        reservation: { ...reservation, status: "cancelled" }
+      });
+    }
+
+    console.log("✅ Reserva cancelada exitosamente:", {
+      id: updatedReservation.id,
+      status: updatedReservation.status,
+      isShared: updatedReservation.plans?.active === false
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Reserva cancelada correctamente",
+      reservation: updatedReservation
+    });
+
+  } catch (error) {
+    console.error("❌ Error cancelling reservation:", error);
+    return res.status(500).json({ error: "Error cancelando la reserva", details: error.message });
+  }
+}
+// ============================================
+// CREAR RESERVA
 // ============================================
 async function createReservation(req, res) {
 
